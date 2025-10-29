@@ -6,6 +6,7 @@ import threading
 import sys
 import json
 import asyncio
+import queue
 import aio_pika
 from loguru import logger
 from app.config.baseapp_config import get_base_config
@@ -162,25 +163,19 @@ class QueueLogHandler:
     def __init__(self):
         self.config = get_base_config()
         self._connection = None
-        self._channel = None
-        self._lock = asyncio.Lock()
+        self._log_queue = queue.Queue()
+        self._worker_thread = None
+        self._stop_event = threading.Event()
     
     async def _ensure_connection(self):
         """Ensure we have a working connection"""
         if self._connection is None or self._connection.is_closed:
-            async with self._lock:
-                if self._connection is None or self._connection.is_closed:
-                    try:
-                        self._connection = await aio_pika.connect_robust(self.config.RABBITMQ_URL)
-                        self._channel = await self._connection.channel()
-                        await self._channel.declare_queue(
-                            "log_queue", 
-                            durable=True,
-                            arguments={"x-max-priority": 10}
-                        )
-                    except (aio_pika.exceptions.AMQPException, ConnectionError) as e:
-                        print(f"Failed to connect to RabbitMQ: {e}", file=sys.stderr)
-                        raise
+            try:
+                self._connection = await aio_pika.connect_robust(self.config.RABBITMQ_URL)
+            except (aio_pika.exceptions.AMQPException, ConnectionError) as e:
+                print(f"Failed to connect to RabbitMQ: {e}", file=sys.stderr)
+                self._connection = None # Ensure connection is None on failure
+                raise
     
     def write(self, message: str):
         """Write method called by loguru - simplified version"""
@@ -226,84 +221,110 @@ class QueueLogHandler:
             
             # Send asynchronously
             if validate_log_message(log_message):
-                self._send_async(log_message)
+                self._log_queue.put(log_message)
                 
         except (ValueError, TypeError, AttributeError, KeyError) as e:
             print(f"Error processing log: {e}", file=sys.stderr)
     
-    def _send_async(self, log_message: dict):
-        """Send log message asynchronously with connection pooling"""
-        def send():
+    def _worker(self):
+        """The worker method that runs in a separate thread."""
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(self._run())
+        finally:
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.close()
+
+    async def _run(self):
+        """The async part of the worker, runs the main loop."""
+        while not self._stop_event.is_set():
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(self._send_message(log_message))
-                loop.close()
-            except (RuntimeError, OSError, ConnectionError) as e:
-                print(f"Failed to send log: {e}", file=sys.stderr)
-        
-        thread = threading.Thread(target=send, daemon=True)
-        thread.start()
-    
+                log_message = self._log_queue.get(timeout=0.1)
+                await self._send_message(log_message)
+                self._log_queue.task_done()
+            except queue.Empty:
+                continue
+            except (ConnectionError, ValueError, TypeError, RuntimeError, OSError) as e:
+                print(f"Error in log worker: {e}", file=sys.stderr)
+
     async def _send_message(self, log_message: dict):
-        """Send message to queue with connection reuse"""
+        """Send a single log message to RabbitMQ."""
         try:
             await self._ensure_connection()
-            await self._channel.default_exchange.publish(
-                aio_pika.Message(
-                    json.dumps(log_message).encode(),
-                    delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
-                    priority=log_message.get("priority", 3)
-                ),
-                routing_key="log_queue"
-            )
-        except (aio_pika.exceptions.AMQPException, ConnectionError) as e:
-            print(f"Failed to send to queue: {e}", file=sys.stderr)
-    
-    async def close(self):
-        """Close connection"""
+            if self._connection:
+                async with self._connection.channel() as channel:
+                    await channel.default_exchange.publish(
+                        aio_pika.Message(
+                            body=json.dumps(log_message).encode(),
+                            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
+                            priority=log_message.get("priority", 3),
+                        ),
+                        routing_key="log_queue",
+                    )
+        except (ConnectionError, ValueError, TypeError, RuntimeError, OSError) as e:
+            print(f"Failed to send log to queue: {e}", file=sys.stderr)
+
+    async def _close_connection(self):
         if self._connection and not self._connection.is_closed:
             await self._connection.close()
-    
+
+    def start(self):
+        """Starts the background worker thread."""
+        self._worker_thread = threading.Thread(target=self._worker, daemon=True)
+        self._worker_thread.start()
+
+    def stop(self):
+        """Stops the background worker thread."""
+        self._log_queue.join() # Wait for all logs to be processed
+        self._stop_event.set()
+        if self._worker_thread:
+            self._worker_thread.join()
+        if self._connection:
+            # We need a loop to close the async connection
+            asyncio.run(self._close_connection())
 
 
 # Global handler instance for proper connection management
-_global_queue_handler = None
+_GLOBAL_QUEUE_HANDLER = None
 
 def configure_logging() -> None:
     """Configure logging with queue integration"""
-    global _global_queue_handler  # pylint: disable=global-statement
-    
+    global _GLOBAL_QUEUE_HANDLER  # pylint: disable=global-statement
+    config = get_base_config()
+
     logger.remove()
-    
+
     # Console handler
     logger.add(
         sys.stdout,
         level="INFO",
         backtrace=False,
         diagnose=False,
-        enqueue=True,
-        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
-    )
-    
-    # Queue handler with connection pooling
-    _global_queue_handler = QueueLogHandler()
-    logger.add(
-        _global_queue_handler,
-        level="INFO",
-        backtrace=False,
-        diagnose=False,
-        enqueue=True,
+        enqueue=True,  # Keep console logs enqueued for performance
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
     )
 
+    # Conditionally add queue handler
+    if config.QUEUE_LOG:
+        _GLOBAL_QUEUE_HANDLER = QueueLogHandler()
+        _GLOBAL_QUEUE_HANDLER.start()
+        logger.add(
+            _GLOBAL_QUEUE_HANDLER,
+            level="INFO",
+            backtrace=False,
+            diagnose=False,
+            enqueue=True,
+            format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
+        )
+
 async def shutdown_logging() -> None:
     """Gracefully shutdown logging and close RabbitMQ connection"""
-    global _global_queue_handler  # pylint: disable=global-statement
+    global _GLOBAL_QUEUE_HANDLER  # pylint: disable=global-statement
     
-    if _global_queue_handler:
-        await _global_queue_handler.close()
-        _global_queue_handler = None
+    if _GLOBAL_QUEUE_HANDLER:
+        _GLOBAL_QUEUE_HANDLER.stop()
+        _GLOBAL_QUEUE_HANDLER = None
         print("Logging system shutdown completed", file=sys.stderr)
 
 def get_logger_context(user_id: str = "", workspace_id: str = "", correlation_id: str = ""):
@@ -333,9 +354,9 @@ def _log_with_context(message: str, log_type: str, level: str = "info", exc_info
     
     # Log with context information embedded in the message
     if exc_info:
-        log_method(f"{log_type}: {message}{context_str}", exc_info=True)
+        log_method(f"{log_type}: {{message}}{context_str}", message=message, exc_info=True)
     else:
-        log_method(f"{log_type}: {message}{context_str}")
+        log_method(f"{log_type}: {{message}}{context_str}", message=message)
 
 
 def log_user_activity(message: str, action_type: str = "general", level: str = "info", exc_info: bool = False):
@@ -374,5 +395,3 @@ def log_central(message: str, level: str = "info", exc_info: bool = False):
         exc_info: Whether to include exception info in the log
     """
     _log_with_context(message, "CENTRAL", level, exc_info)
-
-

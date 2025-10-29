@@ -56,7 +56,7 @@ class BaseAppConfig(BaseSettings):
     )
     
 
-    
+    QUEUE_LOG: bool = Field(default=False, env="QUEUE_LOG")
     
     # CORS settings
     CORS_ORIGINS: str = Field(default="*", env="CORS_ORIGINS")
