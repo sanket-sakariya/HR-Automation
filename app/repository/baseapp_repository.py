@@ -2,7 +2,7 @@ from uuid import UUID
 from datetime import datetime, timedelta, date
 from typing import Optional, Dict, List, Any, Type, Generic, TypeVar
 from math import ceil
-from sqlalchemy import select, asc, desc, func, or_, and_, not_, cast, Date, DateTime
+from sqlalchemy import select, asc, desc, func, or_, and_, not_
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.logger_config import configure_logging
 from app.config.constants import DatabaseErrorMessages
@@ -62,6 +62,7 @@ OPERATOR_MAPPING = {
     "afternoon": "afternoon",
     "evening": "evening",
     "night": "night"
+    
 }
 
 def map_frontend_operator(operator: str) -> str:
@@ -86,6 +87,8 @@ def parse_date_value(value: Any) -> Optional[datetime]:
     if isinstance(value, str):
         try:
             # Try ISO format first
+            # Be flexible with separator between date and time
+            value = value.replace(':', 'T', 1) if value.count(':') > 1 else value
             return datetime.fromisoformat(value.replace('Z', '+00:00'))
         except (ValueError, AttributeError):
             try:
@@ -283,17 +286,15 @@ class BaseAppRepository(Generic[ModelType]):
                     elif operator == "previous_12_months":
                         clause_part = column_attr >= today - timedelta(days=365)
                     elif operator == "between":
-                        # CRITICAL FIX: Parse date values properly
-                        if isinstance(value, (list, tuple)) and len(value) >= 2:
-                            start_date = parse_date_value(value[0])
-                            end_date = parse_date_value(value[1])
-                            
-                            if start_date and end_date:
-                                # Use proper date casting based on column type
-                                if "timestamp" in col_type:
-                                    clause_part = column_attr.between(start_date, end_date)
-                                else:  # date type
-                                    clause_part = column_attr.between(start_date.date(), end_date.date())
+                        start_date = parse_date_value(value)
+                        end_date = parse_date_value(value2)
+                        
+                        if start_date and end_date:
+                            # Use proper date casting based on column type
+                            if "timestamp" in col_type:
+                                clause_part = column_attr.between(start_date, end_date)
+                            else:  # date type
+                                clause_part = column_attr.between(start_date.date(), end_date.date())
                     elif operator == "before":
                         parsed_value = parse_date_value(value)
                         if parsed_value:
@@ -342,61 +343,48 @@ class BaseAppRepository(Generic[ModelType]):
                     
                     # Relative range operators (enhanced)
                     elif operator == "previous":
-                        # Handle relative date range from value
-                        rel_range = f.get("relativeDateRange")
+                        # Handle relative date range from value, check both casings
+                        rel_range = f.get("relative_date_range") or f.get("relativeDateRange")
                         if rel_range:
-                            period_type = rel_range.get("periodType", "day")
+                            period_type = rel_range.get("period_type") or rel_range.get("periodType", "day")
                             count = rel_range.get("count", 1)
-                            include_today = rel_range.get("includeToday", False)
-                            
-                            # Calculate start date based on include_today flag
-                            if include_today:
-                                start_date = today - timedelta(days=count - 1) if period_type == "day" else today
-                            else:
-                                start_date = today - timedelta(days=1)  # Start from yesterday
-                            
+                            include_today = rel_range.get("include_today") or rel_range.get("includeToday", False)
+
+                            days_to_subtract = 0
                             if period_type == "day":
-                                if include_today:
-                                    # Include today: from (today - count + 1) to today
-                                    clause_part = column_attr >= datetime.combine(today - timedelta(days=count - 1), datetime.min.time())
-                                else:
-                                    # Exclude today: from (today - count) to yesterday
-                                    clause_part = and_(
-                                        column_attr >= datetime.combine(today - timedelta(days=count), datetime.min.time()),
-                                        column_attr < datetime.combine(today, datetime.min.time())
-                                    )
+                                days_to_subtract = count
                             elif period_type == "week":
-                                weeks_in_days = count * 7
-                                if include_today:
-                                    clause_part = column_attr >= datetime.combine(today - timedelta(days=weeks_in_days - 1), datetime.min.time())
-                                else:
-                                    clause_part = and_(
-                                        column_attr >= datetime.combine(today - timedelta(days=weeks_in_days), datetime.min.time()),
-                                        column_attr < datetime.combine(today, datetime.min.time())
-                                    )
+                                days_to_subtract = count * 7
                             elif period_type == "month":
-                                months_in_days = count * 30
-                                if include_today:
-                                    clause_part = column_attr >= datetime.combine(today - timedelta(days=months_in_days - 1), datetime.min.time())
-                                else:
-                                    clause_part = and_(
-                                        column_attr >= datetime.combine(today - timedelta(days=months_in_days), datetime.min.time()),
-                                        column_attr < datetime.combine(today, datetime.min.time())
-                                    )
+                                days_to_subtract = count * 30  # Approximation
                             elif period_type == "year":
-                                years_in_days = count * 365
+                                days_to_subtract = count * 365 # Approximation
+
+                            if days_to_subtract > 0:
                                 if include_today:
-                                    clause_part = column_attr >= datetime.combine(today - timedelta(days=years_in_days - 1), datetime.min.time())
-                                else:
+                                    # Range: [today - (days-1), today]
+                                    # Example: previous 7 days including today is from 6 days ago until the end of today.
+                                    start_date = today - timedelta(days=days_to_subtract - 1)
+                                    end_date = today + timedelta(days=1) # End of today
                                     clause_part = and_(
-                                        column_attr >= datetime.combine(today - timedelta(days=years_in_days), datetime.min.time()),
-                                        column_attr < datetime.combine(today, datetime.min.time())
+                                        column_attr >= datetime.combine(start_date, datetime.min.time()),
+                                        column_attr < datetime.combine(end_date, datetime.min.time())
                                     )
+                                else:
+                                    # Range: [today - days, yesterday]
+                                    # Example: previous 7 days excluding today is from 7 days ago until the end of yesterday.
+                                    start_date = today - timedelta(days=days_to_subtract)
+                                    end_date = today # End of yesterday
+                                    clause_part = and_(
+                                        column_attr >= datetime.combine(start_date, datetime.min.time()),
+                                        column_attr < datetime.combine(end_date, datetime.min.time())
+                                    )
+
                     elif operator == "current":
                         # Handle current period
-                        rel_range = f.get("relativeDateRange")
+                        rel_range = f.get("relative_date_range") or f.get("relativeDateRange")
                         if rel_range:
-                            period_type = rel_range.get("periodType", "day")
+                            period_type = rel_range.get("period_type") or rel_range.get("periodType", "day")
                             
                             if period_type == "day":
                                 clause_part = func.date(column_attr) == today
@@ -415,11 +403,11 @@ class BaseAppRepository(Generic[ModelType]):
                                 clause_part = func.date(column_attr).between(start_of_month, end_of_month)
                     elif operator == "next":
                         # Handle next period
-                        rel_range = f.get("relativeDateRange")
+                        rel_range = f.get("relative_date_range") or f.get("relativeDateRange")
                         if rel_range:
-                            period_type = rel_range.get("periodType", "day")
+                            period_type = rel_range.get("period_type") or rel_range.get("periodType", "day")
                             count = rel_range.get("count", 1)
-                            include_today = rel_range.get("includeToday", False)
+                            include_today = rel_range.get("include_today") or rel_range.get("includeToday", False)
                             
                             if period_type == "day":
                                 if include_today:
