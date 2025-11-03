@@ -1,60 +1,0 @@
-
-
-4int
-
-5int
-
-6int
-
-7int
-B9"Generate unique filename for logo (always WebP format)."str
-
-0int
-* !"demo_{demo_id}_{unique_id}.webp"str
-
-1int
-
-2int
-
-3intself4 4(original_filename4! 4(7demo_id49 4(E"ş(
-&
-6 6($"
-uuiduuid4B	uuid.UUID.
-,
-6 6(%"#dependent-value#*:Bstr2
-0
-6 6()	unique_id"#unknown-value#Blist"
- 
-6 6()	"#array-read#:&
-$
-6 6()
-"#array-add-last#:	"
- 
-6 6()"#array-read#:&
-$
-6 6()"#array-add-last#:"
- 
-6 6()"#array-read#:&
-$
-6 6()"#array-add-last#:"
- 
-6 6()"#array-read#:&
-$
-6 6()"#array-add-last#:"
- 
-6 6()"#array-read#:&
-$
-6 6()"#array-add-last#:"
- 
-6 6()"#array-read#:&
-$
-6 6()"#array-add-last#:"
- 
-6 6()"#array-read#:&
-$
-6 6()"#array-add-last#:"
- 
-6 6()"#array-read#:&
-$
-6 6()"#array-add-last#:
-7 7(1 *M/Users/jaydeepgajera/github/demo-management-service/app/helper/file_helper.py

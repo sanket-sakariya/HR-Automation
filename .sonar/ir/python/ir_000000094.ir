@@ -1,4 +1,0 @@
-
-&"Generate URL for logo file."str
-!"/media/logo/{filename}"strself9 9(filename9 9()"
-; ;((*M/Users/jaydeepgajera/github/demo-management-service/app/helper/file_helper.py

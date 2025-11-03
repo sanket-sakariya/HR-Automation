@@ -38,4 +38,3 @@ pytest_cache/
 # IDE / Editor settings
 
 .idea/
-.sonar/

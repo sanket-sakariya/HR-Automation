@@ -1,48 +1,0 @@
-
-,#"Test getting a specific workspace"str
-
-	"user-id"strself
-¨! ¨(%"Á7
-5
-
-ª ª(("" #get-field# created_workspace_id:+
-)
-
-ª ª(("
-__bool__*:BboolH+
-)
-
-ª ª(("#unaryop !#2!:Bbool,"*
-
-ª ª(( *
-ª ª(
-2
-­ ­("y*
-(
-
-¬$ ¬(0"
-uuiduuid4B	uuid.UUIDC
-A
-
-¬  ¬(1test_workspace_id"#dependent-value#*:Bstr"TJ
-H
-
-®  ®(9test_workspace_id"" #get-field# created_workspace_id:"ä/
--
-
-° °(0	headers"#new-object#Bdict/
--
-
-° °(/"#get-field# test_user_id:"
- 
-
-° °(/"	#map-set#:	
-#
-!
-
-² ¸(	"#unknown-value##
-!
-
-² ¸(	"#unknown-value#
-
-² ¸(	*T/Users/jaydeepgajera/github/demo-management-service/test_case/endpoint_test_suite.py

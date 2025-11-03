@@ -1,42 +1,0 @@
-
-	"user-id"str
-"limit"str
-"-created_at"str
-"offset"str
-	10int
-
-"order_by"str
-
-0int
-""Test listing workspaces"strself
-–# –('"ş/
--
-
-˜ ˜(0headers"#new-object#Bdict/
--
-
-˜ ˜(/"#get-field# test_user_id:"
- 
-
-˜ ˜(/"	#map-set#:.
-,
-
-™ (	params"#new-object#Bdict"
- 
-
-š š(
-"	#map-set#:	"
- 
-
-› ›("	#map-set#:"
- 
-
-œ œ(%"	#map-set#:#
-!
-
-Ÿ ¦(	"#unknown-value##
-!
-
-Ÿ ¦(	"#unknown-value#
-
-Ÿ ¦(	*T/Users/jaydeepgajera/github/demo-management-service/test_case/endpoint_test_suite.py

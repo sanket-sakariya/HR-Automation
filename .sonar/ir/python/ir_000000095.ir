@@ -1,96 +1,0 @@
-
-B9"Smaller file sizes (typically 25-50% smaller than JPEG)"str
- "Supports transparency"str
-/&"Better compression with same quality"str
-1024int
-"WebP"str
-	"quality"str
-
-
-"max_size"str
-<3"{self.max_image_size[0]}x{self.max_image_size[1]}"str
-
-"benefits"str
-""supported_input_formats"str
-
- 0int
-"max_file_size_mb"str
-›‘"
-        Get information about image conversion settings.
-        
-        Returns:
-            dict: Conversion configuration details
-        "str
-"output_format"str
-"Modern web standard"strself
-Ú Ú( list"Š&
-$
-
-á í(	"#new-object#Bdict"
- 
-
-â â(#"	#map-set#:/
--
-
-ã ã(("#get-field# webp_quality:"
- 
-
-ã ã((	"	#map-set#:"
- 
-
-ä ä(L"	#map-set#:
-0
-.
-
-å  å(2"#get-field# max_file_size:'
-%
-
-å7 å(B"	#binop *#*2*:)
-'
-
-å  å(C"
-#binop //#*2//:"
- 
-
-å å(C"	#map-set#:5
-3
-
-æ, æ(C" #get-field# allowed_extensions:.
-,
-
-æ' æ(D"
-builtinslist*:Blist"
- 
-
-æ æ(D"	#map-set#:)
-'
-
-ç ì("#unknown-value#Blist(
-&
-
-ç ì("
-#is-exact#:Bbool
-
-
-ç ì("
-#assume#::
-8
-
-ç ì(!"#set-field# __collection_size: Bint(
-&
-
-ç ì(""#array-add-last#:(
-&
-
-ç ì(#"#array-add-last#:(
-&
-
-ç ì($"#array-add-last#:(
-&
-
-ç ì(%"#array-add-last#:"
- 
-
-ç ì(&"	#map-set#:
-
-á í(	*M/Users/jaydeepgajera/github/demo-management-service/app/helper/file_helper.py
