@@ -1,0 +1,56 @@
+
+3*"Test updating workspace is_active status"str
+"is_active"str
+falsebool
+
+	"user-id"strself
+ç. ç(2"Á7
+5
+
+é é(("" #get-field# created_workspace_id:+
+)
+
+é é(("
+__bool__*:BboolH+
+)
+
+é é(("#unaryop !#2!:Bbool,"*
+
+é é(( *
+é é(
+2
+ë ë("y*
+(
+
+ê$ ê(0"
+uuiduuid4B	uuid.UUIDC
+A
+
+ê  ê(1test_workspace_id"#dependent-value#*:Bstr"TJ
+H
+
+ì  ì(9test_workspace_id"" #get-field# created_workspace_id:"¹/
+-
+
+î î(0	headers"#new-object#Bdict/
+-
+
+î î(/"#get-field# test_user_id:"
+ 
+
+î î(/"	#map-set#:	
+/
+-
+
+ï ñ(	payload"#new-object#Bdict"
+ 
+
+ð ð("	#map-set#:#
+!
+
+ó ú(	"#unknown-value##
+!
+
+ó ú(	"#unknown-value#
+
+ó ú(	*T/Users/jaydeepgajera/github/demo-management-service/test_case/endpoint_test_suite.py

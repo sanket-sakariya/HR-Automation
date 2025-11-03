@@ -1,0 +1,61 @@
+
+/&"https://example.com/updated-logo.png"str
+"logo"str
+$"Test updating a workspace"str
+
+	"user-id"str
+"name"str
+8/"Updated Test Workspace {uuid.uuid4().hex[:8]}"strself
+º$ º(("Á7
+5
+
+¼ ¼(("" #get-field# created_workspace_id:+
+)
+
+¼ ¼(("
+__bool__*:BboolH+
+)
+
+¼ ¼(("#unaryop !#2!:Bbool,"*
+
+¼ ¼(( *
+¼ ¼(
+2
+¾ ¾("y*
+(
+
+½$ ½(0"
+uuiduuid4B	uuid.UUIDC
+A
+
+½  ½(1test_workspace_id"#dependent-value#*:Bstr"TJ
+H
+
+¿  ¿(9test_workspace_id"" #get-field# created_workspace_id:"Ý/
+-
+
+Á Á(0	headers"#new-object#Bdict/
+-
+
+Á Á(/"#get-field# test_user_id:"
+ 
+
+Á Á(/"	#map-set#:	
+/
+-
+
+Â Å(	payload"#new-object#Bdict"
+ 
+
+Ã Ã(D"	#map-set#:"
+ 
+
+Ä Ä(:"	#map-set#:#
+!
+
+Ç Î(	"#unknown-value##
+!
+
+Ç Î(	"#unknown-value#
+
+Ç Î(	*T/Users/jaydeepgajera/github/demo-management-service/test_case/endpoint_test_suite.py

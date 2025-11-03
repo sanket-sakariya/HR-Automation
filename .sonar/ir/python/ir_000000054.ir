@@ -1,0 +1,44 @@
+
+-$"Test assigning member to workspace"str
+"test-member-789"str
+	"user-id"str
+"workspace-id"str
+"member"str
+"member_user_id"str
+"role"strself
+‘! ‘(%"´/
+-
+
+“ –(	headers"#new-object#Bdict/
+-
+
+” ”(("#get-field# test_user_id:"
+ 
+
+” ”(("	#map-set#:4
+2
+
+• •(2"#get-field# test_workspace_id:"
+ 
+
+• •(2	"	#map-set#:.
+,
+
+— š(	
+params"#new-object#Bdict"
+ 
+
+˜ ˜(/"	#map-set#:
+"
+ 
+
+™ ™("	#map-set#:
+#
+!
+
+œ £(	"#unknown-value##
+!
+
+œ £(	"#unknown-value#
+
+œ £(	*T/Users/jaydeepgajera/github/demo-management-service/test_case/endpoint_test_suite.py

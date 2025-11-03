@@ -1,0 +1,567 @@
+
+Tfile:///Users/jaydeepgajera/github/demo-management-service/app/config/constants.py37
+__unknown_file ("1*
+2
+constants.py"j
+S
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pya a(
+implicit return*á
+1S
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (Æ
+´
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (M
+DATA_RETRIEVAL_ERROR"__id*4
+ ((&
+$Database error during data retrieval¨
+©
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py
+ 
+(K
+DEMO_CREATION_ERROR"__id*3
+ ('%
+#Database error during demo creationÆ
+´
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (M
+DEMO_RETRIEVAL_ERROR"__id*4
+ ((&
+$Database error while retrieving demo®
+•
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (G
+DEMO_UPDATE_ERROR"__id*1
+ (%#
+!Database error during demo update∂
+≥
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (U
+DEMO_STATUS_UPDATE_ERROR"__id*8
+ (,*
+(Database error during demo status updateπ
+∂
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (X
+DEMO_ACTIVE_UPDATE_ERROR"__id*;
+ (/-
++Database error during demo is_active update¨
+©
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (K
+DEMO_DELETION_ERROR"__id*3
+ ('%
+#Database error during demo deletion∆
+√
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (e"
+ USER_DEMO_MAPPING_CREATION_ERROR"__id*@
+ (42
+0Database error during user-demo mapping creation»
+≈
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (g#
+!USER_DEMO_MAPPING_RETRIEVAL_ERROR"__id*A
+ (53
+1Database error while retrieving user-demo mapping¬
+ø
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (a 
+USER_DEMO_MAPPING_UPDATE_ERROR"__id*>
+ (20
+.Database error during user-demo mapping update–
+Õ
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (o'
+%USER_DEMO_MAPPING_STATUS_UPDATE_ERROR"__id*E
+ (97
+5Database error during user-demo mapping status update”
+–
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (r'
+%USER_DEMO_MAPPING_ACTIVE_UPDATE_ERROR"__id*H
+ (<:
+8Database error during user-demo mapping is_active update∆
+√
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (e"
+ USER_DEMO_MAPPING_DELETION_ERROR"__id*@
+ (42
+0Database error during user-demo mapping deletionª
+∏
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (Z
+USER_DEMO_MAPPING_COUNT_ERROR"__id*8
+ (,*
+(Database error while counting demo usersÆ
+´
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (M
+DATA_RETRIEVAL_ERROR"__id*4
+ ((&
+$Database error during data retrieval¨
+©
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py
+ 
+(K
+DEMO_CREATION_ERROR"__id*3
+ ('%
+#Database error during demo creationÆ
+´
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (M
+DEMO_RETRIEVAL_ERROR"__id*4
+ ((&
+$Database error while retrieving demo®
+•
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (G
+DEMO_UPDATE_ERROR"__id*1
+ (%#
+!Database error during demo update∂
+≥
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (U
+DEMO_STATUS_UPDATE_ERROR"__id*8
+ (,*
+(Database error during demo status updateπ
+∂
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (X
+DEMO_ACTIVE_UPDATE_ERROR"__id*;
+ (/-
++Database error during demo is_active update¨
+©
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (K
+DEMO_DELETION_ERROR"__id*3
+ ('%
+#Database error during demo deletion∆
+√
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (e"
+ USER_DEMO_MAPPING_CREATION_ERROR"__id*@
+ (42
+0Database error during user-demo mapping creation»
+≈
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (g#
+!USER_DEMO_MAPPING_RETRIEVAL_ERROR"__id*A
+ (53
+1Database error while retrieving user-demo mapping¬
+ø
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (a 
+USER_DEMO_MAPPING_UPDATE_ERROR"__id*>
+ (20
+.Database error during user-demo mapping update–
+Õ
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (o'
+%USER_DEMO_MAPPING_STATUS_UPDATE_ERROR"__id*E
+ (97
+5Database error during user-demo mapping status update”
+–
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (r'
+%USER_DEMO_MAPPING_ACTIVE_UPDATE_ERROR"__id*H
+ (<:
+8Database error during user-demo mapping is_active update∆
+√
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (e"
+ USER_DEMO_MAPPING_DELETION_ERROR"__id*@
+ (42
+0Database error during user-demo mapping deletionª
+∏
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py (Z
+USER_DEMO_MAPPING_COUNT_ERROR"__id*8
+ (,*
+(Database error while counting demo users†
+ù
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py   (?
+INTERNAL_SERVER_ERROR"__id*%
+ (
+Internal server error†
+ù
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py   (?
+INTERNAL_SERVER_ERROR"__id*%
+ (
+Internal server errorû
+õ
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py' '(=
+DEMO_CREATION_FAILED"__id*$
+ (
+Demo creation failed¢
+ü
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py( ((A
+DEMO_RETRIEVAL_FAILED"__id*'
+ (
+Failed to retrieve demo§
+°
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py) )(C
+DEMOS_RETRIEVAL_FAILED"__id*(
+ (
+Failed to retrieve demosö
+ó
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py* *(9
+DEMO_UPDATE_FAILED"__id*"
+ (
+Demo update failedü
+ú
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py+ +(>
+DEMO_DELETION_FAILED"__id*%
+ (
+Failed to delete demo´
+®
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py, ,(J
+DEMO_STATUS_UPDATE_FAILED"__id*,
+ ( 
+Failed to update demo statusπ
+∂
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py- -(X"
+ DEMO_ACTIVE_STATUS_UPDATE_FAILED"__id*3
+ ('%
+#Failed to update demo active statusû
+õ
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py' '(=
+DEMO_CREATION_FAILED"__id*$
+ (
+Demo creation failed¢
+ü
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py( ((A
+DEMO_RETRIEVAL_FAILED"__id*'
+ (
+Failed to retrieve demo§
+°
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py) )(C
+DEMOS_RETRIEVAL_FAILED"__id*(
+ (
+Failed to retrieve demosö
+ó
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py* *(9
+DEMO_UPDATE_FAILED"__id*"
+ (
+Demo update failedü
+ú
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py+ +(>
+DEMO_DELETION_FAILED"__id*%
+ (
+Failed to delete demo´
+®
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py, ,(J
+DEMO_STATUS_UPDATE_FAILED"__id*,
+ ( 
+Failed to update demo statusπ
+∂
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py- -(X"
+ DEMO_ACTIVE_STATUS_UPDATE_FAILED"__id*3
+ ('%
+#Failed to update demo active statusØ
+¨
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py5 5(N
+DEMO_MEMBERS_RETRIEVED"__id*3
+ ('%
+#Demo members retrieved successfully©
+¶
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py6 6(H
+MEMBER_ASSIGNED"__id*4
+ ((&
+$Member assigned to demo successfully©
+¶
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py7 7(H
+MEMBER_REVOKED"__id*5
+ ()'
+%Member revoked from demo successfully¨
+©
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py: :(K
+FAILED_TO_ASSIGN_MEMBER"__id*/
+ (#!
+Failed to assign member to demoØ
+¨
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py5 5(N
+DEMO_MEMBERS_RETRIEVED"__id*3
+ ('%
+#Demo members retrieved successfully©
+¶
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py6 6(H
+MEMBER_ASSIGNED"__id*4
+ ((&
+$Member assigned to demo successfully©
+¶
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py7 7(H
+MEMBER_REVOKED"__id*5
+ ()'
+%Member revoked from demo successfully¨
+©
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py: :(K
+FAILED_TO_ASSIGN_MEMBER"__id*/
+ (#!
+Failed to assign member to demoí
+è
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyB B(1
+DEMO_CREATED"__id* 
+ (
+Created new demoé
+ã
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyC C(-
+DEMO_UPDATED"__id*
+ (
+Updated demoé
+ã
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyD D(-
+DEMO_DELETED"__id*
+ (
+Deleted demoú
+ô
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyE E(;
+MEMBER_ASSIGNED"__id*'
+ (
+Assigned member to demoú
+ô
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyF F(;
+MEMBER_REVOKED"__id*(
+ (
+Revoked member from demoù
+ö
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyI I(<
+DEMO_STATUS_UPDATED"__id*$
+ (
+Updating demo status£
+†
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyJ J(B
+LOGO_UPLOAD_FAILED"__id*+
+ (
+Logo upload failed for demo¿
+Ω
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyK K(_
+OLD_LOGO_NOT_FOUND"__id*H
+ (<:
+8Old logo file not found for demo, continuing with upload∑
+¥
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyL L(V
+UNEXPECTED_LOGO_ERROR"__id*<
+ (0.
+,Unexpected error during logo upload for demo™
+ß
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyO O(I
+CANNOT_UPDATE_DELETED_DEMO"__id**
+ (
+Cannot update deleted demoª
+∏
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyP P(Z#
+!CANNOT_UPDATE_STATUS_DELETED_DEMO"__id*4
+ ((&
+$Cannot update status of deleted demoΩ
+∫
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyQ Q(\
+CANNOT_UPDATE_DELETED_MAPPING"__id*:
+ (.,
+*Cannot update deleted user-to-demo mappingŒ
+À
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyR R(m&
+$CANNOT_UPDATE_STATUS_DELETED_MAPPING"__id*D
+ (86
+4Cannot update status of deleted user-to-demo mappingí
+è
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyB B(1
+DEMO_CREATED"__id* 
+ (
+Created new demoé
+ã
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyC C(-
+DEMO_UPDATED"__id*
+ (
+Updated demoé
+ã
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyD D(-
+DEMO_DELETED"__id*
+ (
+Deleted demoú
+ô
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyE E(;
+MEMBER_ASSIGNED"__id*'
+ (
+Assigned member to demoú
+ô
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyF F(;
+MEMBER_REVOKED"__id*(
+ (
+Revoked member from demoù
+ö
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyI I(<
+DEMO_STATUS_UPDATED"__id*$
+ (
+Updating demo status£
+†
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyJ J(B
+LOGO_UPLOAD_FAILED"__id*+
+ (
+Logo upload failed for demo¿
+Ω
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyK K(_
+OLD_LOGO_NOT_FOUND"__id*H
+ (<:
+8Old logo file not found for demo, continuing with upload∑
+¥
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyL L(V
+UNEXPECTED_LOGO_ERROR"__id*<
+ (0.
+,Unexpected error during logo upload for demo™
+ß
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyO O(I
+CANNOT_UPDATE_DELETED_DEMO"__id**
+ (
+Cannot update deleted demoª
+∏
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyP P(Z#
+!CANNOT_UPDATE_STATUS_DELETED_DEMO"__id*4
+ ((&
+$Cannot update status of deleted demoΩ
+∫
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyQ Q(\
+CANNOT_UPDATE_DELETED_MAPPING"__id*:
+ (.,
+*Cannot update deleted user-to-demo mappingŒ
+À
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyR R(m&
+$CANNOT_UPDATE_STATUS_DELETED_MAPPING"__id*D
+ (86
+4Cannot update status of deleted user-to-demo mappingõ
+ò
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyZ Z(:
+DEMO_CREATED"__id*)
+ (
+Demo created successfullyõ
+ò
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py[ [(:
+DEMO_UPDATED"__id*)
+ (
+Demo updated successfullyõ
+ò
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py\ \(:
+DEMO_DELETED"__id*)
+ (
+Demo deleted successfullyü
+ú
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py] ](>
+DEMO_RETRIEVED"__id*+
+ (
+Demo retrieved successfully°
+û
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py^ ^(@
+DEMOS_RETRIEVED"__id*,
+ ( 
+Demos retrieved successfully©
+¶
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py_ _(H
+DEMO_STATUS_UPDATED"__id*0
+ ($"
+ Demo status updated successfully∑
+¥
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py` `(V
+DEMO_ACTIVE_STATUS_UPDATED"__id*7
+ (+)
+'Demo active status updated successfullyõ
+ò
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.pyZ Z(:
+DEMO_CREATED"__id*)
+ (
+Demo created successfullyõ
+ò
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py[ [(:
+DEMO_UPDATED"__id*)
+ (
+Demo updated successfullyõ
+ò
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py\ \(:
+DEMO_DELETED"__id*)
+ (
+Demo deleted successfullyü
+ú
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py] ](>
+DEMO_RETRIEVED"__id*+
+ (
+Demo retrieved successfully°
+û
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py^ ^(@
+DEMOS_RETRIEVED"__id*,
+ ( 
+Demos retrieved successfully©
+¶
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py_ _(H
+DEMO_STATUS_UPDATED"__id*0
+ ($"
+ Demo status updated successfully∑
+¥
+U
+K/Users/jaydeepgajera/github/demo-management-service/app/config/constants.py` `(V
+DEMO_ACTIVE_STATUS_UPDATED"__id*7
+ (+)
+'Demo active status updated successfully*
+2B H

@@ -1,0 +1,7 @@
+organization=botxbyte
+projectKey=botxbyte_demo-management-service
+serverUrl=https://sonarcloud.io
+serverVersion=8.0.0.68079
+dashboardUrl=https://sonarcloud.io/dashboard?id=botxbyte_demo-management-service
+ceTaskId=AZmkossfr30kW1BXhUBz
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZmkossfr30kW1BXhUBz

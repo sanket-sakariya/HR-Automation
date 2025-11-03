@@ -1,0 +1,89 @@
+
+'client.baseapp_client.BaseAppHttpClientZ
+P/Users/jaydeepgajera/github/demo-management-service/app/client/baseapp_client.py ("2*å
+2 (,sq
+ (,
+%2"
+str.rstrip*(
+
+__unknown_file (
+
+
+base_url*!
+
+__unknown_file (
+/2rstripo
+m
+ (,7)
+'client.baseapp_client.BaseAppHttpClient"
+
+base_url"__id*"
+
+__unknown_file (
+
+%2s
+q
+ (6)
+'client.baseapp_client.BaseAppHttpClient"	
+timeout"__id*'
+
+__unknown_file (
+	
+timeouts
+q
+ (6)
+'client.baseapp_client.BaseAppHttpClient"	
+retries"__id*'
+
+__unknown_file (
+	
+retries*
+4
+5*e
+3
+baseapp_client.py97
+ (
+%1"'client.baseapp_client.BaseAppHttpClient"
+ (
+
+%1*U
+4 (&A
+?
+ (&
+%3"__id*'
+
+__unknown_file (
+	
+headers*
+6*j
+5* (,
+* (,
+%4"dict<
+:
+* (,
+%3"__id*"
+
+__unknown_file (
+
+%4*
+6*Š
+6+ (,v
+t
+ (,>)
+'client.baseapp_client.BaseAppHttpClient"
+default_headers"__id*"
+
+__unknown_file (
+
+%3*
+3:
+ (
+
+base_url:
+ (	
+timeout:
+ (	
+retries:
+ (0	
+headersB+)
+'client.baseapp_client.BaseAppHttpClientH

@@ -1,0 +1,32 @@
+
+LC"Get database URL based on async mode and read replica preference."strselfK K(
+async_modeK K(7read_replicaK9 K(S"I)
+'
+M M("
+__bool__*:BboolH"
+M M( *M M(
+"U)
+'
+N3 N(="
+__bool__*:BboolH&"$
+N3 N(= *N0 N(22N> N(B"U)
+'
+O* O(4
+"
+__bool__*:BboolH&"$
+O* O(4
+ *O' O()2O5 O(9"L8
+6
+N N(/"%##get-field# ASYNC_READ_DATABASE_URL:
+N N(Y"F2
+0
+NC N(Y"#get-field# READ_DATABASE_URL:
+N N(Y"$*	
+N N(Y	"G3
+1
+O O(&" #get-field# ASYNC_DATABASE_URL:
+O O(K"A-
++
+O: O(K"#get-field# DATABASE_URL:
+O O(K"$*
+O O(K*P/Users/jaydeepgajera/github/demo-management-service/app/config/baseapp_config.py

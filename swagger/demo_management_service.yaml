@@ -89,6 +89,10 @@ paths:
                     $ref: '#/components/schemas/PaginationMeta'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -145,6 +149,10 @@ paths:
                     example: "Demo created successfully"
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -181,6 +189,10 @@ paths:
                     example: true
                   data:
                     $ref: '#/components/schemas/DemoModel'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -236,6 +248,10 @@ paths:
                     example: "Demo updated successfully"
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -281,6 +297,10 @@ paths:
                   message:
                     type: string
                     example: "Demo deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -344,6 +364,10 @@ paths:
                     example: "Demo status updated successfully"
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -397,6 +421,10 @@ paths:
                     example: "Demo active status updated successfully"
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
@@ -440,62 +468,138 @@ components:
           format: date-time
           description: Timestamp when record was created
           example: "2024-01-15T10:30:00Z"
+          x-read-only: true
+          x-sortable: true
+          x-filterable: true
+          x-display-name: "Created At"
+          x-ui-group: "Audit Information"
+          x-ui-order: 101
+          x-component-hint: "datetime-display"
         updated_at:
           type: string
           format: date-time
           nullable: true
           description: Timestamp when record was last updated
           example: "2024-01-15T10:30:00Z"
+          x-read-only: true
+          x-sortable: true
+          x-filterable: true
+          x-display-name: "Updated At"
+          x-ui-group: "Audit Information"
+          x-ui-order: 102
+          x-component-hint: "datetime-display"
         deleted_at:
           type: string
           format: date-time
           nullable: true
-
           description: Timestamp when record was deleted
           example: "2024-01-15T10:30:00Z"
+          x-read-only: true
+          x-filterable: true
+          x-display-name: "Deleted At"
+          x-ui-group: "Audit Information"
+          x-ui-order: 103
+          x-component-hint: "datetime-display"
+          x-hidden: true
         created_by:
           type: string
           format: uuid
           description: ID of user who created the record
-          
           example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
+          x-read-only: true
+          x-filterable: true
+          x-display-name: "Created By"
+          x-ui-group: "Audit Information"
+          x-ui-order: 104
+          x-component-hint: "user-selector"
+          x-lookup-endpoint: "/api/v1/users/{value}"
         updated_by:
           type: string
           format: uuid
           nullable: true
           description: ID of user who last updated the record
-          
           example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
+          x-read-only: true
+          x-filterable: true
+          x-display-name: "Updated By"
+          x-ui-group: "Audit Information"
+          x-ui-order: 105
+          x-component-hint: "user-selector"
+          x-lookup-endpoint: "/api/v1/users/{value}"
         deleted_by:
           type: string
           format: uuid
           nullable: true
           description: ID of user who deleted the record
-          
           example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
+          x-read-only: true
+          x-filterable: true
+          x-display-name: "Deleted By"
+          x-ui-group: "Audit Information"
+          x-ui-order: 106
+          x-component-hint: "user-selector"
+          x-lookup-endpoint: "/api/v1/users/{value}"
+          x-hidden: true
         status:
           type: string
           enum: ['creating', 'created', 'updating', 'updated', 'deleting', 'deleted']
           description: Current processing status of the record
-          
           example: "created"
+          x-sortable: true
+          x-filterable: true
+          x-display-name: "Status"
+          x-ui-group: "Status Information"
+          x-ui-order: 20
+          x-component-hint: "select"
+          x-state-machine:
+            initial: "creating"
+            states:
+              creating:
+                on:
+                  SUCCESS: "created"
+                  FAILURE: "deleted"
+              created:
+                on:
+                  UPDATE: "updating"
+                  DELETE: "deleting"
+              updating:
+                on:
+                  SUCCESS: "updated"
+                  FAILURE: "created"
         is_active:
           type: boolean
           description: Whether the record is active (not the same as status)
-          
           example: true
+          x-sortable: true
+          x-filterable: true
+          x-display-name: "Active"
+          x-ui-group: "Status Information"
+          x-ui-order: 21
+          x-component-hint: "toggle-switch"
         error_message:
           type: string
           nullable: true
           description: Technical error message for debugging
-          
           example: "Database connection timeout after 30 seconds"
+          x-read-only: true
+          x-display-name: "Error Message"
+          x-ui-group: "Status Information"
+          x-ui-order: 22
+          x-component-hint: "textarea"
+          x-hidden: true
+          x-internal: true
+          x-log-redact: true
         error_user_message:
           type: string
           nullable: true
           description: User-friendly error message for display
-          
           example: "Something went wrong. Please try again later."
+          x-read-only: true
+          x-display-name: "User-Friendly Error"
+          x-ui-group: "Status Information"
+          x-ui-order: 23
+          x-component-hint: "alert-message"
+          x-hidden: true
       
     # Demo
     DemoModel:
@@ -508,25 +612,44 @@ components:
               format: uuid
               readOnly: true
               description: Demo identifier
-              
               example: "bd08612-1a9d-4a6e-8431-1demoid"
+              x-read-only: true
+              x-filterable: true
+              x-display-name: "Demo ID"
+              x-ui-group: "Primary Details"
+              x-ui-order: 1
+              x-component-hint: "uuid-display"
             name:
               type: string
               maxLength: 200
               description: Demo name
-              x-searchable: true
               example: "Marketing Team"
+              x-searchable: true
+              x-sortable: true
+              x-filterable: true
+              x-display-name: "Demo Name"
+              x-placeholder: "Enter the name of the demo"
+              x-component-hint: "textfield"
+              x-ui-group: "Primary Details"
+              x-ui-order: 2
+              x-validation-regex: "^[a-zA-Z0-9 ]{1,200}$"
+              x-business-rule: "The demo name must be unique within the workspace."
             logo:
               type: string
               format: uri
               nullable: true
               description: Demo logo URL
-              
               example: "https://example.com/logo.png"
+              x-display-name: "Logo URL"
+              x-placeholder: "https://example.com/logo.png"
+              x-component-hint: "image-uploader"
+              x-ui-group: "Primary Details"
+              x-ui-order: 3
+              x-validation-regex: "^https?://.*"
+              x-ui-multimedia-type: "image"
             
           required:
             - demo_id
-            - name
 
     
     # Pagination Meta
@@ -595,3 +718,31 @@ components:
               error_message:
                 type: string
                 example: "Internal Server Error"
+    
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error_message:
+                type: string
+                example: "Authentication credentials were not provided."
+
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error_message:
+                type: string
+                example: "You do not have permission to perform this action."
