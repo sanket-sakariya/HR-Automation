@@ -120,7 +120,7 @@ jobs:
               "path": "/spec/template/spec/containers/0/livenessProbe",
               "value": {
                 "httpGet": {
-                  "path": "/demo-management/api/v1/health/",
+                  "path": "/demo-management-service/api/v1/health/",
                   "port": '$APP_PORT'
                 },
                 "initialDelaySeconds": 30,
@@ -133,7 +133,7 @@ jobs:
               "path": "/spec/template/spec/containers/0/livenessProbe",
               "value": {
                 "httpGet": {
-                  "path": "/demo-management/api/v1/health/",
+                  "path": "/demo-management-service/api/v1/health/",
                   "port": '$APP_PORT'
                 },
                 "initialDelaySeconds": 30,
@@ -163,7 +163,7 @@ jobs:
               "path": "/spec/template/spec/containers/0/livenessProbe",
               "value": {
                 "httpGet": {
-                  "path": "/demo-management/api/v1/health/",
+                  "path": "/demo-management-service/api/v1/health/",
                   "port": '$APP_PORT'
                 },
                 "initialDelaySeconds": 30,
