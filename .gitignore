@@ -36,5 +36,10 @@ pytest_cache/
 *.py,cover
 
 # IDE / Editor settings
-
 .idea/
+
+# macOS
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
