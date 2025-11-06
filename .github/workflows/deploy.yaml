@@ -1,0 +1,196 @@
+name: Build and Deploy to DO Kubernetes
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Load environment variables from .env.deploy
+      run: |
+        if [ -f .env.deploy ]; then
+          echo "📝 Loading variables from .env.deploy"
+          cat .env.deploy
+          grep -v '^#' .env.deploy | grep -v '^$' | sed 's/^export //' >> $GITHUB_ENV
+        else
+          echo "❌ .env.deploy file not found!"
+          exit 1
+        fi
+
+    - name: Set deployment variables
+      run: |
+        echo "DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}" >> $GITHUB_ENV
+        echo "KUBE_DEPLOYMENT=${{ github.event.repository.name }}" >> $GITHUB_ENV
+        echo "KUBE_CONTAINER=${{ github.event.repository.name }}" >> $GITHUB_ENV
+        echo "SERVICE_NAME=${{ github.event.repository.name }}" >> $GITHUB_ENV
+
+    - name: Display deployment configuration
+      run: |
+        echo "🚀 Deployment Configuration:"
+        echo "   Docker Image: $DOCKER_IMAGE"
+        echo "   Namespace: $KUBE_NAMESPACE"
+        echo "   Deployment: $KUBE_DEPLOYMENT"
+        echo "   Container: $KUBE_CONTAINER"
+        echo "   Replicas: $REPLICAS"
+        echo "   Port: $APP_PORT"
+        echo "   CPU Limit: $CPU_LIMIT"
+        echo "   Memory Limit: $MEMORY_LIMIT"
+        echo "   CPU Request: $CPU_REQUEST"
+        echo "   Memory Request: $MEMORY_REQUEST"
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: |
+          ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_IMAGE_TAG }}
+          ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+        cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
+        cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+
+    - name: Set up kubectl with kubeconfig
+      run: |
+        mkdir -p $HOME/.kube
+        echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+        chmod 600 $HOME/.kube/config
+
+    - name: Verify connection to cluster
+      run: |
+        echo "🔍 Connecting to Kubernetes cluster..."
+        kubectl cluster-info
+        kubectl get nodes
+
+    - name: Check if deployment exists
+      id: check_deployment
+      run: |
+        if kubectl get deployment $KUBE_DEPLOYMENT -n $KUBE_NAMESPACE 2>/dev/null; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "✅ Deployment exists, will update image"
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "📦 Deployment does not exist, will create new deployment"
+        fi
+
+    - name: Create or Update Deployment
+      run: |
+        if [ "${{ steps.check_deployment.outputs.exists }}" == "true" ]; then
+          # Update existing deployment
+          echo "🔄 Updating existing deployment..."
+          kubectl set image deployment/$KUBE_DEPLOYMENT \
+            $KUBE_CONTAINER=$DOCKER_IMAGE:$DOCKER_IMAGE_TAG \
+            -n $KUBE_NAMESPACE
+        else
+          # Create new deployment
+          echo "🆕 Creating new deployment..."
+          cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $KUBE_DEPLOYMENT
+  namespace: $KUBE_NAMESPACE
+  labels:
+    app: $KUBE_DEPLOYMENT
+spec:
+  replicas: $REPLICAS
+  selector:
+    matchLabels:
+      app: $KUBE_DEPLOYMENT
+  template:
+    metadata:
+      labels:
+        app: $KUBE_DEPLOYMENT
+    spec:
+      containers:
+      - name: $KUBE_CONTAINER
+        image: $DOCKER_IMAGE:$DOCKER_IMAGE_TAG
+        ports:
+        - containerPort: $APP_PORT
+        resources:
+          limits:
+            cpu: "$CPU_LIMIT"
+            memory: "$MEMORY_LIMIT"
+          requests:
+            cpu: "$CPU_REQUEST"
+            memory: "$MEMORY_REQUEST"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: $APP_PORT
+          initialDelaySeconds: 30
+          periodSeconds: 10
+EOF
+        fi
+        
+        echo "⏳ Waiting for rollout to complete..."
+        kubectl rollout status deployment/$KUBE_DEPLOYMENT -n $KUBE_NAMESPACE
+
+    - name: Check if service exists
+      id: check_service
+      run: |
+        if kubectl get service $SERVICE_NAME -n $KUBE_NAMESPACE 2>/dev/null; then
+          echo "exists=true" >> $GITHUB_OUTPUT
+          echo "✅ Service exists, will update if needed"
+        else
+          echo "exists=false" >> $GITHUB_OUTPUT
+          echo "📦 Service does not exist, will create new service"
+        fi
+
+    - name: Create or Update Service
+      run: |
+        if [ "${{ steps.check_service.outputs.exists }}" == "true" ]; then
+          echo "✅ Service already exists: $SERVICE_NAME"
+        else
+          echo "🆕 Creating new service..."
+          cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: $SERVICE_NAME
+  namespace: $KUBE_NAMESPACE
+  labels:
+    app: $KUBE_DEPLOYMENT
+spec:
+  type: $SERVICE_TYPE
+  selector:
+    app: $KUBE_DEPLOYMENT
+  ports:
+  - port: $APP_PORT
+    targetPort: $APP_PORT
+    protocol: TCP
+    name: http
+EOF
+          echo "✅ Service created successfully"
+        fi
+
+    - name: Verify deployment
+      run: |
+        echo "✅ Deployment successful!"
+        echo ""
+        echo "📦 Pods:"
+        kubectl get pods -n $KUBE_NAMESPACE -l app=$KUBE_DEPLOYMENT
+        echo ""
+        echo "🔍 Deployment Details:"
+        kubectl describe deployment $KUBE_DEPLOYMENT -n $KUBE_NAMESPACE
+        echo ""
+        echo "🌐 Service Details:"
+        kubectl get service $SERVICE_NAME -n $KUBE_NAMESPACE
+        echo ""
+        echo "📍 Service Endpoints:"
+        kubectl get endpoints $SERVICE_NAME -n $KUBE_NAMESPACE
