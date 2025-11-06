@@ -3,7 +3,17 @@ name: Build and Deploy to DO Kubernetes
 on:
   push:
     branches:
-      - main
+      - v-1.1
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - production
 
 jobs:
   build-and-deploy:
@@ -13,14 +23,21 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Load environment variables from .env.deploy
+    - name: Set environment
       run: |
-        if [ -f .env.deploy ]; then
-          echo "📝 Loading variables from .env.deploy"
-          cat .env.deploy
-          grep -v '^#' .env.deploy | grep -v '^$' | sed 's/^export //' >> $GITHUB_ENV
+        ENV=${{ github.event.inputs.environment || 'dev' }}
+        echo "DEPLOY_ENV=$ENV" >> $GITHUB_ENV
+        echo "🌍 Deploying to: $ENV"
+
+    - name: Load environment variables
+      run: |
+        ENV_FILE=".env.$DEPLOY_ENV"
+        if [ -f $ENV_FILE ]; then
+          echo "📝 Loading variables from $ENV_FILE"
+          cat $ENV_FILE
+          grep -v '^#' $ENV_FILE | grep -v '^$' | sed 's/^export //' >> $GITHUB_ENV
         else
-          echo "❌ .env.deploy file not found!"
+          echo "❌ $ENV_FILE file not found!"
           exit 1
         fi
 
@@ -63,7 +80,6 @@ jobs:
           APP_PORT=${{ env.APP_PORT }}
           API_PREFIX=${{ github.event.repository.name }}
         tags: |
-          ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_IMAGE_TAG }}
           ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
         cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
         cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
