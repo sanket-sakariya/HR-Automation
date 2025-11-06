@@ -59,6 +59,9 @@ jobs:
       with:
         context: .
         push: true
+        build-args: |
+          APP_PORT=${{ env.APP_PORT }}
+          API_PREFIX=${{ github.event.repository.name }}
         tags: |
           ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_IMAGE_TAG }}
           ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
@@ -93,51 +96,82 @@ jobs:
         if [ "${{ steps.check_deployment.outputs.exists }}" == "true" ]; then
           # Update existing deployment
           echo "🔄 Updating existing deployment..."
+          
+          # Update image
           kubectl set image deployment/$KUBE_DEPLOYMENT \
-            $KUBE_CONTAINER=$DOCKER_IMAGE:$DOCKER_IMAGE_TAG \
+            $KUBE_CONTAINER=$DOCKER_IMAGE:${{ github.sha }} \
             -n $KUBE_NAMESPACE
+          
+          # Update replicas
+          kubectl scale deployment/$KUBE_DEPLOYMENT \
+            --replicas=$REPLICAS \
+            -n $KUBE_NAMESPACE
+          
+          # Update resource limits and requests
+          kubectl set resources deployment/$KUBE_DEPLOYMENT \
+            --limits=cpu=$CPU_LIMIT,memory=$MEMORY_LIMIT \
+            --requests=cpu=$CPU_REQUEST,memory=$MEMORY_REQUEST \
+            -n $KUBE_NAMESPACE
+          
+          # Update or add liveness probe
+          kubectl patch deployment $KUBE_DEPLOYMENT -n $KUBE_NAMESPACE --type=json -p='[
+            {
+              "op": "replace",
+              "path": "/spec/template/spec/containers/0/livenessProbe",
+              "value": {
+                "httpGet": {
+                  "path": "/demo-management/api/v1/health/",
+                  "port": '$APP_PORT'
+                },
+                "initialDelaySeconds": 30,
+                "periodSeconds": 10
+              }
+            }
+          ]' || kubectl patch deployment $KUBE_DEPLOYMENT -n $KUBE_NAMESPACE --type=json -p='[
+            {
+              "op": "add",
+              "path": "/spec/template/spec/containers/0/livenessProbe",
+              "value": {
+                "httpGet": {
+                  "path": "/demo-management/api/v1/health/",
+                  "port": '$APP_PORT'
+                },
+                "initialDelaySeconds": 30,
+                "periodSeconds": 10
+              }
+            }
+          ]'
         else
           # Create new deployment
           echo "🆕 Creating new deployment..."
-          cat <<EOF | kubectl apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: $KUBE_DEPLOYMENT
-  namespace: $KUBE_NAMESPACE
-  labels:
-    app: $KUBE_DEPLOYMENT
-spec:
-  replicas: $REPLICAS
-  selector:
-    matchLabels:
-      app: $KUBE_DEPLOYMENT
-  template:
-    metadata:
-      labels:
-        app: $KUBE_DEPLOYMENT
-    spec:
-      containers:
-      - name: $KUBE_CONTAINER
-        image: $DOCKER_IMAGE:$DOCKER_IMAGE_TAG
-        ports:
-        - containerPort: $APP_PORT
-        resources:
-          limits:
-            cpu: "$CPU_LIMIT"
-            memory: "$MEMORY_LIMIT"
-          requests:
-            cpu: "$CPU_REQUEST"
-            memory: "$MEMORY_REQUEST"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: $APP_PORT
-          initialDelaySeconds: 30
-          periodSeconds: 10
-EOF
+          kubectl create deployment $KUBE_DEPLOYMENT \
+            --image=$DOCKER_IMAGE:${{ github.sha }} \
+            --replicas=$REPLICAS \
+            --port=$APP_PORT \
+            -n $KUBE_NAMESPACE
+          
+          # Update resource limits and requests
+          kubectl set resources deployment/$KUBE_DEPLOYMENT \
+            --limits=cpu=$CPU_LIMIT,memory=$MEMORY_LIMIT \
+            --requests=cpu=$CPU_REQUEST,memory=$MEMORY_REQUEST \
+            -n $KUBE_NAMESPACE
+          
+          # Add liveness probe
+          kubectl patch deployment $KUBE_DEPLOYMENT -n $KUBE_NAMESPACE --type=json -p='[
+            {
+              "op": "add",
+              "path": "/spec/template/spec/containers/0/livenessProbe",
+              "value": {
+                "httpGet": {
+                  "path": "/demo-management/api/v1/health/",
+                  "port": '$APP_PORT'
+                },
+                "initialDelaySeconds": 30,
+                "periodSeconds": 10
+              }
+            }
+          ]'
         fi
-        
         echo "⏳ Waiting for rollout to complete..."
         kubectl rollout status deployment/$KUBE_DEPLOYMENT -n $KUBE_NAMESPACE
 
@@ -158,24 +192,12 @@ EOF
           echo "✅ Service already exists: $SERVICE_NAME"
         else
           echo "🆕 Creating new service..."
-          cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Service
-metadata:
-  name: $SERVICE_NAME
-  namespace: $KUBE_NAMESPACE
-  labels:
-    app: $KUBE_DEPLOYMENT
-spec:
-  type: $SERVICE_TYPE
-  selector:
-    app: $KUBE_DEPLOYMENT
-  ports:
-  - port: $APP_PORT
-    targetPort: $APP_PORT
-    protocol: TCP
-    name: http
-EOF
+          kubectl expose deployment $KUBE_DEPLOYMENT \
+            --type=$SERVICE_TYPE \
+            --port=$APP_PORT \
+            --target-port=$APP_PORT \
+            --name=$SERVICE_NAME \
+            -n $KUBE_NAMESPACE
           echo "✅ Service created successfully"
         fi
 
@@ -194,3 +216,4 @@ EOF
         echo ""
         echo "📍 Service Endpoints:"
         kubectl get endpoints $SERVICE_NAME -n $KUBE_NAMESPACE
+
