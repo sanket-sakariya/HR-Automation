@@ -54,6 +54,139 @@
             background: #4b5563;
             border-color: #60a5fa;
         }
+        #pinned-section {
+            background: #111827;
+            border-bottom: 2px solid #374151;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #pinned-section h3 {
+            margin: 0;
+            padding: 15px 20px 10px;
+            font-size: 14px;
+            color: #fbbf24;
+            font-weight: 600;
+            background: #111827;
+        }
+        .pinned-item {
+            padding: 12px 20px;
+            border-bottom: 1px solid #374151;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .pinned-item:hover {
+            background: #374151;
+        }
+        .pinned-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .pinned-item-name {
+            font-size: 12px;
+            font-weight: 500;
+            color: #e5e7eb;
+            display: flex;
+            align-items: center;
+        }
+        .pinned-item-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .pin-action-btn {
+            padding: 6px 10px;
+            background: #374151;
+            color: #e5e7eb;
+            border: 1px solid #4b5563;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .pin-action-btn:hover {
+            background: #4b5563;
+        }
+        .pin-action-btn.execute {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: white;
+        }
+        .pin-action-btn.execute:hover {
+            background: #1e40af;
+        }
+        .pin-action-btn.rename {
+            background: #374151;
+            border-color: #4b5563;
+        }
+        .pin-action-btn.rename:hover {
+            background: #4b5563;
+        }
+        .pin-action-btn.delete {
+            background: #374151;
+            border-color: #4b5563;
+        }
+        .pin-action-btn.delete:hover {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+        .swagger-ui .btn.execute {
+            background: #2563eb !important;
+            border-color: #2563eb !important;
+            color: white !important;
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+            min-width: 70px !important;
+        }
+        .swagger-ui .btn.execute:hover {
+            background: #1e40af !important;
+        }
+        .swagger-ui .btn.pin-request {
+            background: #fbbf24 !important;
+            border-color: #fbbf24 !important;
+            color: #1f2937 !important;
+            margin-left: 8px !important;
+            padding: 5px 10px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            min-width: 60px !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+            float: right !important;
+            margin-right: 10px !important;
+        }
+        .swagger-ui .btn.pin-request:hover {
+            background: #f59e0b !important;
+            border-color: #f59e0b !important;
+        }
+        .swagger-ui .btn.pin-request.pinned {
+            background: #10b981 !important;
+            border-color: #10b981 !important;
+            color: white !important;
+        }
+        .swagger-ui .btn.pin-request.pinned:hover {
+            background: #059669 !important;
+            border-color: #059669 !important;
+        }
+        .swagger-ui .try-out {
+            display: inline-block !important;
+        }
+        .swagger-ui .btn-clear {
+            background: transparent !important;
+            border: 1px solid #4b5563 !important;
+            color: #e5e7eb !important;
+            margin-left: 6px !important;
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+        }
+        .swagger-ui .btn-clear:hover {
+            background: #374151 !important;
+        }
         #endpoints-table {
             width: 100%;
             border-collapse: collapse;
@@ -65,11 +198,11 @@
             text-align: left;
             font-weight: 600;
             font-size: 11px;
-            text-transform: uppercase;
+
             letter-spacing: 0.5px;
             color: #9ca3af;
             position: sticky;
-            top: 105px;
+            top: 0;
             z-index: 5;
             border-bottom: 1px solid #374151;
         }
@@ -555,10 +688,86 @@
             border-color: #3b82f6;
             color: #1e40af;
         }
+        body.light-theme #pinned-section {
+            background: #f8fafc;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        body.light-theme #pinned-section h3 {
+            color: #d97706;
+            background: #f8fafc;
+        }
+        body.light-theme .pinned-item {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        body.light-theme .pinned-item:hover {
+            background: #f0f9ff;
+        }
+        body.light-theme .pinned-item-name {
+            color: #1f2937;
+        }
+        body.light-theme .pin-action-btn {
+            background: #ffffff;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        body.light-theme .pin-action-btn:hover {
+            background: #f9fafb;
+        }
+        body.light-theme .pin-action-btn.execute {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: white;
+        }
+        body.light-theme .pin-action-btn.execute:hover {
+            background: #1e40af;
+        }
+        body.light-theme .pin-action-btn.delete:hover {
+            background: #dc2626;
+            border-color: #dc2626;
+            color: white;
+        }
+        body.light-theme .swagger-ui .btn.execute {
+            background: #2563eb !important;
+            border-color: #2563eb !important;
+            color: white !important;
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+        }
+        body.light-theme .swagger-ui .btn.execute:hover {
+            background: #1e40af !important;
+        }
+        body.light-theme .swagger-ui .btn.pin-request {
+            background: #fbbf24 !important;
+            border-color: #fbbf24 !important;
+            color: #1f2937 !important;
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+        }
+        body.light-theme .swagger-ui .btn.pin-request:hover {
+            background: #f59e0b !important;
+        }
+        body.light-theme .swagger-ui .btn.pin-request.pinned {
+            background: #10b981 !important;
+            border-color: #10b981 !important;
+            color: white !important;
+        }
+        body.light-theme .swagger-ui .btn-clear {
+            background: transparent !important;
+            border: 1px solid #d1d5db !important;
+            color: #374151 !important;
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+        }
+        body.light-theme .swagger-ui .btn-clear:hover {
+            background: #f9fafb !important;
+        }
         body.light-theme #endpoints-table th {
             background: #f8fafc;
             color: #64748b;
             border-bottom: 2px solid #e2e8f0;
+            z-index: 5;
         }
         body.light-theme #endpoints-table td {
             border-bottom: 1px solid #f1f5f9;
@@ -661,6 +870,16 @@
         <table id="endpoints-table">
             <thead>
                 <tr>
+                    <th colspan="3" style="padding: 0; border: none;">
+                        <div id="pinned-section" style="display: none;">
+                            <h3>📌 Pinned Buttons</h3>
+                            <div id="pinned-items">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                    </th>
+                </tr>
+                <tr>
                     <th>Method</th>
                     <th>Endpoint</th>
                     <th>Tag</th>
@@ -675,6 +894,9 @@
     <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
     <script>
         let swaggerUI;
+        let pinnedRequests = JSON.parse(localStorage.getItem('pinnedRequests') || '[]');
+        
+        console.log('Loaded pinned requests:', pinnedRequests);
         
         // Initialize theme from localStorage
         const savedTheme = localStorage.getItem('swagger-theme') || 'dark';
@@ -682,9 +904,286 @@
             document.body.classList.add('light-theme');
         }
         
+        // Render pinned requests on page load
+        renderPinnedRequests();
+        
         function toggleTheme() {
             const isLight = document.body.classList.toggle('light-theme');
             localStorage.setItem('swagger-theme', isLight ? 'light' : 'dark');
+        }
+        
+        function savePinnedRequests() {
+            localStorage.setItem('pinnedRequests', JSON.stringify(pinnedRequests));
+            renderPinnedRequests();
+        }
+        
+        function renderPinnedRequests() {
+            const pinnedSection = document.getElementById('pinned-section');
+            const pinnedItems = document.getElementById('pinned-items');
+            
+            if (pinnedRequests.length === 0) {
+                pinnedSection.style.display = 'none';
+                return;
+            }
+            
+            pinnedSection.style.display = 'block';
+            pinnedItems.innerHTML = '';
+            
+            pinnedRequests.forEach((pin, index) => {
+                const item = document.createElement('div');
+                item.className = 'pinned-item';
+                item.innerHTML = `
+                    <div class="pinned-item-info" onclick="loadPinnedRequest(${index}, false)">
+                        <div class="pinned-item-name">${pin.path}</div>
+                    </div>
+                    <div class="pinned-item-actions">
+                        <button class="pin-action-btn execute" onclick="event.stopPropagation(); loadPinnedRequest(${index}, true)">Execute</button>
+                        <button class="pin-action-btn delete" onclick="event.stopPropagation(); deletePinnedRequest(${index})">🗑️</button>
+                    </div>
+                `;
+                pinnedItems.appendChild(item);
+            });
+        }
+        
+        function loadPinnedRequest(index, autoExecute = false) {
+            const pin = pinnedRequests[index];
+            if (!pin) {
+                console.error('Pin not found at index:', index);
+                return;
+            }
+            
+            console.log('Loading pinned request:', pin.name, 'autoExecute:', autoExecute);
+            
+            // Use the stored operationId directly (it already has the full format)
+            const operationId = pin.operationId;
+            
+            console.log('Looking for operationId:', operationId);
+            
+            // Find the row and scroll
+            const row = document.querySelector(`[data-operation-id="${operationId}"]`);
+            if (row) {
+                scrollToEndpoint(operationId, row);
+            } else {
+                console.warn('Row not found for operationId:', operationId);
+            }
+            
+            // Wait for the UI to open, then fill in the data
+            setTimeout(() => {
+                const element = document.getElementById(operationId);
+                if (!element) {
+                    console.error('Element not found:', operationId);
+                    return;
+                }
+                
+                const opblock = element.closest('.opblock') || element.querySelector('.opblock');
+                if (!opblock) {
+                    console.error('Opblock not found for:', operationId);
+                    return;
+                }
+                
+                console.log('Found opblock, filling data...');
+                
+                // Fill in path parameters
+                if (pin.parameters) {
+                    Object.entries(pin.parameters).forEach(([key, value]) => {
+                        const input = opblock.querySelector(`input[placeholder="${key}"]`) ||
+                                     opblock.querySelector(`input[data-param-name="${key}"]`);
+                        if (input) input.value = value;
+                    });
+                }
+                
+                // Fill in headers
+                if (pin.headers) {
+                    Object.entries(pin.headers).forEach(([key, value]) => {
+                        const input = opblock.querySelector(`input[placeholder="${key}"]`) ||
+                                     opblock.querySelector(`input[data-param-name="${key}"]`);
+                        if (input) input.value = value;
+                    });
+                }
+                
+                // Fill in request body
+                if (pin.requestBody) {
+                    const textarea = opblock.querySelector('.body-param__text');
+                    if (textarea) {
+                        textarea.value = typeof pin.requestBody === 'string' 
+                            ? pin.requestBody 
+                            : JSON.stringify(pin.requestBody, null, 2);
+                        // Trigger change event
+                        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+                
+                // Auto-execute if requested
+                if (autoExecute) {
+                    console.log('Auto-execute requested, looking for Try it out button...');
+                    
+                    // First, click "Try it out" button
+                    setTimeout(() => {
+                        const tryItOutBtn = opblock.querySelector('.try-out__btn');
+                        if (tryItOutBtn && !tryItOutBtn.classList.contains('cancel')) {
+                            console.log('Clicking Try it out...');
+                            tryItOutBtn.click();
+                            
+                            // Then wait and click Execute
+                            setTimeout(() => {
+                                const executeBtn = opblock.querySelector('.btn.execute');
+                                if (executeBtn) {
+                                    console.log('Execute button found, clicking...');
+                                    executeBtn.click();
+                                } else {
+                                    console.error('Execute button not found in opblock');
+                                }
+                            }, 500);
+                        } else {
+                            console.log('Try it out already active or not found, clicking execute directly...');
+                            // Try it out already active, just click execute
+                            const executeBtn = opblock.querySelector('.btn.execute');
+                            if (executeBtn) {
+                                console.log('Execute button found, clicking...');
+                                executeBtn.click();
+                            } else {
+                                console.error('Execute button not found in opblock');
+                            }
+                        }
+                    }, 300);
+                }
+            }, 800);
+        }
+        
+        function renamePinnedRequest(index) {
+            const pin = pinnedRequests[index];
+            const newName = prompt('Enter new name:', pin.name);
+            if (newName && newName.trim()) {
+                pinnedRequests[index].name = newName.trim();
+                savePinnedRequests();
+            }
+        }
+        
+        function deletePinnedRequest(index) {
+            if (confirm('Delete this pinned request?')) {
+                pinnedRequests.splice(index, 1);
+                savePinnedRequests();
+            }
+        }
+        
+        function isPinned(operationId) {
+            return pinnedRequests.some(pin => pin.operationId === operationId);
+        }
+        
+        function addPinButton(operationId, method, path, tag) {
+            const tryAddButton = () => {
+                const element = document.getElementById(operationId);
+                if (!element) return false;
+                
+                const opblock = element.closest('.opblock') || element.querySelector('.opblock');
+                if (!opblock) return false;
+                
+                // Check if pin button already exists
+                if (opblock.querySelector('.btn.pin-request')) return true;
+                
+                // Mark that we've processed this opblock
+                if (opblock.dataset.pinButtonAdded) return true;
+                opblock.dataset.pinButtonAdded = 'true';
+                
+                // Find the opblock summary (the always-visible header)
+                const opblockSummary = opblock.querySelector('.opblock-summary');
+                if (!opblockSummary) {
+                    console.warn('Opblock summary not found for:', operationId);
+                    return false;
+                }
+                
+                console.log('Found opblock summary for:', operationId);
+                
+                const pinBtn = document.createElement('button');
+                pinBtn.className = 'btn pin-request' + (isPinned(operationId) ? ' pinned' : '');
+                pinBtn.type = 'button';
+                pinBtn.title = isPinned(operationId) ? 'Click to unpin' : 'Pin this request';
+                pinBtn.innerHTML = isPinned(operationId) ? '✅' : '📌';
+                pinBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const isPinnedNow = isPinned(operationId);
+                    
+                    if (isPinnedNow) {
+                        // Unpin
+                        pinnedRequests = pinnedRequests.filter(p => p.operationId !== operationId);
+                        pinBtn.innerHTML = '📌';
+                        pinBtn.classList.remove('pinned');
+                        pinBtn.title = 'Pin this request';
+                    } else {
+                        // Pin: collect current data
+                        const parameters = {};
+                        const headers = {};
+                        let requestBody = null;
+                        
+                        // Get all input fields for path parameters and headers
+                        opblock.querySelectorAll('.parameters-col_description input').forEach(input => {
+                            if (input.value) {
+                                const paramName = input.placeholder || input.dataset.paramName;
+                                if (paramName) {
+                                    const paramIn = input.closest('tr')?.querySelector('.parameter__in')?.textContent;
+                                    if (paramIn === 'header') {
+                                        headers[paramName] = input.value;
+                                    } else if (paramIn === 'path' || paramIn === 'query') {
+                                        parameters[paramName] = input.value;
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Get request body
+                        const textarea = opblock.querySelector('.body-param__text');
+                        if (textarea && textarea.value) {
+                            try {
+                                requestBody = JSON.parse(textarea.value);
+                            } catch {
+                                requestBody = textarea.value;
+                            }
+                        }
+                        
+                        // Auto-generate name: METHOD + endpoint last part + timestamp
+                        const pathParts = path.split('/').filter(p => p && !p.startsWith('{'));
+                        const lastPart = pathParts[pathParts.length - 1] || 'request';
+                        const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                        const name = `${method} ${lastPart} (${timestamp})`;
+                        
+                        pinnedRequests.push({
+                            name: name,
+                            operationId,
+                            method,
+                            path,
+                            tag,
+                            parameters,
+                            headers,
+                            requestBody
+                        });
+                        pinBtn.innerHTML = '✅';
+                        pinBtn.classList.add('pinned');
+                        pinBtn.title = 'Click to unpin';
+                    }
+                    
+                    savePinnedRequests();
+                };
+                
+                // Insert pin button into the opblock summary (always visible header)
+                console.log('Appending pin button to opblock summary');
+                opblockSummary.appendChild(pinBtn);
+                
+                return true;
+            };
+            
+            // Try immediately
+            if (!tryAddButton()) {
+                // If not found, try a few more times with delays
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    attempts++;
+                    if (tryAddButton() || attempts > 10) {
+                        clearInterval(interval);
+                    }
+                }, 200);
+            }
         }
 
         fetch('/openapi.json')
@@ -707,6 +1206,94 @@
                 
 
                 populateSidebar(spec);
+                renderPinnedRequests();
+                
+                // Store all endpoints for pin button injection
+                window.allEndpoints = [];
+                for (const [path, methods] of Object.entries(spec.paths)) {
+                    for (const [method, details] of Object.entries(methods)) {
+                        if (['get', 'post', 'put', 'delete', 'patch'].includes(method)) {
+                            const tag = details.tags?.[0] || 'default';
+                            const formattedTag = tag.replace(/\s+/g, '_');
+                            const opId = details.operationId || `${method.toLowerCase()}_${path.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                            const operationId = `operations-${formattedTag}-${opId}`;
+                            window.allEndpoints.push({ operationId, method: method.toUpperCase(), path, tag });
+                        }
+                    }
+                }
+                
+                // Add pin buttons on all opblock summaries (collapsed or expanded)
+                const addPinButtonsToAllSummaries = () => {
+                    const opblocks = document.querySelectorAll('.opblock');
+                    console.log('Scanning', opblocks.length, 'endpoints for pin buttons');
+                    opblocks.forEach((opblock) => {
+                        const opblockId = opblock.id;
+                        if (opblockId && opblockId.startsWith('operations-')) {
+                            const endpoint = window.allEndpoints.find(ep => ep.operationId === opblockId);
+                            if (endpoint) {
+                                addPinButton(endpoint.operationId, endpoint.method, endpoint.path, endpoint.tag);
+                            }
+                        }
+                    });
+                };
+                
+                // Run multiple passes to catch async rendering
+                setTimeout(addPinButtonsToAllSummaries, 100);
+                setTimeout(addPinButtonsToAllSummaries, 400);
+                setTimeout(addPinButtonsToAllSummaries, 800);
+                setTimeout(addPinButtonsToAllSummaries, 1500);
+                
+                // Observe DOM changes to add buttons when new ops render
+                const observer = new MutationObserver((mutations) => {
+                    let shouldCheck = false;
+                    mutations.forEach((mutation) => {
+                        mutation.addedNodes.forEach((node) => {
+                            if (node.nodeType === 1) {
+                                if (
+                                    node.classList?.contains('opblock') ||
+                                    node.querySelector?.('.opblock-summary') ||
+                                    node.querySelector?.('.opblock')
+                                ) {
+                                    shouldCheck = true;
+                                }
+                            }
+                        });
+                    });
+                    if (shouldCheck) {
+                        addPinButtonsToAllSummaries();
+                    }
+                });
+                
+                // Start observing the swagger-ui container
+                const swaggerContainer = document.getElementById('swagger-ui');
+                if (swaggerContainer) {
+                    observer.observe(swaggerContainer, {
+                        childList: true,
+                        subtree: true
+                    });
+                }
+                
+                // Auto-highlight sidebar when clicking endpoints in Swagger UI
+                setTimeout(() => {
+                    document.addEventListener('click', (e) => {
+                        // Check if click was on an opblock summary (endpoint header)
+                        const opblockSummary = e.target.closest('.opblock-summary');
+                        if (opblockSummary) {
+                            const opblock = opblockSummary.closest('.opblock');
+                            if (opblock && opblock.id) {
+                                const operationId = opblock.id;
+                                // Find and highlight the corresponding sidebar row
+                                const sidebarRow = document.querySelector(`[data-operation-id="${operationId}"]`);
+                                if (sidebarRow) {
+                                    // Remove active class from all rows
+                                    document.querySelectorAll('.endpoint-row').forEach(r => r.classList.remove('active'));
+                                    // Add active class to this row
+                                    sidebarRow.classList.add('active');
+                                }
+                            }
+                        }
+                    }, true); // Use capture phase to catch clicks early
+                }, 500);
             });
         
         function populateSidebar(spec) {
@@ -760,7 +1347,11 @@
                     <td><span class="tag-name">${endpoint.tag}</span></td>
                 `;
                 
-                row.onclick = () => scrollToEndpoint(row.dataset.operationId, row);
+                row.onclick = () => {
+                    scrollToEndpoint(row.dataset.operationId, row);
+                    // Add pin button when endpoint is opened
+                    addPinButton(row.dataset.operationId, endpoint.method, endpoint.path, endpoint.tag);
+                };
                 tbody.appendChild(row);
             });
         }
