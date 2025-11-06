@@ -1,9 +1,6 @@
 name: Build and Deploy to DO Kubernetes
 
 on:
-  push:
-    branches:
-      - v-1.1
   workflow_dispatch:
     inputs:
       environment:
