@@ -15,7 +15,10 @@ from app.config.config import config
 from app.config.logger_config import logger
 from app.schema.database_schema import (
     DatabaseOperationRequestSchema,
-    DatabaseOperationResponseSchema
+    DatabaseOperationResponseSchema,
+    MigrationUploadRequestSchema,
+    MigrationDownloadRequestSchema,
+    MigrationOperationResponseSchema
 )
 from app.schema.response_schema import ApiResponseSchema
 from app.model.baseapp_model import Base
@@ -265,6 +268,34 @@ async def database_operation(
                 script = ScriptDirectory.from_config(alembic_cfg)
                 head_revision = script.get_current_head()
                 
+                # Upload new migrations to Wasabi after successful creation
+                versions_dir = project_root / "alembic" / "versions"
+                if head_revision and versions_dir.exists():
+                    try:
+                        from app.helper.migration_storage import MigrationStorageService
+                        storage_service = MigrationStorageService()
+                        
+                        # Upload to Wasabi with revision ID as version
+                        upload_success = storage_service.upload_migrations(
+                            versions_dir,
+                            version=head_revision
+                        )
+                        if upload_success:
+                            logger.info(
+                                f"Successfully uploaded migration {head_revision} to Wasabi"
+                            )
+                        else:
+                            logger.warning(
+                                f"Failed to upload migration {head_revision} to Wasabi. "
+                                "Please upload manually."
+                            )
+                    except Exception as upload_error:
+                        # Don't fail the revision creation if upload fails
+                        logger.error(
+                            f"Error uploading migration to Wasabi: {str(upload_error)}",
+                            exc_info=True
+                        )
+                
                 current_rev = await get_current_revision()
                 
                 response_data = DatabaseOperationResponseSchema(
@@ -303,5 +334,139 @@ async def database_operation(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database operation failed: {str(e)}"
+        ) from e
+
+
+@router.post("/database/upload", response_model=ApiResponseSchema[MigrationOperationResponseSchema])
+async def upload_migrations(request: MigrationUploadRequestSchema):
+    """Upload migration files to Wasabi/S3."""
+    try:
+        project_root = Path(__file__).parent.parent.parent.parent.parent
+        migrations_path = project_root / "alembic" / "versions"
+        
+        if not migrations_path.exists():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Migrations directory not found: {migrations_path}"
+            )
+        
+        migration_files = list(migrations_path.glob("*.py"))
+        if not migration_files:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"No migration files found in {migrations_path}"
+            )
+        
+        from app.helper.migration_storage import MigrationStorageService
+        storage_service = MigrationStorageService()
+        
+        if not storage_service._is_configured():
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Wasabi/S3 not configured. Set WASABI_ACCESS_KEY_ID, WASABI_SECRET_ACCESS_KEY, and MIGRATION_BUCKET_NAME"
+            )
+        
+        logger.info(f"Uploading {len(migration_files)} migration file(s) to Wasabi...")
+        
+        # Run upload in thread pool to avoid blocking (always use latest)
+        def run_upload():
+            return storage_service.upload_migrations(migrations_path, version=None)
+        
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            success = await loop.run_in_executor(executor, run_upload)
+        
+        if success:
+            zip_filename = f"{config.SERVICE_NAME}-migrations.zip"
+            location = f"migrations/latest/{zip_filename}"
+            
+            response_data = MigrationOperationResponseSchema(
+                operation="upload",
+                success=True,
+                message=f"Successfully uploaded {len(migration_files)} migration file(s) to Wasabi",
+                file_count=len(migration_files),
+                location=location
+            )
+            
+            logger.info(f"Migration upload completed: {location}")
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to upload migrations to Wasabi"
+            )
+        
+        return ApiResponseSchema[MigrationOperationResponseSchema](
+            success=True,
+            data=response_data,
+            message="Migration upload completed successfully"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Migration upload failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Migration upload failed: {str(e)}"
+        ) from e
+
+
+@router.post("/database/download", response_model=ApiResponseSchema[MigrationOperationResponseSchema])
+async def download_migrations(request: MigrationDownloadRequestSchema):
+    """Download migration files from Wasabi/S3."""
+    try:
+        project_root = Path(__file__).parent.parent.parent.parent.parent
+        migrations_path = project_root / "alembic" / "versions"
+        
+        from app.helper.migration_storage import MigrationStorageService
+        storage_service = MigrationStorageService()
+        
+        if not storage_service._is_configured():
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Wasabi/S3 not configured. Set WASABI_ACCESS_KEY_ID, WASABI_SECRET_ACCESS_KEY, and MIGRATION_BUCKET_NAME"
+            )
+        
+        logger.info("Downloading migrations from Wasabi...")
+        
+        # Run download in thread pool to avoid blocking (always use latest)
+        def run_download():
+            return storage_service.download_migrations(migrations_path, version=None)
+        
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            success = await loop.run_in_executor(executor, run_download)
+        
+        if success:
+            migration_files = list(migrations_path.glob("*.py")) if migrations_path.exists() else []
+            
+            response_data = MigrationOperationResponseSchema(
+                operation="download",
+                success=True,
+                message=f"Successfully downloaded {len(migration_files)} migration file(s) from Wasabi",
+                file_count=len(migration_files),
+                location=str(migrations_path)
+            )
+            
+            logger.info(f"Migration download completed: {len(migration_files)} files in {migrations_path}")
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to download migrations from Wasabi"
+            )
+        
+        return ApiResponseSchema[MigrationOperationResponseSchema](
+            success=True,
+            data=response_data,
+            message="Migration download completed successfully"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Migration download failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Migration download failed: {str(e)}"
         ) from e
 

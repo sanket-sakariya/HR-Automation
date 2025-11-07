@@ -190,3 +190,62 @@ Next, to apply migrations (upgrade the database), send:
 ```
 
 This will upgrade your database schema to the latest revision.
+
+---
+
+### Upload and Download Migrations via the API
+
+To **back up** (upload) your local Alembic migration files to Wasabi/S3, or **restore** (download) them from Wasabi, you can use these endpoints:
+
+#### **Upload migration files to Wasabi/S3**
+
+```
+POST http://localhost:8801/demo-management-service/api/v1/database/upload
+```
+
+**Request body:**
+
+```json
+{}
+```
+
+- No fields are required in the body.
+- The server zips and uploads your current `alembic/versions/*.py` migration scripts to Wasabi/S3.
+- Ensure your environment variables for Wasabi/S3 are configured (`WASABI_ACCESS_KEY_ID`, `WASABI_SECRET_ACCESS_KEY`, `MIGRATION_BUCKET_NAME`).
+
+#### **Download migration files from Wasabi/S3**
+
+```
+POST http://localhost:8801/demo-management-service/api/v1/database/download
+```
+
+**Request body:**
+
+```json
+{}
+```
+
+- No fields are required in the body.
+- Downloads migration files from Wasabi/S3 (by default the “latest” migration set) and writes them to `alembic/versions/`. This will overwrite current migration files in that directory.
+
+##### **Example cURL Usage**
+
+```bash
+# Upload migrations to Wasabi
+curl -X POST http://localhost:8801/demo-management-service/api/v1/database/upload \
+     -H "Content-Type: application/json" \
+     -d '{}'
+
+# Download migrations from Wasabi
+curl -X POST http://localhost:8801/demo-management-service/api/v1/database/download \
+     -H "Content-Type: application/json" \
+     -d '{}'
+```
+
+These APIs help you share or restore migration files across environments (CI, multiple devs, production, etc.) without manual copying.
+
+---
+
+
+
+

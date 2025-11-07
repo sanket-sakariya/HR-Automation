@@ -34,3 +34,7 @@ pytest_cache/
 .env.*
 !.env.example
 !.env.template
+
+
+# Migrations
+versions/

@@ -1,15 +1,21 @@
 from __future__ import annotations
 from functools import lru_cache
+from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
 
+# Determine project root (where .env file should be located)
+# This file is at: app/config/baseapp_config.py
+# Project root is 2 levels up
+_project_root = Path(__file__).parent.parent.parent
+_env_file = _project_root / ".env"
 
 class BaseAppConfig(BaseSettings):
     """Base configuration class with common settings that can be reused by all config classes."""
     
     model_config = SettingsConfigDict(
-        env_file=".env", 
+        env_file=str(_env_file) if _env_file.exists() else ".env", 
         env_file_encoding="utf-8", 
         case_sensitive=False, 
         extra="ignore"
@@ -71,6 +77,16 @@ class BaseAppConfig(BaseSettings):
     
     # Database routing settings
     USE_READ_REPLICA: bool = Field(default=False, env="USE_READ_REPLICA")
+    
+    # Wasabi/S3 settings for migration storage
+    WASABI_ENDPOINT_URL: str = Field(
+        default="https://s3.wasabisys.com",
+        env="WASABI_ENDPOINT_URL"
+    )
+    WASABI_ACCESS_KEY_ID: str = Field(default="", env="WASABI_ACCESS_KEY_ID")
+    WASABI_SECRET_ACCESS_KEY: str = Field(default="", env="WASABI_SECRET_ACCESS_KEY")
+    WASABI_REGION: str = Field(default="us-east-1", env="WASABI_REGION")
+    MIGRATION_BUCKET_NAME: str = Field(default="", env="MIGRATION_BUCKET_NAME")
 
     def get_database_url(self, async_mode: bool = False, read_replica: bool = False) -> str:
         """Get database URL based on async mode and read replica preference."""

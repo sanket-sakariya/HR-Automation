@@ -36,3 +36,22 @@ class DatabaseOperationResponseSchema(BaseAppSchema):
     revision_id: Optional[str] = Field(default=None, description="Created revision ID (for revision operation)")
     current_revision: Optional[str] = Field(default=None, description="Current database revision after operation")
 
+
+class MigrationUploadRequestSchema(BaseAppSchema):
+    """Schema for migration upload requests."""
+    pass
+
+
+class MigrationDownloadRequestSchema(BaseAppSchema):
+    """Schema for migration download requests."""
+    pass
+
+
+class MigrationOperationResponseSchema(BaseAppSchema):
+    """Schema for migration upload/download responses."""
+    
+    operation: str = Field(..., description="Operation that was performed (upload/download)")
+    success: bool = Field(..., description="Whether the operation was successful")
+    message: str = Field(..., description="Result message")
+    file_count: Optional[int] = Field(default=None, description="Number of migration files processed")
+    location: Optional[str] = Field(default=None, description="Location/path of the migration files")

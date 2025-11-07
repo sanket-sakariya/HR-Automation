@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from app.config.config import config
-from app.config.logger_config import configure_logging, shutdown_logging
+from app.config.logger_config import configure_logging, shutdown_logging, logger
 from app.api.v1.router import api_router
 from app.middleware.correlation import CorrelationIdMiddleware
 from app.exception.fastapi.error_handlers import setup_error_handlers
@@ -16,6 +16,26 @@ async def lifespan(app: FastAPI):  # pylint: disable=unused-argument
     """Manage application lifespan events."""
     # Startup
     configure_logging()
+    
+    # Ensure migration files exist (download from Wasabi if needed)
+    # This is critical because migration files are excluded from Docker image via .dockerignore
+    from app.helper.migration_storage import MigrationStorageService
+    from pathlib import Path
+    
+    project_root = Path(__file__).parent.parent.parent
+    migrations_path = project_root / "alembic" / "versions"
+    
+    storage_service = MigrationStorageService()
+    migrations_exist = storage_service.ensure_migrations_exist(migrations_path)
+    
+    if not migrations_exist:
+        logger.warning(
+            "⚠️  Migration files not found and could not be downloaded from Wasabi. "
+            "Database migrations may fail. Please ensure migrations are uploaded to Wasabi."
+        )
+    else:
+        logger.info("✅ Migration files are ready")
+    
     yield
     # Shutdown
     await shutdown_logging()
