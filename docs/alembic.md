@@ -157,3 +157,36 @@ Whenever you change models (`demo_model.py`, etc.):
 ---
 
 👉 Do you want me to **rewrite your test runner** so it skips `create_all` and instead ensures Alembic migrations are applied before running tests?
+
+
+### Using the API to Manage Database Migrations
+
+You can programmatically set up and upgrade your SQLAlchemy database by calling the following API endpoint:
+
+```
+POST http://localhost:8801/demo-management-service/api/v1/database/
+```
+
+#### Step 1: Create a Migration (Revision)
+
+Send a POST request with this JSON body to generate a new migration file (revision):
+
+```json
+{
+  "operation": "revision",
+  "message": "initial migration for existing tables"
+}
+```
+
+#### Step 2: Apply the Migration (Upgrade)
+
+Next, to apply migrations (upgrade the database), send:
+
+```json
+{
+  "operation": "upgrade",
+  "revision": "head"
+}
+```
+
+This will upgrade your database schema to the latest revision.
