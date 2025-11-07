@@ -28,3 +28,9 @@ pytest_cache/
 .DS_Store?
 .Spotlight-V100
 .Trashes
+
+# Environment files - DO NOT COMMIT
+.env
+.env.*
+!.env.example
+!.env.template

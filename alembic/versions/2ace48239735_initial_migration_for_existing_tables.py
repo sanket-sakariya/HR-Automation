@@ -1,8 +1,8 @@
-"""Add demo table with proper model detection
+"""initial migration for existing tables
 
-Revision ID: 82d41edb1389
-Revises: 8347bf17f9e5
-Create Date: 2025-10-02 12:08:56.943298
+Revision ID: 2ace48239735
+Revises: 
+Create Date: 2025-11-07 11:22:07.047707
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '82d41edb1389'
-down_revision: Union[str, None] = '8347bf17f9e5'
+revision: str = '2ace48239735'
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -30,7 +30,7 @@ def upgrade() -> None:
     sa.Column('created_by', sa.UUID(), nullable=False),
     sa.Column('updated_by', sa.UUID(), nullable=True),
     sa.Column('deleted_by', sa.UUID(), nullable=True),
-    sa.Column('status', sa.String(length=40), nullable=False),
+    sa.Column('status', sa.String(length=20), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('error_message', sa.Text(), nullable=True),
     sa.Column('error_user_message', sa.Text(), nullable=True),
