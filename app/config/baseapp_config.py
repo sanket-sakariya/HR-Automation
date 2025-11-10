@@ -36,10 +36,6 @@ class BaseAppConfig(BaseSettings):
     POSTGRES_DB: str = Field(default="demo_management_db", env="POSTGRES_DB")
     POSTGRES_USER: str = Field(default="postgres", env="POSTGRES_USER")
     POSTGRES_PASSWORD: str = Field(default="postgres", env="POSTGRES_PASSWORD")
-    DATABASE_URL: str = Field(
-        default="postgresql+psycopg2://postgres:postgres@localhost:5432/demo_management_db",
-        env="DATABASE_URL"
-    )
     ASYNC_DATABASE_URL: str = Field(
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/demo_management_db",
         env="ASYNC_DATABASE_URL"
@@ -52,10 +48,6 @@ class BaseAppConfig(BaseSettings):
     POSTGRES_READ_DB: str = Field(default="demo_management_db", env="POSTGRES_READ_DB")
     POSTGRES_READ_USER: str = Field(default="postgres", env="POSTGRES_READ_USER")
     POSTGRES_READ_PASSWORD: str = Field(default="postgres", env="POSTGRES_READ_PASSWORD")
-    READ_DATABASE_URL: str = Field(
-        default="postgresql+psycopg2://postgres:postgres@localhost:5432/demo_management_db",
-        env="READ_DATABASE_URL"
-    )
     ASYNC_READ_DATABASE_URL: str = Field(
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/demo_management_db",
         env="ASYNC_READ_DATABASE_URL"
@@ -88,12 +80,6 @@ class BaseAppConfig(BaseSettings):
     WASABI_REGION: str = Field(default="us-east-1", env="WASABI_REGION")
     MIGRATION_BUCKET_NAME: str = Field(default="", env="MIGRATION_BUCKET_NAME")
 
-    def get_database_url(self, async_mode: bool = False, read_replica: bool = False) -> str:
-        """Get database URL based on async mode and read replica preference."""
-        if read_replica:
-            return self.ASYNC_READ_DATABASE_URL if async_mode else self.READ_DATABASE_URL
-        return self.ASYNC_DATABASE_URL if async_mode else self.DATABASE_URL
-    
     def is_production(self) -> bool:
         """Check if running in production environment."""
         return str(self.ENV).lower() in ["production", "prod"]
