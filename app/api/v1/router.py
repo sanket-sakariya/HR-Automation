@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints.health import router as health_router
 from app.api.v1.endpoints.demo_endpoint import router as demo_router
-from app.api.v1.endpoints.database_endpoint import router as database_router
+from app.api.v1.endpoints.migration_endpoint import router as database_router
 
 
 api_router: APIRouter = APIRouter()

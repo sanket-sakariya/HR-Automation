@@ -47,6 +47,11 @@ class MigrationDownloadRequestSchema(BaseAppSchema):
     pass
 
 
+class RevisionRequestSchema(BaseAppSchema):
+    """Schema for revision creation requests."""
+    message: str = Field(..., description="Migration message for the revision")
+
+
 class MigrationOperationResponseSchema(BaseAppSchema):
     """Schema for migration upload/download responses."""
     
