@@ -105,11 +105,8 @@ config = context.config
 # Get app configuration
 app_config = get_config()
 
-# Override sqlalchemy.url with a sync driver URL for Alembic migrations
-database_url = app_config.DATABASE_URL.replace(
-    "postgresql+psycopg2://", 
-    "postgresql+asyncpg://"
-).replace("sslmode=", "ssl=")
+# Use ASYNC_DATABASE_URL directly (already uses asyncpg driver)
+database_url = app_config.ASYNC_DATABASE_URL
 
 config.set_main_option("sqlalchemy.url", database_url)
 
