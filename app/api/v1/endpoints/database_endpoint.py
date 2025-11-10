@@ -23,9 +23,6 @@ from app.schema.database_schema import (
 from app.schema.response_schema import ApiResponseSchema
 from app.model.baseapp_model import Base
 
-# Import all models to ensure they're registered with Base.metadata
-from app.model.demo_model import DemoModel  # noqa: F401
-
 
 router = APIRouter()
 
@@ -241,6 +238,11 @@ async def database_operation(
                 project_root = Path(__file__).parent.parent.parent.parent.parent
                 original_cwd = os.getcwd()
                 
+                # Ensure versions directory exists before creating revision
+                versions_dir = project_root / "alembic" / "versions"
+                versions_dir.mkdir(parents=True, exist_ok=True)
+                
+    
                 def run_revision():
                     """Run Alembic revision in a separate thread to avoid event loop conflicts."""
                     try:
@@ -469,4 +471,3 @@ async def download_migrations(request: MigrationDownloadRequestSchema):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Migration download failed: {str(e)}"
         ) from e
-
