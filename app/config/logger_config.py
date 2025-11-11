@@ -2,14 +2,13 @@ import re
 from contextvars import ContextVar
 from typing import Optional, Dict, Any
 from uuid import uuid4
-import threading
 import sys
 import json
 import asyncio
-import queue
-import aio_pika
+import time
 from loguru import logger
 from app.config.baseapp_config import get_base_config
+from app.helper.rabbitmq_helper import RabbitMQHelper
 
 # Context variables
 user_id_context: ContextVar[Optional[str]] = ContextVar('user_id', default=None)
@@ -158,24 +157,61 @@ def _create_log_message(
     return base_message
 
 class QueueLogHandler:
-    """Simplified queue log handler with connection pooling"""
+    """Simplified queue log handler using RabbitMQ helper with asyncio tasks"""
     
     def __init__(self):
         self.config = get_base_config()
-        self._connection = None
-        self._log_queue = queue.Queue()
-        self._worker_thread = None
-        self._stop_event = threading.Event()
+        self._rabbitmq_helper: Optional[RabbitMQHelper] = None
+        self._log_queue: Optional[asyncio.Queue] = None
+        self._worker_task: Optional[asyncio.Task] = None
+        self._queue_name = "log_queue"
+        self._initialized = False
     
-    async def _ensure_connection(self):
-        """Ensure we have a working connection"""
-        if self._connection is None or self._connection.is_closed:
+    async def _initialize(self):
+        """Initialize the handler - creates queue and starts worker task"""
+        if self._initialized:
+            return
+        
+        # Check if RabbitMQ is enabled
+        if not self.config.RABBITMQ_ENABLED:
+            logger.warning("Queue log handler: RabbitMQ is disabled, skipping initialization")
+            return
+        
+        # Create async queue
+        self._log_queue = asyncio.Queue(maxsize=1000)
+        
+        # Initialize RabbitMQ helper
+        try:
+            self._rabbitmq_helper = RabbitMQHelper()
+            # Ensure the log queue exists (durable/permanent storage)
+            # Set x-max-priority=10 to support message priorities (3, 5, 8)
+            await self._rabbitmq_helper.ensure_queue_exists(
+                queue_name=self._queue_name,
+                durable=True,
+                exclusive=False,
+                auto_delete=False,
+                arguments={"x-max-priority": 10}  # Support message priorities up to 10
+            )
+        except (ConnectionError, RuntimeError) as e:
+            logger.error(f"Failed to initialize RabbitMQ helper: {e}")
+            self._rabbitmq_helper = None
+            return
+        
+        # Start worker task
+        self._worker_task = asyncio.create_task(self._worker_loop())
+        self._initialized = True
+    
+    def _ensure_initialized(self):
+        """Ensure handler is initialized (called from sync context)"""
+        if not self._initialized and self._log_queue is None:
+            # Try to get the current event loop
             try:
-                self._connection = await aio_pika.connect_robust(self.config.RABBITMQ_URL)
-            except (aio_pika.exceptions.AMQPException, ConnectionError) as e:
-                print(f"Failed to connect to RabbitMQ: {e}", file=sys.stderr)
-                self._connection = None # Ensure connection is None on failure
-                raise
+                loop = asyncio.get_running_loop()
+                # If we have a running loop, schedule initialization
+                asyncio.create_task(self._initialize())
+            except RuntimeError:
+                # No event loop running, will initialize on first async call
+                pass
     
     def write(self, message: str):
         """Write method called by loguru - simplified version"""
@@ -219,70 +255,91 @@ class QueueLogHandler:
                 priority=priority
             )
             
-            # Send asynchronously
+            # Try to put message in queue (non-blocking)
             if validate_log_message(log_message):
-                self._log_queue.put(log_message)
+                self._ensure_initialized()
+                if self._log_queue:
+                    try:
+                        # Use put_nowait to avoid blocking
+                        self._log_queue.put_nowait(log_message)
+                    except asyncio.QueueFull:
+                        # Queue is full, skip this log message
+                        pass
                 
         except (ValueError, TypeError, AttributeError, KeyError) as e:
             print(f"Error processing log: {e}", file=sys.stderr)
-    
-    def _worker(self):
-        """The worker method that runs in a separate thread."""
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(self._run())
-        finally:
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.close()
 
-    async def _run(self):
-        """The async part of the worker, runs the main loop."""
-        while not self._stop_event.is_set():
+    async def _worker_loop(self):
+        """The async worker loop that processes log messages"""
+        while True:
             try:
-                log_message = self._log_queue.get(timeout=0.1)
-                await self._send_message(log_message)
-                self._log_queue.task_done()
-            except queue.Empty:
-                continue
+                # Wait for message with timeout
+                try:
+                    log_message = await asyncio.wait_for(self._log_queue.get(), timeout=1.0)
+                    await self._send_message(log_message)
+                    self._log_queue.task_done()
+                except asyncio.TimeoutError:
+                    # Timeout is normal, just continue
+                    continue
+            except asyncio.CancelledError:
+                # Task was cancelled, break the loop
+                break
             except (ConnectionError, ValueError, TypeError, RuntimeError, OSError) as e:
                 print(f"Error in log worker: {e}", file=sys.stderr)
+            except Exception as e:
+                # Catch any other exceptions to prevent worker from crashing
+                print(f"Unexpected error in log worker: {e}", file=sys.stderr)
+                await asyncio.sleep(0.1)  # Brief pause before retrying
 
     async def _send_message(self, log_message: dict):
-        """Send a single log message to RabbitMQ."""
+        """Send a single log message to RabbitMQ using RabbitMQHelper."""
         try:
-            await self._ensure_connection()
-            if self._connection:
-                async with self._connection.channel() as channel:
-                    await channel.default_exchange.publish(
-                        aio_pika.Message(
-                            body=json.dumps(log_message).encode(),
-                            delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
-                            priority=log_message.get("priority", 3),
-                        ),
-                        routing_key="log_queue",
-                    )
+            if self._rabbitmq_helper:
+                # Publish message using the helper (queue already ensured to exist)
+                success = await self._rabbitmq_helper.publish_message(
+                    queue_name=self._queue_name,
+                    message=log_message,
+                    priority=log_message.get("priority", 3),
+                    ensure_queue=False  # Queue already ensured in _initialize
+                )
+                if not success:
+                    logger.warning(f"Failed to publish log message to queue '{self._queue_name}'")
         except (ConnectionError, ValueError, TypeError, RuntimeError, OSError) as e:
-            print(f"Failed to send log to queue: {e}", file=sys.stderr)
+            error_msg = f"Failed to send log to queue: {e}"
+            logger.error(error_msg)
+            print(error_msg, file=sys.stderr)
 
-    async def _close_connection(self):
-        if self._connection and not self._connection.is_closed:
-            await self._connection.close()
-
-    def start(self):
-        """Starts the background worker thread."""
-        self._worker_thread = threading.Thread(target=self._worker, daemon=True)
-        self._worker_thread.start()
-
-    def stop(self):
-        """Stops the background worker thread."""
-        self._log_queue.join() # Wait for all logs to be processed
-        self._stop_event.set()
-        if self._worker_thread:
-            self._worker_thread.join()
-        if self._connection:
-            # We need a loop to close the async connection
-            asyncio.run(self._close_connection())
+    async def stop(self):
+        """Stop the handler and close RabbitMQ connection."""
+        # Cancel worker task
+        if self._worker_task and not self._worker_task.done():
+            self._worker_task.cancel()
+            try:
+                await self._worker_task
+            except asyncio.CancelledError:
+                pass
+        
+        # Process remaining messages in queue (with timeout)
+        if self._log_queue:
+            try:
+                # Wait for queue to be processed
+                timeout = 2.0
+                start_time = time.time()
+                while not self._log_queue.empty() and (time.time() - start_time) < timeout:
+                    await asyncio.sleep(0.1)
+            except Exception:
+                pass
+        
+        # Close RabbitMQ connection
+        if self._rabbitmq_helper:
+            try:
+                await self._rabbitmq_helper.close()
+            except Exception as e:
+                logger.warning(f"Error closing RabbitMQ helper: {e}")
+            finally:
+                self._rabbitmq_helper = None
+        
+        self._initialized = False
 
 
 # Global handler instance for proper connection management
@@ -305,10 +362,10 @@ def configure_logging() -> None:
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
     )
 
-    # Conditionally add queue handler
-    if config.QUEUE_LOG:
+    # Conditionally add queue handler (only if both QUEUE_LOG and RABBITMQ_ENABLED are True)
+    if config.QUEUE_LOG and config.RABBITMQ_ENABLED:
         _GLOBAL_QUEUE_HANDLER = QueueLogHandler()
-        _GLOBAL_QUEUE_HANDLER.start()
+        # Initialize asynchronously (will be initialized when first log is written or in lifespan)
         logger.add(
             _GLOBAL_QUEUE_HANDLER,
             level="INFO",
@@ -317,15 +374,18 @@ def configure_logging() -> None:
             enqueue=True,
             format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
         )
+    elif config.QUEUE_LOG and not config.RABBITMQ_ENABLED:
+        logger.warning("QUEUE_LOG is enabled but RABBITMQ_ENABLED is False. Queue logging is disabled.")
 
 async def shutdown_logging() -> None:
     """Gracefully shutdown logging and close RabbitMQ connection"""
     global _GLOBAL_QUEUE_HANDLER  # pylint: disable=global-statement
     
     if _GLOBAL_QUEUE_HANDLER:
-        _GLOBAL_QUEUE_HANDLER.stop()
+        # Stop handler and close RabbitMQ connection
+        await _GLOBAL_QUEUE_HANDLER.stop()
         _GLOBAL_QUEUE_HANDLER = None
-        print("Logging system shutdown completed", file=sys.stderr)
+        logger.info("Logging system shutdown completed")
 
 def get_logger_context(user_id: str = "", workspace_id: str = "", correlation_id: str = ""):
     """

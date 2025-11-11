@@ -67,6 +67,26 @@ class BaseAppConfig(BaseSettings):
     REDIS_URL: str = Field(default="redis://localhost:6379/0", env="REDIS_URL")
     RABBITMQ_URL: str = Field(default="amqp://guest:guest@localhost:5672/", env="RABBITMQ_URL")
     
+    # RabbitMQ Queue Names (comma-separated list or individual queue names)
+    # Example: "demo_creation_topic,demo_deletion_topic,log_queue"
+    RABBITMQ_QUEUE_NAMES: str = Field(
+        default="log_queue",
+        env="RABBITMQ_QUEUE_NAMES",
+        description="Comma-separated list of queue names to ensure exist on startup"
+    )
+    
+    # Service enable/disable flags (for permission management)
+    RABBITMQ_ENABLED: bool = Field(
+        default=True,
+        env="RABBITMQ_ENABLED",
+        description="Enable/disable RabbitMQ connections and queue operations"
+    )
+    POSTGRES_ENABLED: bool = Field(
+        default=True,
+        env="POSTGRES_ENABLED",
+        description="Enable/disable PostgreSQL database connections"
+    )
+    
     # Database routing settings
     USE_READ_REPLICA: bool = Field(default=False, env="USE_READ_REPLICA")
     

@@ -11,6 +11,7 @@ from alembic.script import ScriptDirectory
 
 from app.config.database import async_engine
 from app.config.config import config
+from app.config.baseapp_config import get_base_config
 from app.config.logger_config import logger
 from app.repository.migration_repository import MigrationRepository
 from app.schema.migration_schema import (
@@ -76,6 +77,14 @@ async def create_revision(request: RevisionRequestSchema):
     Requires a message in the request body: {"message": "your migration message"}
     """
     try:
+        # Check if PostgreSQL is enabled
+        base_config = get_base_config()
+        if not base_config.POSTGRES_ENABLED:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="PostgreSQL is disabled. Set POSTGRES_ENABLED=True to use database operations."
+            )
+        
         # Initialize migration repository
         migration_repo = MigrationRepository()
         
@@ -207,6 +216,14 @@ async def upgrade_database():
     Automatically upgrades to the latest migration without requiring any request body.
     """
     try:
+        # Check if PostgreSQL is enabled
+        base_config = get_base_config()
+        if not base_config.POSTGRES_ENABLED:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="PostgreSQL is disabled. Set POSTGRES_ENABLED=True to use database operations."
+            )
+        
         # Initialize migration repository
         migration_repo = MigrationRepository()
         
@@ -320,10 +337,10 @@ async def upload_migrations(request: MigrationUploadRequestSchema):
                 detail=f"No migration files found in {migrations_path}"
             )
         
-        from app.helper.migration_storage import MigrationStorageService
-        storage_service = MigrationStorageService()
+        from app.helper.migration_helper import MigrationHelper
+        migration_helper = MigrationHelper()
         
-        if not storage_service._is_configured():
+        if not migration_helper._is_configured():
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Wasabi/S3 not configured. Set WASABI_ACCESS_KEY_ID, WASABI_SECRET_ACCESS_KEY, and MIGRATION_BUCKET_NAME"
@@ -333,7 +350,7 @@ async def upload_migrations(request: MigrationUploadRequestSchema):
         
         # Run upload in thread pool to avoid blocking (always use latest)
         def run_upload():
-            return storage_service.upload_migrations(migrations_path, version=None)
+            return migration_helper.upload_migrations(migrations_path, version=None)
         
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor() as executor:
@@ -381,10 +398,10 @@ async def download_migrations(request: MigrationDownloadRequestSchema):
         project_root = Path(__file__).parent.parent.parent.parent.parent
         migrations_path = project_root / "alembic" / "versions"
         
-        from app.helper.migration_storage import MigrationStorageService
-        storage_service = MigrationStorageService()
+        from app.helper.migration_helper import MigrationHelper
+        migration_helper = MigrationHelper()
         
-        if not storage_service._is_configured():
+        if not migration_helper._is_configured():
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Wasabi/S3 not configured. Set WASABI_ACCESS_KEY_ID, WASABI_SECRET_ACCESS_KEY, and MIGRATION_BUCKET_NAME"
@@ -394,7 +411,7 @@ async def download_migrations(request: MigrationDownloadRequestSchema):
         
         # Run download in thread pool to avoid blocking (always use latest)
         def run_download():
-            return storage_service.download_migrations(migrations_path, version=None)
+            return migration_helper.download_migrations(migrations_path, version=None)
         
         loop = asyncio.get_event_loop()
         with ThreadPoolExecutor() as executor:

@@ -6,6 +6,28 @@ from app.exception.baseapp_exception import BaseAppException
 from app.config.logger_config import log_central
 
 
+def _make_serializable(obj):
+    """
+    Recursively convert non-serializable objects to serializable format.
+    
+    Args:
+        obj: Object to make serializable (dict, Exception, etc.)
+        
+    Returns:
+        Serializable version of the object
+    """
+    if isinstance(obj, dict):
+        return {key: _make_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, Exception):
+        return str(obj)
+    elif isinstance(obj, (list, tuple)):
+        return [_make_serializable(item) for item in obj]
+    elif isinstance(obj, bytes):
+        return obj.decode('utf-8', errors='ignore')
+    else:
+        return obj
+
+
 def setup_error_handlers(app):
     """
     Set up custom error handlers for the FastAPI app.
@@ -49,6 +71,15 @@ def setup_error_handlers(app):
             for key, value in error.items():
                 if isinstance(value, bytes):
                     serializable_error[key] = value.decode('utf-8', errors='ignore')
+                elif isinstance(value, Exception):
+                    # Convert exception objects to string representation
+                    serializable_error[key] = str(value)
+                elif isinstance(value, dict):
+                    # Recursively handle nested dictionaries (like 'ctx' field)
+                    serializable_error[key] = _make_serializable(value)
+                elif isinstance(value, (list, tuple)):
+                    # Handle lists/tuples that might contain non-serializable objects
+                    serializable_error[key] = [_make_serializable(item) if isinstance(item, (dict, Exception)) else item for item in value]
                 else:
                     serializable_error[key] = value
             errors.append(serializable_error)
