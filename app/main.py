@@ -14,9 +14,6 @@ from app.exception.fastapi.error_handlers import setup_error_handlers
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # pylint: disable=unused-argument
     """Manage application lifespan events."""
-    from app.config.baseapp_config import get_base_config
-    base_config = get_base_config()
-    
     # Startup
     configure_logging()
     
@@ -25,37 +22,24 @@ async def lifespan(app: FastAPI):  # pylint: disable=unused-argument
     if _GLOBAL_QUEUE_HANDLER:
         await _GLOBAL_QUEUE_HANDLER._initialize()
     
-    # Log service status
-    if base_config.POSTGRES_ENABLED:
-        logger.info("✅ PostgreSQL is enabled")
-    else:
-        logger.warning("⚠️  PostgreSQL is disabled (POSTGRES_ENABLED=False)")
-    
-    if base_config.RABBITMQ_ENABLED:
-        logger.info("✅ RabbitMQ is enabled")
-    else:
-        logger.warning("⚠️  RabbitMQ is disabled (RABBITMQ_ENABLED=False)")
-    
     # Ensure migration files exist (download from Wasabi if needed)
     # This is critical because migration files are excluded from Docker image via .dockerignore
-    # Only check migrations if PostgreSQL is enabled
-    if base_config.POSTGRES_ENABLED:
-        from app.helper.migration_helper import MigrationHelper
-        from pathlib import Path
-        
-        project_root = Path(__file__).parent.parent.parent
-        migrations_path = project_root / "alembic" / "versions"
-        
-        migration_helper = MigrationHelper()
-        migrations_exist = migration_helper.ensure_migrations_exist(migrations_path)
-        
-        if not migrations_exist:
-            logger.warning(
-                "⚠️  Migration files not found and could not be downloaded from Wasabi. "
-                "Database migrations may fail. Please ensure migrations are uploaded to Wasabi."
-            )
-        else:
-            logger.info("✅ Migration files are ready")
+    from app.helper.migration_helper import MigrationHelper
+    from pathlib import Path
+    
+    project_root = Path(__file__).parent.parent.parent
+    migrations_path = project_root / "alembic" / "versions"
+    
+    migration_helper = MigrationHelper()
+    migrations_exist = migration_helper.ensure_migrations_exist(migrations_path)
+    
+    if not migrations_exist:
+        logger.warning(
+            "⚠️  Migration files not found and could not be downloaded from Wasabi. "
+            "Database migrations may fail. Please ensure migrations are uploaded to Wasabi."
+        )
+    else:
+        logger.info("✅ Migration files are ready")
     
     yield
     # Shutdown

@@ -75,18 +75,6 @@ class BaseAppConfig(BaseSettings):
         description="Comma-separated list of queue names to ensure exist on startup"
     )
     
-    # Service enable/disable flags (for permission management)
-    RABBITMQ_ENABLED: bool = Field(
-        default=True,
-        env="RABBITMQ_ENABLED",
-        description="Enable/disable RabbitMQ connections and queue operations"
-    )
-    POSTGRES_ENABLED: bool = Field(
-        default=True,
-        env="POSTGRES_ENABLED",
-        description="Enable/disable PostgreSQL database connections"
-    )
-    
     # Database routing settings
     USE_READ_REPLICA: bool = Field(default=False, env="USE_READ_REPLICA")
     

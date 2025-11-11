@@ -19,17 +19,8 @@ class MigrationRepository:
         
         Args:
             engine: Optional async engine. Defaults to async_engine from config.
-            
-        Note:
-            If POSTGRES_ENABLED=False and no engine is provided, the repository will be created
-            but operations will fail. Endpoints should check POSTGRES_ENABLED before using this.
         """
         self.engine = engine or async_engine
-        
-        if not self.engine:
-            # Don't raise error here - let endpoints handle it gracefully
-            # This allows the repository to be created even if PostgreSQL is disabled
-            pass
         # Define alembic_version table structure
         self.metadata = MetaData()
         self.alembic_version_table = Table(
@@ -45,15 +36,7 @@ class MigrationRepository:
         
         Returns:
             True if the table exists, False otherwise
-            
-        Raises:
-            InternalServerErrorException: If engine is not available (PostgreSQL disabled)
         """
-        if not self.engine:
-            raise InternalServerErrorException(
-                message="Database engine not available. PostgreSQL is disabled (POSTGRES_ENABLED=False)."
-            )
-        
         try:
             async with self.engine.connect() as connection:
                 # Use SQLAlchemy inspect to check if table exists
@@ -76,15 +59,7 @@ class MigrationRepository:
         
         Returns:
             Current revision string if exists, None if table doesn't exist or no revision found
-            
-        Raises:
-            InternalServerErrorException: If engine is not available (PostgreSQL disabled)
         """
-        if not self.engine:
-            raise InternalServerErrorException(
-                message="Database engine not available. PostgreSQL is disabled (POSTGRES_ENABLED=False)."
-            )
-        
         try:
             # First check if table exists
             table_exists = await self.check_alembic_version_table_exists()

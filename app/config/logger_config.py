@@ -172,11 +172,6 @@ class QueueLogHandler:
         if self._initialized:
             return
         
-        # Check if RabbitMQ is enabled
-        if not self.config.RABBITMQ_ENABLED:
-            logger.warning("Queue log handler: RabbitMQ is disabled, skipping initialization")
-            return
-        
         # Create async queue
         self._log_queue = asyncio.Queue(maxsize=1000)
         
@@ -362,8 +357,8 @@ def configure_logging() -> None:
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
     )
 
-    # Conditionally add queue handler (only if both QUEUE_LOG and RABBITMQ_ENABLED are True)
-    if config.QUEUE_LOG and config.RABBITMQ_ENABLED:
+    # Conditionally add queue handler (only if QUEUE_LOG is True)
+    if config.QUEUE_LOG:
         _GLOBAL_QUEUE_HANDLER = QueueLogHandler()
         # Initialize asynchronously (will be initialized when first log is written or in lifespan)
         logger.add(
@@ -374,8 +369,6 @@ def configure_logging() -> None:
             enqueue=True,
             format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
         )
-    elif config.QUEUE_LOG and not config.RABBITMQ_ENABLED:
-        logger.warning("QUEUE_LOG is enabled but RABBITMQ_ENABLED is False. Queue logging is disabled.")
 
 async def shutdown_logging() -> None:
     """Gracefully shutdown logging and close RabbitMQ connection"""

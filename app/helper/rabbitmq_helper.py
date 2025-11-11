@@ -50,20 +50,9 @@ class RabbitMQHelper:
         
         Args:
             rabbitmq_url: Optional RabbitMQ URL. If not provided, uses config.RABBITMQ_URL
-            
-        Note:
-            If RABBITMQ_ENABLED=False, the helper will be created but all operations will be disabled.
-            Methods will return None/False when RabbitMQ is disabled.
         """
         self.config = get_base_config()
-        self._enabled = self.config.RABBITMQ_ENABLED
-        
-        if self._enabled:
-            self.rabbitmq_url = rabbitmq_url or self.config.RABBITMQ_URL
-        else:
-            self.rabbitmq_url = None
-            logger.warning("RabbitMQ helper initialized but RabbitMQ is disabled (RABBITMQ_ENABLED=False)")
-        
+        self.rabbitmq_url = rabbitmq_url or self.config.RABBITMQ_URL
         self._connection: Optional[Connection] = None
         self._channel: Optional[Channel] = None
         self._queues: Dict[str, Queue] = {}
@@ -76,11 +65,8 @@ class RabbitMQHelper:
             Active RabbitMQ connection
             
         Raises:
-            ConnectionError: If connection cannot be established or RabbitMQ is disabled
+            ConnectionError: If connection cannot be established
         """
-        if not self._enabled:
-            raise ConnectionError("RabbitMQ is disabled. Set RABBITMQ_ENABLED=True to use RabbitMQ operations.")
-        
         if self._connection is None or self._connection.is_closed:
             try:
                 self._connection = await aio_pika.connect_robust(self.rabbitmq_url)
