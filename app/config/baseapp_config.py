@@ -75,6 +75,19 @@ class BaseAppConfig(BaseSettings):
         description="Comma-separated list of queue names to ensure exist on startup"
     )
     
+    # Service-level enable/disable flags (for individual service opt-in/opt-out)
+    # Note: Project always has access, but individual services can choose to use or not use these services
+    RABBITMQ_ENABLED: bool = Field(
+        default=True,
+        env="RABBITMQ_ENABLED",
+        description="Enable/disable RabbitMQ usage for this service (service-level opt-in/opt-out)"
+    )
+    POSTGRES_ENABLED: bool = Field(
+        default=True,
+        env="POSTGRES_ENABLED",
+        description="Enable/disable PostgreSQL usage for this service (service-level opt-in/opt-out)"
+    )
+    
     # Database routing settings
     USE_READ_REPLICA: bool = Field(default=False, env="USE_READ_REPLICA")
     

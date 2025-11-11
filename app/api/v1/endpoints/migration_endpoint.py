@@ -11,6 +11,7 @@ from alembic.script import ScriptDirectory
 
 from app.config.database import async_engine
 from app.config.config import config
+from app.config.baseapp_config import get_base_config
 from app.config.logger_config import logger
 from app.repository.migration_repository import MigrationRepository
 from app.schema.migration_schema import (
@@ -76,6 +77,14 @@ async def create_revision(request: RevisionRequestSchema):
     Requires a message in the request body: {"message": "your migration message"}
     """
     try:
+        # Check if PostgreSQL is enabled for this service
+        base_config = get_base_config()
+        if not base_config.POSTGRES_ENABLED:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="PostgreSQL is disabled for this service. Set POSTGRES_ENABLED=True to use database operations."
+            )
+        
         # Initialize migration repository
         migration_repo = MigrationRepository()
         
@@ -207,6 +216,14 @@ async def upgrade_database():
     Automatically upgrades to the latest migration without requiring any request body.
     """
     try:
+        # Check if PostgreSQL is enabled for this service
+        base_config = get_base_config()
+        if not base_config.POSTGRES_ENABLED:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="PostgreSQL is disabled for this service. Set POSTGRES_ENABLED=True to use database operations."
+            )
+        
         # Initialize migration repository
         migration_repo = MigrationRepository()
         
