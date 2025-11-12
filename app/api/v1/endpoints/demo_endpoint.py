@@ -1,24 +1,23 @@
 from __future__ import annotations
-from typing import Optional, List
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.config.constants import SuccessMessages, ApiErrorMessages
 
-from app.config.database import get_async_db as get_db
-from app.config.constants import SuccessMessages
-from app.schema.response_schema import (
-    ApiResponseSchema, 
-    PaginatedResponseSchema, 
-)
+from app.config.database import get_async_db
 from app.schema.demo_schema import (
-    DemoCreateSchema, 
-    DemoUpdateSchema, 
+    DemoCreateSchema,
     DemoReadSchema,
-    DemoStatusUpdateSchema,
+    DemoUpdateSchema,
     DemoIsActiveUpdateSchema,
-    DemoListParamsSchema,
 )
 from app.service.demo_service import DemoService
+from app.helper.fastapi.get_header import get_list_params, get_user_id, get_workspace_id, ListParamsSchema
+from app.schema.response_schema import (
+    ApiResponseSchema,
+    PaginatedResponseSchema,
+    PaginationMeta
+)
 from app.exception.demo_exception import (
     DemoNotFoundException,
     DemoCreationException,
@@ -28,59 +27,72 @@ from app.exception.demo_exception import (
     DemoPermissionDeniedException
 )
 from app.exception.baseapp_exception import (
-
     InternalServerErrorException
 )
-from app.helper.fastapi.get_header import get_user_id, get_workspace_id
+
 
 router = APIRouter()
 
-# Create a new demo
-@router.post("/", response_model=ApiResponseSchema[DemoReadSchema], status_code=status.HTTP_201_CREATED)
+
+# Create a new Demo
+@router.post("/demo/create/", response_model=ApiResponseSchema[DemoReadSchema], status_code=status.HTTP_201_CREATED)
 async def create_demo(
-    demo_in: DemoCreateSchema,
-    db: AsyncSession = Depends(get_db),
+    payload: DemoCreateSchema,
+    db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
     workspace_id: UUID = Depends(get_workspace_id),
 ):
     """
     Create a new demo.
+    
+    This endpoint allows creating a demo.
     """
     try:
-        data = await DemoService(db).create(payload=demo_in, user_id=user_id, workspace_id=workspace_id)
+        # Create demo using the schema
+        data = await DemoService(db).create(payload=payload, user_id=user_id, workspace_id=workspace_id)
+            
         return ApiResponseSchema[DemoReadSchema](success=True, data=data, message=SuccessMessages.DEMO_CREATED)
+        
     except (DemoCreationException, DemoInvalidDataException, InternalServerErrorException) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_CREATION_FAILED}: {str(e)}"
+        ) from e
 
-# Retrieve a demo by ID
-@router.get("/{demo_id}/", response_model=ApiResponseSchema[DemoReadSchema])
+# Retrieve an Demo by ID
+@router.get("/demo/read/{demo_id}/", response_model=ApiResponseSchema[DemoReadSchema])
 async def get_demo(
     demo_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
     workspace_id: UUID = Depends(get_workspace_id),
 ):
-    """
-    Retrieve a demo by ID.
-    """
+    """Retrieve an demo by ID."""
+
     try:
         data = await DemoService(db).read(demo_id=demo_id, user_id=user_id, workspace_id=workspace_id)
         return ApiResponseSchema[DemoReadSchema](success=True, data=data, message=SuccessMessages.DEMO_RETRIEVED)
     except (DemoNotFoundException, DemoPermissionDeniedException, InternalServerErrorException) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_RETRIEVAL_FAILED}: {str(e)}"
+        ) from e
 
-# List all demos
-@router.get("/", response_model=PaginatedResponseSchema[List[DemoReadSchema]])
+# List all Demos
+@router.get("/demos/", response_model=PaginatedResponseSchema[list[DemoReadSchema]])
 async def list_demos(
-    params: DemoListParamsSchema = Depends(),
-    db: AsyncSession = Depends(get_db),
+    params: ListParamsSchema = Depends(get_list_params),
+    db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
     workspace_id: UUID = Depends(get_workspace_id),
 ):
-    """
-    List all demos.
-    """
+    """List all demos."""
     try:
+        # Use filters directly (already parsed in get_list_params)
         result = await DemoService(db).list_all(
             filters=params.filters,
             search=params.search,
@@ -90,82 +102,106 @@ async def list_demos(
             user_id=user_id,
             workspace_id=workspace_id
         )
-        return PaginatedResponseSchema[List[DemoReadSchema]](
+        
+        # Extract data and pagination info from service result
+        data = result.get("data", [])
+        pagination_data = result.get("pagination", {})
+        
+        # Use pagination data from service, with fallback calculations
+        total_count = pagination_data.get("total_count", len(data))
+        total_pages = pagination_data.get("total_pages", (total_count + params.limit - 1) // params.limit if total_count > 0 else 0)
+        
+        pagination = PaginationMeta(
+            total_count=total_count,
+            offset=params.offset,
+            limit=params.limit,
+            total_pages=total_pages
+        )
+        
+        return PaginatedResponseSchema[list[DemoReadSchema]](
             success=True, 
-            data=result.get("data", []), 
-            pagination=result.get("pagination", {}),
-            message=SuccessMessages.DEMO_RETRIEVED
+            data=data, 
+            pagination=pagination,
+            message=SuccessMessages.DEMOS_RETRIEVED
         )
     except (DemoPermissionDeniedException, InternalServerErrorException) as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+        raise HTTPException(status_code=e.status_code, detail=e.detail) from e 
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMOS_RETRIEVAL_FAILED}: {str(e)}" 
+        ) from e
 
-# Update an existing demo
-@router.patch("/{demo_id}/", response_model=ApiResponseSchema[DemoReadSchema])
+# Update an Demo
+@router.patch("/demo/update/{demo_id}/", response_model=ApiResponseSchema[DemoReadSchema])
 async def update_demo(
     demo_id: UUID,
-    demo_in: DemoUpdateSchema,
-    db: AsyncSession = Depends(get_db),
+    payload: DemoUpdateSchema,
+    db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
     workspace_id: UUID = Depends(get_workspace_id),
 ):
     """
     Update an existing demo.
+    
+    This endpoint allows updating demo fields.
     """
     try:
-        data = await DemoService(db).update(demo_id=demo_id, payload=demo_in, user_id=user_id, workspace_id=workspace_id)
+        # Update demo using the schema
+        data = await DemoService(db).update(demo_id=demo_id, payload=payload, user_id=user_id, workspace_id=workspace_id)
+        
+    
         return ApiResponseSchema[DemoReadSchema](success=True, data=data, message=SuccessMessages.DEMO_UPDATED)
+        
     except (DemoNotFoundException, DemoUpdateException, DemoInvalidDataException, DemoPermissionDeniedException) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_UPDATE_FAILED}: {str(e)}"
+        ) from e
 
-# Delete a demo
-@router.delete("/{demo_id}/", response_model=ApiResponseSchema[dict])
+# Delete an Demo
+@router.delete("/demo/delete/{demo_id}/", response_model=ApiResponseSchema[dict])
 async def delete_demo(
     demo_id: UUID,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
     workspace_id: UUID = Depends(get_workspace_id),
 ):
-    """
-    Delete a demo by ID.
-    """
+    """Delete an demo by ID."""
     try:
         await DemoService(db).delete(demo_id=demo_id, user_id=user_id, workspace_id=workspace_id)
         return ApiResponseSchema[dict](success=True, data={}, message=SuccessMessages.DEMO_DELETED)
     except (DemoNotFoundException, DemoDeletionException, DemoPermissionDeniedException, DemoInvalidDataException) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_DELETION_FAILED}: {str(e)}"
+        ) from e
 
-# Update demo status
-@router.patch("/status/{demo_id}/", response_model=ApiResponseSchema[DemoReadSchema])
-async def update_demo_status(
-    demo_id: UUID,
-    payload: DemoStatusUpdateSchema,
-    db: AsyncSession = Depends(get_db),
-    user_id: UUID = Depends(get_user_id),
-    workspace_id: UUID = Depends(get_workspace_id),
-):
-    """
-    Update demo status and error messages.
-    """
-    try:
-        data = await DemoService(db).update_status(demo_id=demo_id, payload=payload, user_id=user_id, workspace_id=workspace_id)
-        return ApiResponseSchema[DemoReadSchema](success=True, data=data, message=SuccessMessages.DEMO_STATUS_UPDATED)
-    except (DemoNotFoundException, DemoUpdateException, DemoPermissionDeniedException, DemoInvalidDataException) as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail) from e
-
-# Update demo is_active status
-@router.patch("/is-active/{demo_id}/", response_model=ApiResponseSchema[DemoReadSchema])
+# Update is_active of an Demo
+@router.patch("/demo/update/is-active/{demo_id}/", response_model=ApiResponseSchema[DemoReadSchema])
 async def update_demo_is_active(
     demo_id: UUID,
     payload: DemoIsActiveUpdateSchema,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
     workspace_id: UUID = Depends(get_workspace_id),
 ):
     """
     Update demo is_active status.
+    
+    Updates only the is_active field of the demo.
     """
     try:
         data = await DemoService(db).update_is_active(demo_id=demo_id, payload=payload, user_id=user_id, workspace_id=workspace_id)
         return ApiResponseSchema[DemoReadSchema](success=True, data=data, message=SuccessMessages.DEMO_ACTIVE_STATUS_UPDATED)
     except (DemoNotFoundException, DemoUpdateException, DemoPermissionDeniedException, DemoInvalidDataException) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}"
+        ) from e

@@ -10,7 +10,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from sqlalchemy import text
 from app.config.database import async_engine
-from app.config.config import config
+from app.config.baseapp_config import get_base_config
 from app.config.logger_config import logger
 from app.helper.path_helper import PathHelper
 from app.service.migration_service import get_alembic_config
@@ -180,7 +180,8 @@ async def upgrade_database():
     """
     try:
         # Check if PostgreSQL is enabled for this service
-        if not config.POSTGRES_ENABLED:
+        base_config = get_base_config()
+        if not base_config.POSTGRES_ENABLED:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="PostgreSQL is disabled for this service. Set POSTGRES_ENABLED=True to use database operations."
