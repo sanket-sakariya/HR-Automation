@@ -13,7 +13,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 from app.config.baseapp_config import get_base_config
-from app.config.logger_config import logger
+
 from app.helper.migration_helper import MigrationHelper
 from app.helper.path_helper import PathHelper
 from app.repository.migration_repository import MigrationRepository
@@ -144,7 +144,7 @@ class MigrationService(BaseAppService):
 
     async def upload_migrations(self) -> MigrationResponseSchema:
         """Upload migration files to Wasabi/S3."""
-        if not self.migration_helper._is_configured(): 
+        if not self.migration_helper.wasabi_helper.s3_client: 
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Wasabi/S3 not configured.",
@@ -178,7 +178,7 @@ class MigrationService(BaseAppService):
 
     async def download_migrations(self) -> MigrationResponseSchema:
         """Download migration files from Wasabi/S3."""
-        if not self.migration_helper._is_configured():  
+        if not self.migration_helper.wasabi_helper.s3_client:  
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Wasabi/S3 not configured.",
