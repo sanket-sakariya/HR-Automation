@@ -126,4 +126,3 @@ class DemoFileNotFoundException(BaseAppException):
     def __init__(self, file_path: str):
         message = f"Demo file not found: {file_path}"
         super().__init__(message=message, status_code=status.HTTP_404_NOT_FOUND)
-

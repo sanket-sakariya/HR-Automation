@@ -18,14 +18,13 @@ def _make_serializable(obj):
     """
     if isinstance(obj, dict):
         return {key: _make_serializable(value) for key, value in obj.items()}
-    elif isinstance(obj, Exception):
+    if isinstance(obj, Exception):
         return str(obj)
-    elif isinstance(obj, (list, tuple)):
+    if isinstance(obj, (list, tuple)):
         return [_make_serializable(item) for item in obj]
-    elif isinstance(obj, bytes):
+    if isinstance(obj, bytes):
         return obj.decode('utf-8', errors='ignore')
-    else:
-        return obj
+    return obj
 
 
 def setup_error_handlers(app):
