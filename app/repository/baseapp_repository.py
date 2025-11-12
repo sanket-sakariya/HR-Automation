@@ -117,7 +117,6 @@ class BaseAppRepository(Generic[ModelType]):
     def __init__(self, db: AsyncSession, model: Type[ModelType]):
         self.db = db
         self.model = model
-        # logger.info(f" {self.__class__.__name__} initialized with DB session: {id(db)}")  # Disabled to reduce log noise
 
     async def get_all(
         self,

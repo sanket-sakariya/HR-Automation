@@ -46,7 +46,6 @@ class MigrationRepository(BaseAppRepository[MigrationModel]):
             table_exists = await self.db.run_sync(check_table)
             return table_exists
         except Exception as e:
-            logger.error(f"Error checking alembic_version table existence: {str(e)}")
             raise InternalServerErrorException(
                 message=f"{DatabaseErrorMessages.DATA_RETRIEVAL_ERROR}: {str(e)}"
             ) from e

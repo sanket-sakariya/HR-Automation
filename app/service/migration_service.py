@@ -100,7 +100,6 @@ class MigrationService(BaseAppService):
                     detail=f"DB rev '{current_db_rev}' not in local files.",
                 ) from e
 
-        logger.info(f"Creating new revision with message: {message}")
         await self._run_alembic_command(
             "revision", autogenerate=True, message=message
         )
@@ -133,7 +132,6 @@ class MigrationService(BaseAppService):
                 detail="No migration files found. Please create a migration first.",
             )
 
-        logger.info("Upgrading database to revision: head")
         await self._run_alembic_command("upgrade", revision="head")
         await asyncio.sleep(0.1)
         current_rev = await self.migration_repo.get_current_revision()
@@ -160,7 +158,6 @@ class MigrationService(BaseAppService):
                 detail=f"No migration files found in {migrations_path}",
             )
 
-        logger.info("Uploading migration files to Wasabi...")
         success = await asyncio.get_event_loop().run_in_executor(
             None, self.migration_helper.upload_migrations, migrations_path, None
         )
@@ -188,7 +185,6 @@ class MigrationService(BaseAppService):
             )
 
         migrations_path = PathHelper.find_project_root(Path(__file__)) / "alembic" / "versions"
-        logger.info("Downloading migrations from Wasabi...")
         success = await asyncio.get_event_loop().run_in_executor(
             None, self.migration_helper.download_migrations, migrations_path, None
         )

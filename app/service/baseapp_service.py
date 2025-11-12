@@ -14,4 +14,3 @@ class BaseAppService:
             db: Database session
         """
         self.db = db
-        # logger.info(f" {self.__class__.__name__} initialized with DB session: {id(db)}")  # Disabled to reduce log noise
