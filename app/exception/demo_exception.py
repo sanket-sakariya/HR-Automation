@@ -1,6 +1,8 @@
 from typing import Optional
 from uuid import UUID
+
 from fastapi import status
+
 from app.exception.baseapp_exception import (
     BaseAppException,
     NotFoundException,

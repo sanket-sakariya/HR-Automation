@@ -1,7 +1,8 @@
+import os
+
 import astroid
 from pylint.checkers import BaseChecker
 from pylint.lint import PyLinter
-import os
 
 
 class SchemaRulesChecker(BaseChecker):
@@ -52,26 +53,28 @@ class SchemaRulesChecker(BaseChecker):
 
     # ---------------- Visitors ----------------
     def visit_classdef(self, node: astroid.ClassDef):
-        # Only apply to files ending with _schema.py
+        """Check class definition rules for schemas."""
+        if not self._should_check_schema(node):
+            return
+
+        self._check_schema_name(node)
+        self._check_schema_fields(node)
+
+    def _should_check_schema(self, node):
+        """Determine if a class node should be checked as a schema."""
         if not node.root().file or not node.root().file.endswith("_schema.py"):
-            return
-            
-        # Skip base schema file
-        if node.root().file and os.path.basename(node.root().file) == "baseapp_schema.py":
-            return
+            return False
+        if os.path.basename(node.root().file) == "baseapp_schema.py":
+            return False
+        return self._is_schema_class(node)
 
-        if not self._is_schema_class(node):
-            return
+    def _check_schema_name(self, node):
+        """Check if the schema class name ends with 'Schema'."""
+        if not node.name.endswith("Schema"):
+            self.add_message("schema-name-must-end-with-schema", node=node, args=(node.name,))
 
-        class_name = node.name
-        base_names = self._get_base_names(node)
-
-
-        # ---- Rule: Class name must end with 'Schema' ----
-        if not class_name.endswith("Schema"):
-            self.add_message("schema-name-must-end-with-schema", node=node, args=(class_name,))
-
-        # ---- Field Checks ----
+    def _check_schema_fields(self, node):
+        """Check all fields in a schema class."""
         for assign in self._get_field_assignments(node):
             if isinstance(assign, astroid.Assign):
                 field_name = assign.targets[0].as_string()
@@ -84,35 +87,38 @@ class SchemaRulesChecker(BaseChecker):
             else:
                 continue
 
-            # Boolean fields must start with 'is_' and have default True
-            if field_annotation == "bool":
-                if not field_name.startswith("is_"):
-                    self.add_message("boolean-field-rule", node=assign, args=(field_name,))
-                elif field_value and "default=True" not in field_value and field_value != "True":
-                    # Check if it has default=True in Field() or is just True
-                    self.add_message("boolean-field-rule", node=assign, args=(field_name,))
-                elif isinstance(assign, astroid.AnnAssign) and not field_value:
-                    # For AnnAssign without default value, it should use Field()
-                    self.add_message("boolean-field-rule", node=assign, args=(field_name,))
-                # Skip field validation check for boolean fields as they're handled above
+            if self._check_boolean_field(assign, field_name, field_annotation, field_value):
                 continue
 
-            # Enum usage (check for Enum in annotation)
-            if "Enum" in field_annotation:
-                # Enforce PascalCase naming
-                if not field_name[0].isupper():
-                    self.add_message("enum-field-rule", node=assign, args=(field_name,))
+            self._check_enum_field(assign, field_name, field_annotation)
+            self._check_field_validation(assign, field_name, field_annotation, field_value)
 
-            # Field validation must use Field() (exclude special fields like model_config)
-            if field_name not in ["model_config", "ConfigDict"]:
-                if field_value and "Field(" not in field_value:
+    def _check_boolean_field(self, assign, field_name, field_annotation, field_value):
+        """Check boolean field rules."""
+        if field_annotation == "bool":
+            if not field_name.startswith("is_"):
+                self.add_message("boolean-field-rule", node=assign, args=(field_name,))
+            elif field_value and "default=True" not in field_value and field_value != "True":
+                self.add_message("boolean-field-rule", node=assign, args=(field_name,))
+            elif isinstance(assign, astroid.AnnAssign) and not field_value:
+                self.add_message("boolean-field-rule", node=assign, args=(field_name,))
+            return True
+        return False
+
+    def _check_enum_field(self, assign, field_name, field_annotation):
+        """Check enum field rules."""
+        if "Enum" in field_annotation:
+            if not field_name[0].isupper():
+                self.add_message("enum-field-rule", node=assign, args=(field_name,))
+
+    def _check_field_validation(self, assign, field_name, field_annotation, field_value):
+        """Check that fields use Field() for validation."""
+        if field_name not in ["model_config", "ConfigDict"]:
+            if field_value and "Field(" not in field_value:
+                self.add_message("field-validation-rule", node=assign, args=(field_name,))
+            elif isinstance(assign, astroid.AnnAssign) and not field_value and not field_annotation.startswith("Optional["):
+                if field_annotation in ["str", "int", "bool", "float", "UUID", "datetime"]:
                     self.add_message("field-validation-rule", node=assign, args=(field_name,))
-                elif isinstance(assign, astroid.AnnAssign) and not field_value and not field_annotation.startswith("Optional["):
-                    # For AnnAssign without Field(), check if it's a simple type annotation
-                    if field_annotation in ["str", "int", "bool", "float", "UUID", "datetime"]:
-                        self.add_message("field-validation-rule", node=assign, args=(field_name,))
-
-
 
 def register(linter: PyLinter):
     """Register the checker with pylint"""

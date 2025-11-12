@@ -63,6 +63,7 @@ class ModelRulesChecker(BaseChecker):
         return filename.endswith("_model.py")
  
     def visit_classdef(self, node: astroid.ClassDef):
+        """Check class definition rules for models."""
         if not self._is_model_file(node):
             return
  
@@ -102,6 +103,7 @@ class ModelRulesChecker(BaseChecker):
             self.add_message("model-name-must-end-with-model", node=node, args=(node.name,))
  
     def visit_assign(self, node: astroid.Assign):
+        """Check assignment rules for model columns."""
         if not self._is_model_file(node):
             return
  
@@ -114,16 +116,24 @@ class ModelRulesChecker(BaseChecker):
         if func_name != "Column":
             return
  
+        col_name = node.targets[0].as_string()
         col_args = [a.as_string() for a in node.value.args] if node.value.args else []
         col_kwargs = {kw.arg: kw.value.as_string() for kw in node.value.keywords if kw.arg}
-        col_name = node.targets[0].as_string()
  
-        # ---- Primary Key Rule ----
+        self._check_primary_key(node, col_name, col_args, col_kwargs)
+        self._check_string_column(node, col_name, col_args)
+        self._check_boolean_column(node, col_name, col_args, col_kwargs)
+        self._check_status_column(node, col_name, col_args, col_kwargs)
+        self._check_datetime_column(node, col_name, col_args)
+ 
+    def _check_primary_key(self, node, col_name, col_args, col_kwargs):
+        """Check primary key rules."""
         if "primary_key=True" in col_args or col_kwargs.get("primary_key") == "True":
             if "UUID(as_uuid=True)" not in col_args or col_kwargs.get("default") != "uuid.uuid4":
                 self.add_message("primary-key-uuid-required", node=node, args=(col_name,))
  
-        # ---- String Column Rule ----
+    def _check_string_column(self, node, col_name, col_args):
+        """Check string column rules."""
         if col_args and col_args[0].startswith("String"):
             length = None
             if "(" in col_args[0] and ")" in col_args[0]:
@@ -134,7 +144,8 @@ class ModelRulesChecker(BaseChecker):
             if length is None or length > 255:
                 self.add_message("string-column-rules", node=node, args=(col_name,))
  
-        # ---- Boolean Rule ----
+    def _check_boolean_column(self, node, col_name, col_args, col_kwargs):
+        """Check boolean column rules."""
         if any("Boolean" in arg for arg in col_args):
             if not (
                 col_kwargs.get("default") is not None
@@ -142,18 +153,18 @@ class ModelRulesChecker(BaseChecker):
             ):
                 self.add_message("boolean-rules", node=node, args=(col_name,))
  
-        # ---- Status Rule ----
+    def _check_status_column(self, node, col_name, col_args, col_kwargs):
+        """Check status column rules."""
         if col_name == "status":
             if not ("String(20)" in col_args and col_kwargs.get("default") == "'created'"):
                 self.add_message("status-field-rules", node=node, args=(col_name,))
  
- 
-        # ---- DateTime Rule ----
+    def _check_datetime_column(self, node, col_name, col_args):
+        """Check datetime column rules."""
         if col_args and "DateTime" in col_args[0]:
             # Check for timezone=True
             if "timezone=True" not in node.value.as_string():
                 self.add_message("datetime-timezone-required", node=node, args=(col_name,))
- 
  
 def register(linter: PyLinter):
     """Register the checker with pylint"""

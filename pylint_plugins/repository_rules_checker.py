@@ -1,80 +1,8 @@
-# import astroid
-# from pylint.checkers import BaseChecker
-# from pylint.lint import PyLinter
-# import os
-
-# class RepositoryRulesChecker(BaseChecker):
-#     """Checker enforcing Repository rules & conventions"""
-
-#     name = "repository-rules-checker"
-#     priority = -1
-#     msgs = {
-#         "E9910": (
-#             "Repository class '%s' must inherit from BaseAppRepository",
-#             "repository-must-inherit-baseapp",
-#             "All repositories must inherit from BaseAppRepository",
-#         ),
-#         "E9911": (
-#             "Repository class '%s' must end with 'Repository'",
-#             "repository-name-must-end-repository",
-#             "All repository class names must end with 'Repository'",
-#         ),
-#         "E9912": (
-#             "Repository file '%s' must end with '_repository.py'",
-#             "repository-file-must-match-naming",
-#             "Repository file must follow <model>_repository.py convention",
-#         ),
-#     }
-
-#     def _is_repository_file(self, node: astroid.NodeNG) -> bool:
-#         """Check if current file is *_repository.py (excluding baseapp_repository.py)"""
-#         filename = node.root().file or ""
-#         basename = os.path.basename(filename)
-#         return basename.endswith("_repository.py") and basename != "baseapp_repository.py"
-
-#     def visit_classdef(self, node: astroid.ClassDef):
-#         if not self._is_repository_file(node):
-#             return
-
-#         # Must inherit from BaseAppRepository (generic allowed)
-#         base_names = [b.as_string() for b in node.bases]
-#         if not any(name.startswith("BaseAppRepository") for name in base_names):
-#             self.add_message(
-#                 "repository-must-inherit-baseapp", node=node, args=(node.name,)
-#             )
-
-#         # Must end with Repository
-#         if not node.name.endswith("Repository"):
-#             self.add_message(
-#                 "repository-name-must-end-repository", node=node, args=(node.name,)
-#             )
-
-#     def visit_module(self, node: astroid.Module):
-#         filename = node.file or ""
-#         basename = os.path.basename(filename)
-
-#         # Skip baseapp_repository.py
-#         if basename == "baseapp_repository.py":
-#             return
-
-#         # Check repository file naming
-#         if filename and not filename.endswith("_repository.py"):
-#             self.add_message(
-#                 "repository-file-must-match-naming", node=node, args=(filename,)
-#             )
-
-
-# def register(linter: PyLinter):
-#     """Register the checker"""
-#     linter.register_checker(RepositoryRulesChecker(linter))
-
-
-
+import os
 
 import astroid
 from pylint.checkers import BaseChecker
 from pylint.lint import PyLinter
-import os
 
 
 class RepositoryRulesChecker(BaseChecker):
@@ -134,6 +62,7 @@ class RepositoryRulesChecker(BaseChecker):
         return ""
 
     def visit_classdef(self, node: astroid.ClassDef):
+        """Check class definition rules for repositories."""
         if not self._is_repository_file(node):
             return
 
@@ -151,6 +80,7 @@ class RepositoryRulesChecker(BaseChecker):
             )
 
     def visit_module(self, node: astroid.Module):
+        """Check module-level rules for repositories."""
         filename = node.file or ""
         basename = os.path.basename(filename)
 
@@ -169,9 +99,11 @@ class RepositoryRulesChecker(BaseChecker):
             )
 
     def visit_functiondef(self, node: astroid.FunctionDef):
+        """Check function definition rules for repositories."""
         self._check_function_arguments(node)
 
     def visit_asyncfunctiondef(self, node: astroid.AsyncFunctionDef):
+        """Check async function definition rules for repositories."""
         self._check_function_arguments(node)
 
     def _check_function_arguments(self, node: astroid.FunctionDef | astroid.AsyncFunctionDef):

@@ -1,9 +1,9 @@
 """API router for version 1."""
 from fastapi import APIRouter
 
-from .endpoints.health import router as health_router
-from .endpoints.migration_endpoint import router as migration_router
-from .endpoints.demo_endpoint import router as demo_router
+from app.api.v1.endpoints.health import router as health_router
+from app.api.v1.endpoints.migration_endpoint import router as migration_router
+from app.api.v1.endpoints.demo_endpoint import router as demo_router
 
 
 api_router = APIRouter()

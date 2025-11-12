@@ -18,5 +18,5 @@
         "--disable=all,C0301",
         "--enable=E9910,E9911,E9912,E9913,E9914,E9915,E9916,E9917,E9918,E9919,E9931,E9932,E9933,E9934,E9940,E9941,E9942,E9943,E9944,E9945,E9946,E9950,E9951,E9952,E9953,E9954,E9955,E9956"
     ],
-    "python.defaultInterpreterPath": "./venv/Scripts/python.exe"
+    "python.defaultInterpreterPath": "./venv/bin/python"
 }

@@ -89,7 +89,7 @@ def create_app() -> FastAPI:
     setup_error_handlers(fastapi_app)
 
     # Include API routes
-    fastapi_app.include_router(router=api_router, prefix="/demo-management-service/api/v1")
+    fastapi_app.include_router(router=api_router, prefix=f"/{config.SERVICE_NAME}/api/v1")
     
     # Mount static files for media
     fastapi_app.mount("/media", StaticFiles(directory="app/media"), name="media")
