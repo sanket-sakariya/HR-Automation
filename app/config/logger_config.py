@@ -168,7 +168,7 @@ class QueueLogHandler:
         self._queue_name = "log_queue"
         self._initialized = False
     
-    async def _initialize(self):
+    async def initialize(self):
         """Initialize the handler - creates queue and starts worker task"""
         if self._initialized:
             return
