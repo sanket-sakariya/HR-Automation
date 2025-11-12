@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 from uuid import UUID
 from typing import Annotated, Optional
@@ -5,8 +6,7 @@ from fastapi import Header, HTTPException, status
 
 from app.schema.response_schema import ListParamsSchema
 
-
-def get_user_id(user_id: Annotated[str, Header(alias="user-id")]) -> UUID:
+def get_user_id(user_id: Annotated[str, Header(alias="user-id", description="The unique identifier for the user.", example="550e8400-e29b-41d4-a716-446655440000")]) -> UUID:
     """Get user ID from 'user-id' header with UUID validation."""
     if not user_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="user-id header missing")
@@ -21,7 +21,7 @@ def get_user_id(user_id: Annotated[str, Header(alias="user-id")]) -> UUID:
             detail=f"Invalid user-id format. Expected UUID, got: '{user_id}'. Example: 550e8400-e29b-41d4-a716-446655440000"
         ) from ValueError
 
-def get_workspace_id(workspace_id: Annotated[str, Header(alias="workspace-id")]) -> UUID:
+def get_workspace_id(workspace_id: Annotated[str, Header(alias="workspace-id", description="The unique identifier for the workspace.", example="123e4567-e89b-12d3-a456-426614174000")]) -> UUID:
     """Get workspace ID from 'workspace-id' header with UUID validation."""
     if not workspace_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="workspace-id header missing")
@@ -33,7 +33,7 @@ def get_workspace_id(workspace_id: Annotated[str, Header(alias="workspace-id")])
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            detail=f"Invalid workspace-id format. Expected UUID, got: '{workspace_id}'. Example: 550e8400-e29b-41d4-a716-446655440000"
+            detail=f"Invalid workspace-id format. Expected UUID, got: '{workspace_id}'. Example: 123e4567-e89b-12d3-a456-426614174000"
         ) from ValueError
 
 

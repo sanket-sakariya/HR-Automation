@@ -8,66 +8,29 @@ from fastapi import APIRouter, HTTPException, status
 from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
-
+from sqlalchemy import text
 from app.config.database import async_engine
 from app.config.config import config
-from app.config.baseapp_config import get_base_config
 from app.config.logger_config import logger
-from app.repository.migration_repository import MigrationRepository
+from app.helper.path_helper import PathHelper
+from app.service.migration_service import get_alembic_config
+from app.schema.response_schema import ApiResponseSchema
 from app.schema.migration_schema import (
+    DatabaseOperationRequestSchema,
     DatabaseOperationResponseSchema,
+    MigrationOperationResponseSchema,
     MigrationUploadRequestSchema,
     MigrationDownloadRequestSchema,
-    MigrationOperationResponseSchema,
     RevisionRequestSchema
 )
-from app.schema.response_schema import ApiResponseSchema
+from app.repository.migration_repository import MigrationRepository
 from app.model.baseapp_model import Base
+
+# Import all models to ensure they're registered with Base.metadata
+from app.model.demo_model import DemoModel  # noqa: F401
 
 
 router = APIRouter()
-
-
-def get_alembic_config() -> Config:
-    """Get Alembic configuration."""
-    # Get the project root directory
-    # File is at: app/api/v1/endpoints/database_endpoint.py
-    # Need to go up 5 levels to reach project root
-    project_root = Path(__file__).parent.parent.parent.parent.parent
-    alembic_ini_path = project_root / "alembic.ini"
-    
-    # Verify alembic.ini exists
-    if not alembic_ini_path.exists():
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Alembic configuration file not found: {alembic_ini_path}"
-        )
-    
-    # Verify alembic directory exists
-    alembic_dir = project_root / "alembic"
-    if not alembic_dir.exists():
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Alembic directory not found: {alembic_dir}"
-        )
-    
-    # Create Alembic config with absolute path to ini file
-    alembic_cfg = Config(str(alembic_ini_path))
-    
-    # Override database URL from app config
-    # Use ASYNC_DATABASE_URL for Alembic (env.py handles async internally)
-    database_url = config.ASYNC_DATABASE_URL
-    alembic_cfg.set_main_option("sqlalchemy.url", database_url)
-    
-    # Ensure script_location is set correctly (relative to project root)
-    script_location = alembic_cfg.get_main_option("script_location")
-    if not script_location:
-        alembic_cfg.set_main_option("script_location", "alembic")
-    
-    return alembic_cfg
-
-
-
 
 @router.post("/migration/revision", response_model=ApiResponseSchema[DatabaseOperationResponseSchema])
 async def create_revision(request: RevisionRequestSchema):
@@ -217,8 +180,7 @@ async def upgrade_database():
     """
     try:
         # Check if PostgreSQL is enabled for this service
-        base_config = get_base_config()
-        if not base_config.POSTGRES_ENABLED:
+        if not config.POSTGRES_ENABLED:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="PostgreSQL is disabled for this service. Set POSTGRES_ENABLED=True to use database operations."
@@ -231,7 +193,7 @@ async def upgrade_database():
         alembic_cfg = get_alembic_config()
         
         # Check if there are any migration files
-        project_root = Path(__file__).parent.parent.parent.parent.parent
+        project_root = PathHelper.find_project_root(Path(__file__))
         versions_dir = project_root / "alembic" / "versions"
         migration_files = list(versions_dir.glob("*.py")) if versions_dir.exists() else []
         

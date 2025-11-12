@@ -71,9 +71,6 @@ class LogMessages:
     
     # Central logs
     DEMO_STATUS_UPDATED: Final[str] = "Updating demo status"
-    LOGO_UPLOAD_FAILED: Final[str] = "Logo upload failed for demo"
-    OLD_LOGO_NOT_FOUND: Final[str] = "Old logo file not found for demo, continuing with upload"
-    UNEXPECTED_LOGO_ERROR: Final[str] = "Unexpected error during logo upload for demo"
     
     # Repository logs
     CANNOT_UPDATE_DELETED_DEMO: Final[str] = "Cannot update deleted demo"

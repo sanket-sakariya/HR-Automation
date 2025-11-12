@@ -19,7 +19,6 @@ from app.exception.demo_exception import (
 
 from app.service.baseapp_service import BaseAppService
 from app.repository.demo_repository import DemoRepository
-from app.helper.file_helper import FileHelper
 from app.config.config import config
 
 class DemoService(BaseAppService):
@@ -27,36 +26,20 @@ class DemoService(BaseAppService):
     def __init__(self, db: AsyncSession):
         super().__init__(db=db)
         self.demo_repo = DemoRepository(db=db)
-        self.file_helper = FileHelper(
-            base_media_path=config.MEDIA_PATH,
-            logo_subdir=config.LOGO_SUBDIR
-        )
 
-    async def create(self, payload: DemoCreateSchema, user_id: UUID, logo_file=None) -> DemoReadSchema:        
+    async def create(self, payload: DemoCreateSchema, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:        
         """Create a new demo."""
-        demo = await self.demo_repo.insert(demo_data=payload.model_dump(), user_id=user_id)
+        demo = await self.demo_repo.insert(demo_data=payload.model_dump(), user_id=user_id, workspace_id=workspace_id)
         log_user_activity(f"{LogMessages.DEMO_CREATED}: {demo.name}", action_type="demo_create", level="info")
         
         # Set initial status
         demo.status = "created"
         
-        # Upload logo if provided
-        if logo_file:
-            logo_url = await self.file_helper.upload_logo(file=logo_file, demo_id=str(demo.demo_id))
-            # Update demo with logo URL
-            updated_demo = await self.demo_repo.update(
-                demo_id=demo.demo_id, 
-                demo_data={"logo": logo_url}, 
-                user_id=user_id
-            )
-            if updated_demo:
-                demo = updated_demo
-        
         return DemoReadSchema.model_validate(demo)
 
-    async def read(self, demo_id: UUID, user_id: UUID) -> DemoReadSchema:
+    async def read(self, demo_id: UUID, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:
         """Read a demo."""
-        demo = await self.demo_repo.get_by_id(demo_id=demo_id)
+        demo = await self.demo_repo.get_by_id(demo_id=demo_id, workspace_id=workspace_id)
         if not demo:
             raise DemoNotFoundException(demo_id=demo_id)
         return DemoReadSchema.model_validate(demo)
@@ -69,6 +52,7 @@ class DemoService(BaseAppService):
         skip: int = 0,
         limit: int = 20,
         user_id: Optional[UUID] = None,
+        workspace_id: Optional[UUID] = None,
     ) -> Dict[str, Any]:
         """List all demos."""
         
@@ -79,6 +63,7 @@ class DemoService(BaseAppService):
             skip=skip, 
             limit=limit,
             user_id=user_id,
+            workspace_id=workspace_id,
         )
         
         # Convert data to schema objects while preserving pagination structure
@@ -93,36 +78,23 @@ class DemoService(BaseAppService):
             return {"data": schema_data, "pagination": {}}
 
     
-    async def update(self, demo_id: UUID, payload: DemoUpdateSchema, user_id: UUID, logo_file=None) -> DemoReadSchema:
+    async def update(self, demo_id: UUID, payload: DemoUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:
         """Update a demo."""
-        existing_demo = await self.demo_repo.get_by_id(demo_id=demo_id)
+        existing_demo = await self.demo_repo.get_by_id(demo_id=demo_id, workspace_id=workspace_id)
         if not existing_demo:
             raise DemoNotFoundException(demo_id=demo_id)
         
-        # Handle logo upload if provided
-        if logo_file:
-            # Delete old logo if exists
-            if existing_demo.logo:
-                await self.file_helper.delete_logo(existing_demo.logo)
-            
-            # Upload new logo
-            logo_url = await self.file_helper.upload_logo(file=logo_file, demo_id=str(demo_id))
-            
-            # Add logo URL to payload
-            payload_dict = payload.model_dump(exclude_unset=True)
-            payload_dict["logo"] = logo_url
-        else:
-            payload_dict = payload.model_dump(exclude_unset=True)
+        payload_dict = payload.model_dump(exclude_unset=True)
         
         payload_dict["status"] = "updated"
-        demo = await self.demo_repo.update(demo_id=demo_id, demo_data=payload_dict, user_id=user_id)
+        demo = await self.demo_repo.update(demo_id=demo_id, demo_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
 
         log_user_activity(f"{LogMessages.DEMO_UPDATED}: {demo.name}", action_type="demo_update")
         return DemoReadSchema.model_validate(demo)
 
-    async def delete(self, demo_id: UUID, user_id: UUID) -> None:
+    async def delete(self, demo_id: UUID, user_id: UUID, workspace_id: UUID) -> None:
         """Delete a demo."""
-        deleted = await self.demo_repo.delete(demo_id=demo_id, user_id=user_id)
+        deleted = await self.demo_repo.delete(demo_id=demo_id, user_id=user_id, workspace_id=workspace_id)
         
         if not deleted:
             raise DemoNotFoundException(demo_id=demo_id)
@@ -130,7 +102,7 @@ class DemoService(BaseAppService):
         log_user_activity(f"{LogMessages.DEMO_DELETED} {demo_id}", action_type="demo_delete")
 
     
-    async def update_status(self, demo_id: UUID, payload: DemoStatusUpdateSchema, user_id: UUID) -> DemoReadSchema:
+    async def update_status(self, demo_id: UUID, payload: DemoStatusUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:
         """
         Update demo status and error messages.
         """
@@ -140,7 +112,8 @@ class DemoService(BaseAppService):
         demo = await self.demo_repo.update_status(
             demo_id=demo_id, 
             status=payload.status, 
-            user_id=user_id
+            user_id=user_id,
+            workspace_id=workspace_id
         )
 
         # Update error messages if provided
@@ -154,12 +127,13 @@ class DemoService(BaseAppService):
             demo = await self.demo_repo.update(
                 demo_id=demo_id, 
                 demo_data=update_data, 
-                user_id=user_id
+                user_id=user_id,
+                workspace_id=workspace_id
             )
 
         return DemoReadSchema.model_validate(demo)
 
-    async def update_is_active(self, demo_id: UUID, payload: DemoIsActiveUpdateSchema, user_id: UUID) -> DemoReadSchema:
+    async def update_is_active(self, demo_id: UUID, payload: DemoIsActiveUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:
         """
         Update demo is_active status.
         
@@ -179,7 +153,8 @@ class DemoService(BaseAppService):
         demo = await self.demo_repo.update_is_active(
             demo_id=demo_id, 
             is_active=payload.is_active, 
-            user_id=user_id
+            user_id=user_id,
+            workspace_id=workspace_id
         )
 
         return DemoReadSchema.model_validate(demo)

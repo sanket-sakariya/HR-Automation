@@ -126,11 +126,6 @@ paths:
                   type: string
                   maxLength: 200
                   example: "Marketing Team"
-                logo:
-                  type: string
-                  format: uri
-                  nullable: true
-                
               required:
                 - name
       responses:
@@ -227,11 +222,6 @@ paths:
                   type: string
                   maxLength: 200
                   example: "Marketing Team Updated"
-                logo:
-                  type: string
-                  format: uri
-                  nullable: true
-                
       responses:
         '200':
           description: Demo updated successfully
@@ -634,20 +624,6 @@ components:
               x-ui-order: 2
               x-validation-regex: "^[a-zA-Z0-9 ]{1,200}$"
               x-business-rule: "The demo name must be unique within the workspace."
-            logo:
-              type: string
-              format: uri
-              nullable: true
-              description: Demo logo URL
-              example: "https://example.com/logo.png"
-              x-display-name: "Logo URL"
-              x-placeholder: "https://example.com/logo.png"
-              x-component-hint: "image-uploader"
-              x-ui-group: "Primary Details"
-              x-ui-order: 3
-              x-validation-regex: "^https?://.*"
-              x-ui-multimedia-type: "image"
-            
           required:
             - demo_id
 

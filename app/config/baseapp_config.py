@@ -61,7 +61,6 @@ class BaseAppConfig(BaseSettings):
     
     # Media settings
     MEDIA_PATH: str = Field(default="app/media", env="MEDIA_PATH")
-    LOGO_SUBDIR: str = Field(default="logo", env="LOGO_SUBDIR")
     
     # Cache and messaging settings
     REDIS_URL: str = Field(default="redis://localhost:6379/0", env="REDIS_URL")

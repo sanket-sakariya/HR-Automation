@@ -1,4 +1,5 @@
 from typing import Optional, Dict, List, Any
+from sqlalchemy import select
 from sqlalchemy.exc import  SQLAlchemyError
 from uuid import UUID
 from app.config.constants import DatabaseErrorMessages
@@ -18,12 +19,14 @@ class DemoRepository(BaseAppRepository[DemoModel]):
         super().__init__(db=db, model=DemoModel)
         
 
-    async def insert(self, demo_data: Dict[str, Any], user_id: UUID = None) -> DemoModel:
+    async def insert(self, demo_data: Dict[str, Any], user_id: UUID = None, workspace_id: UUID = None) -> DemoModel:
         """Insert a new demo (async). user_id optional."""
         try:
             demo = DemoModel(**demo_data)
             if user_id is not None:
                 demo.created_by = user_id
+            if workspace_id is not None:
+                demo.workspace_id = workspace_id
 
             self.db.add(demo)
             await self.db.commit()
@@ -33,10 +36,12 @@ class DemoRepository(BaseAppRepository[DemoModel]):
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_CREATION_ERROR}: {str(e)}") from e
 
-    async def get_by_id(self, demo_id: UUID) -> DemoModel:
+    async def get_by_id(self, demo_id: UUID, workspace_id: UUID) -> DemoModel:
         """Get a demo by ID (async)."""
         try:
-            demo = await self.db.get(DemoModel, demo_id)
+            stmt = select(self.model).where(self.model.demo_id == demo_id, self.model.workspace_id == workspace_id)
+            result = await self.db.execute(stmt)
+            demo = result.scalar_one_or_none()
             # Return None if demo is deleted
             if demo and demo.status == "deleted":
                 raise DemoNotFoundException(demo_id=demo_id)
@@ -45,10 +50,10 @@ class DemoRepository(BaseAppRepository[DemoModel]):
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_RETRIEVAL_ERROR}: {str(e)}") from e
 
 
-    async def update(self, demo_id: UUID, demo_data: Dict[str, Any], user_id: UUID = None) -> DemoModel:
+    async def update(self, demo_id: UUID, demo_data: Dict[str, Any], user_id: UUID = None, workspace_id: UUID = None) -> DemoModel:
         """Update an existing demo (async)."""
         try:
-            demo = await self.get_by_id(demo_id)
+            demo = await self.get_by_id(demo_id, workspace_id=workspace_id)
             if not demo:
                 raise DemoNotFoundException(demo_id=demo_id)
             
@@ -67,10 +72,10 @@ class DemoRepository(BaseAppRepository[DemoModel]):
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_UPDATE_ERROR}: {str(e)}") from e
 
 
-    async def update_status(self, demo_id: UUID, status: str, user_id: UUID = None) -> DemoModel:
+    async def update_status(self, demo_id: UUID, status: str, user_id: UUID = None, workspace_id: UUID = None) -> DemoModel:
         """Update only the status of a demo (async). Only works if current status is not 'deleted'."""
         try:
-            demo = await self.get_by_id(demo_id)
+            demo = await self.get_by_id(demo_id, workspace_id=workspace_id)
             if not demo:
                 raise DemoNotFoundException(demo_id=demo_id)
   
@@ -85,10 +90,10 @@ class DemoRepository(BaseAppRepository[DemoModel]):
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_STATUS_UPDATE_ERROR}: {str(e)}") from e
 
 
-    async def update_is_active(self, demo_id: UUID, is_active: bool, user_id: UUID = None) -> DemoModel:
+    async def update_is_active(self, demo_id: UUID, is_active: bool, user_id: UUID = None, workspace_id: UUID = None) -> DemoModel:
         """Update only the is_active flag of a demo (async)."""
         try:
-            demo = await self.get_by_id(demo_id)
+            demo = await self.get_by_id(demo_id, workspace_id=workspace_id)
             if not demo:
                 raise DemoNotFoundException(demo_id=demo_id)
 
@@ -102,10 +107,10 @@ class DemoRepository(BaseAppRepository[DemoModel]):
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_ACTIVE_UPDATE_ERROR}: {str(e)}") from e
 
-    async def delete(self, demo_id: UUID, user_id: UUID = None) -> bool:
+    async def delete(self, demo_id: UUID, user_id: UUID = None, workspace_id: UUID = None) -> bool:
         """Soft delete a demo (update status & is_active) (async)."""
         try:
-            demo = await self.get_by_id(demo_id)
+            demo = await self.get_by_id(demo_id, workspace_id=workspace_id)
             if not demo:
                 raise DemoNotFoundException(demo_id=demo_id)
 
@@ -132,7 +137,8 @@ class DemoRepository(BaseAppRepository[DemoModel]):
         order_by: Optional[str] = None,
         skip: int = 0,
         limit: int = 20,
-        user_id: Optional[UUID] = None
+        user_id: Optional[UUID] = None,
+        workspace_id: Optional[UUID] = None
     ) -> Dict[str, Any]:
         """
         Get all demos with dynamic filters + direct search + ordering + pagination.
@@ -145,5 +151,6 @@ class DemoRepository(BaseAppRepository[DemoModel]):
             order_by=order_by,
             skip=skip,
             limit=limit,
-            user_id=user_id
+            user_id=user_id,
+            workspace_id=workspace_id
         )
