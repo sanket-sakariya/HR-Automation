@@ -209,7 +209,7 @@ class QueueLogHandler:
             try:
                 loop = asyncio.get_running_loop()
                 # If we have a running loop, schedule initialization
-                asyncio.create_task(self._initialize())
+                asyncio.create_task(self.initialize())
             except RuntimeError:
                 # No event loop running, will initialize on first async call
                 pass
