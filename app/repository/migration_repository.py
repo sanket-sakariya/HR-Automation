@@ -2,7 +2,7 @@ from __future__ import annotations
 from sqlalchemy import Table, Column, String, MetaData, inspect, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.logger_config import logger
+
 from app.exception.baseapp_exception import InternalServerErrorException
 from app.config.constants import DatabaseErrorMessages
 from app.repository.baseapp_repository import BaseAppRepository
