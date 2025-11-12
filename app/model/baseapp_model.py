@@ -5,9 +5,9 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-class BaseAppModel(Base):
+class BaseAppModel(Base):  # pylint: disable=R0903
     """Base model for all models."""
-    __abstract__ = True   # <--- Add this line
+    __abstract__ = True
 
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=True, default=datetime.utcnow, onupdate=datetime.utcnow)

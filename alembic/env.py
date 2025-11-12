@@ -87,12 +87,12 @@ import ssl
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-from sqlalchemy.ext.asyncio import create_async_engine
+
 
 from alembic import context
 
 # Import your app config
-from app.config.config import get_config
+from app.config.baseapp_config import get_base_config
 from app.model.baseapp_model import Base
 
 # Import all models to ensure they're registered with Base.metadata
@@ -103,7 +103,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 config = context.config
 
 # Get app configuration
-app_config = get_config()
+app_config = get_base_config()
 
 # Use ASYNC_DATABASE_URL directly (already uses asyncpg driver)
 database_url = app_config.ASYNC_DATABASE_URL

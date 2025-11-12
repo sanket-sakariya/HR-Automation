@@ -7,7 +7,6 @@ from pydantic import Field, ConfigDict, EmailStr, AnyHttpUrl, BaseModel
 from app.schema.baseapp_schema import (
     BaseAppSchema
 )
-from app.model.demo_model import DemoStatus
 
 
 class SocialAccountSchema(BaseModel):
@@ -32,7 +31,7 @@ class DemoCreateSchema(BaseAppSchema):
     age: Optional[int] = Field(default=None, gt=0, lt=150)
     progress: Optional[float] = Field(default=None, ge=0.0, le=100.0)
     is_active: Optional[bool] = Field(default=True)
-    status: Optional[DemoStatus] = Field(default=DemoStatus.CREATING)
+    status: Optional[str] = Field(default="creating")
     start_date: Optional[date] = Field(default=None)
     social_accounts: Optional[List[SocialAccountSchema]] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
@@ -83,7 +82,7 @@ class DemoUpdateSchema(BaseAppSchema):
     age: Optional[int] = Field(default=None, gt=0, lt=150)
     progress: Optional[float] = Field(default=None, ge=0.0, le=100.0)
     is_active: Optional[bool] = Field(default=None)
-    status: Optional[DemoStatus] = Field(default=None)
+    status: Optional[str] = Field(default=None)
     start_date: Optional[date] = Field(default=None)
     social_accounts: Optional[List[SocialAccountSchema]] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
@@ -103,7 +102,7 @@ class DemoUpdateSchema(BaseAppSchema):
 class StatusSchema(BaseAppSchema):
     """Represents the current status of an entity."""
 
-    status: DemoStatus = Field(..., description="Current status of the entity")
+    status: str = Field(..., description="Current status of the entity")
     is_active: bool = True
 
     model_config = ConfigDict(
@@ -114,7 +113,7 @@ class StatusSchema(BaseAppSchema):
 class DemoStatusUpdateSchema(BaseAppSchema):
     """Schema for updating demo status and error messages."""
 
-    status: DemoStatus = Field(..., description="New status of the demo")
+    status: str = Field(..., description="New status of the demo")
     error_message: Optional[str] = Field(default=None, description="Technical error message for debugging")
     error_user_message: Optional[str] = Field(default=None, description="User-friendly error message for display")
 
@@ -176,7 +175,7 @@ class DemoReadSchema(BaseAppSchema):
     updated_at: Optional[datetime] = Field(default=None, description="Updated at")
     deleted_at: Optional[datetime] = Field(default=None, description="Deleted at")
     deleted_by: Optional[UUID] = Field(default=None, description="Deleted by")
-    status: DemoStatus = Field(..., description="Current status of the demo")
+    status: str = Field(..., description="Current status of the demo")
     is_active: bool = Field(default=True, description="Whether the demo is active")
     social_accounts: Optional[List[SocialAccountSchema]] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)

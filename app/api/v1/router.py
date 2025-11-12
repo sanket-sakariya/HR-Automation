@@ -1,12 +1,13 @@
+"""API router for version 1."""
 from fastapi import APIRouter
 
-from app.api.v1.endpoints.health import router as health_router
-from app.api.v1.endpoints.demo_endpoint import router as demo_router
-from app.api.v1.endpoints.migration_endpoint import router as database_router
+from .endpoints.health import router as health_router
+from .endpoints.migration_endpoint import router as migration_router
+from .endpoints.demo_endpoint import router as demo_router
 
 
-api_router: APIRouter = APIRouter()
+api_router = APIRouter()
 
-api_router.include_router(router=health_router,  tags=["Health"])  # /health/
-api_router.include_router(router=demo_router,  tags=["Demo"])  # /demo/
-api_router.include_router(router=database_router,  tags=["Database"])  # /database/
+api_router.include_router(health_router, tags=["health"])
+api_router.include_router(migration_router, tags=["migrations"])
+api_router.include_router(demo_router, tags=["demos"])

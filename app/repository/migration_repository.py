@@ -1,35 +1,27 @@
 from __future__ import annotations
-from typing import Optional
-from sqlalchemy import Table, Column, String, MetaData, select, inspect
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy import Table, Column, String, MetaData, inspect, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.database import async_engine
-from app.config.config import config
 from app.config.logger_config import logger
 from app.exception.baseapp_exception import InternalServerErrorException
 from app.config.constants import DatabaseErrorMessages
+from app.repository.baseapp_repository import BaseAppRepository
+from app.model.migration_model import MigrationModel
 
 
-class MigrationRepository:
+class MigrationRepository(BaseAppRepository[MigrationModel]):
     """Repository for migration-related database operations."""
-    
-    def __init__(self, engine: Optional[AsyncEngine] = None):
+
+    def __init__(self, db: AsyncSession):
         """
         Initialize migration repository.
         
         Args:
-            engine: Optional async engine. Defaults to async_engine from config.
-            
-        Note:
-            If POSTGRES_ENABLED=False for this service and no engine is provided, the repository will be created
-            but operations will fail. Endpoints should check POSTGRES_ENABLED before using this.
+            db: The asynchronous database session.
         """
-        self.engine = engine or async_engine
+        super().__init__(db, MigrationModel)
+        self.db = db
         
-        if not self.engine:
-            # Don't raise error here - let endpoints handle it gracefully
-            # This allows the repository to be created even if PostgreSQL is disabled for this service
-            pass
         # Define alembic_version table structure
         self.metadata = MetaData()
         self.alembic_version_table = Table(
@@ -45,62 +37,26 @@ class MigrationRepository:
         
         Returns:
             True if the table exists, False otherwise
-            
-        Raises:
-            InternalServerErrorException: If engine is not available (PostgreSQL disabled for this service)
         """
-        if not self.engine:
-            raise InternalServerErrorException(
-                message="Database engine not available. PostgreSQL is disabled for this service (POSTGRES_ENABLED=False)."
-            )
-        
         try:
-            async with self.engine.connect() as connection:
-                # Use SQLAlchemy inspect to check if table exists
-                # For async engines, we need to use run_sync to access the inspector
-                def check_table(sync_conn):
-                    inspector = inspect(sync_conn)
-                    return 'alembic_version' in inspector.get_table_names(schema='public')
-                
-                table_exists = await connection.run_sync(check_table)
-                return table_exists
+            def check_table(sync_conn):
+                inspector = inspect(sync_conn)
+                return 'alembic_version' in inspector.get_table_names(schema='public')
+            
+            table_exists = await self.db.run_sync(check_table)
+            return table_exists
         except Exception as e:
             logger.error(f"Error checking alembic_version table existence: {str(e)}")
             raise InternalServerErrorException(
                 message=f"{DatabaseErrorMessages.DATA_RETRIEVAL_ERROR}: {str(e)}"
             ) from e
     
-    async def get_current_revision(self) -> Optional[str]:
-        """
-        Get the current database revision from alembic_version table.
+    async def get_current_revision(self) -> str:
+        """Get the current revision of the database."""
+        if not await self.check_alembic_version_table_exists():
+            return ""
         
-        Returns:
-            Current revision string if exists, None if table doesn't exist or no revision found
-            
-        Raises:
-            InternalServerErrorException: If engine is not available (PostgreSQL disabled for this service)
-        """
-        if not self.engine:
-            raise InternalServerErrorException(
-                message="Database engine not available. PostgreSQL is disabled for this service (POSTGRES_ENABLED=False)."
-            )
-        
-        try:
-            # First check if table exists
-            table_exists = await self.check_alembic_version_table_exists()
-            
-            if not table_exists:
-                return None
-            
-            # Get current revision using SQLAlchemy select
-            async with self.engine.connect() as connection:
-                query = select(self.alembic_version_table.c.version_num).limit(1)
-                result = await connection.execute(query)
-                revision = result.scalar_one_or_none()
-                return revision
-        except Exception as e:
-            logger.error(f"Error getting current revision: {str(e)}")
-            raise InternalServerErrorException(
-                message=f"{DatabaseErrorMessages.DATA_RETRIEVAL_ERROR}: {str(e)}"
-            ) from e
-
+        query = text(f"SELECT version_num FROM {self.alembic_version_table.name}")
+        result = await self.db.execute(query)
+        revision = result.scalar_one_or_none()
+        return revision or ""

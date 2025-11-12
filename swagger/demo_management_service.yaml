@@ -316,7 +316,13 @@ paths:
             format: uuid
           description: Demo identifier
           example: "bd08612-1a9d-4a6e-8431-1demoid"
-        
+        - in: query
+          name: status
+          required: true
+          schema:
+            type: string
+          description: The new status for the demo
+          example: "created"
       requestBody:
         required: true
         content:

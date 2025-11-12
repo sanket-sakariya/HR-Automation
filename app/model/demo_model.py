@@ -1,5 +1,7 @@
-import uuid
 import datetime
+import uuid
+from enum import Enum
+
 from sqlalchemy import (
     Column,
     String,
@@ -9,23 +11,13 @@ from sqlalchemy import (
     Text,
     Date,
     DateTime,
-    Enum,
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+
 from app.model.baseapp_model import BaseAppModel
-import enum
 
 
-class DemoStatus(enum.Enum):
-    CREATING = "creating"
-    CREATED = "created"
-    DELETING = "deleting"
-    DELETED = "deleted"
-    UPDATING = "updating"
-    UPDATED = "updated"
-
-
-class DemoModel(BaseAppModel):
+class DemoModel(BaseAppModel):  # pylint: disable=R0903
     """Demo model."""
     __tablename__ = "demo"
     demo_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

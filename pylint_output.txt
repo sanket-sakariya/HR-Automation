@@ -1,0 +1,6 @@
+************* Module demo_model
+app/model/demo_model.py:48:0: R0903: Too few public methods (0/2) (too-few-public-methods)
+
+------------------------------------------------------------------
+Your code has been rated at 9.81/10 (previous run: 9.62/10, +0.19)
+
