@@ -36,8 +36,6 @@ class DemoCreateSchema(BaseAppSchema):
     social_accounts: Optional[List[SocialAccountSchema]] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
     preferences: Optional[PreferencesSchema] = Field(default=None)
-    workspace_id: Optional[UUID] = Field(default=None)
-    user_id: Optional[UUID] = Field(default=None)
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -64,9 +62,7 @@ class DemoCreateSchema(BaseAppSchema):
                 "preferences": {
                     "newsletter": True,
                     "notifications_enabled": False
-                },
-                "workspace_id": "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d",
-                "user_id": "b3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4e"
+                }
             }
         }
     )
@@ -180,8 +176,6 @@ class DemoReadSchema(BaseAppSchema):
     social_accounts: Optional[List[SocialAccountSchema]] = Field(default=None)
     tags: Optional[List[str]] = Field(default=None)
     preferences: Optional[PreferencesSchema] = Field(default=None)
-    workspace_id: Optional[UUID] = Field(default=None)
-    user_id: Optional[UUID] = Field(default=None)
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -223,9 +217,7 @@ class DemoReadSchema(BaseAppSchema):
                 "preferences": {
                     "newsletter": True,
                     "notifications_enabled": False
-                },
-                "workspace_id": "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d",
-                "user_id": "b3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4e"
+                }
             }
         },
     )

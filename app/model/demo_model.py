@@ -27,5 +27,3 @@ class DemoModel(BaseAppModel):  # pylint: disable=R0903
     social_accounts = Column(JSONB, nullable=True)
     tags = Column(ARRAY(String), nullable=True)
     preferences = Column(JSONB, nullable=True)
-    workspace_id = Column(UUID(as_uuid=True), nullable=True)
-    user_id = Column(UUID(as_uuid=True), nullable=True)

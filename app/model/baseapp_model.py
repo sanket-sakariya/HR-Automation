@@ -15,6 +15,7 @@ class BaseAppModel(Base):  # pylint: disable=R0903
     created_by = Column(UUID(as_uuid=True), nullable=False)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
     deleted_by = Column(UUID(as_uuid=True), nullable=True)
+    workspace_id = Column(UUID(as_uuid=True), nullable=True)
     status = Column(String(20), nullable=False, default="created")
     is_active = Column(Boolean, nullable=False, default=True)
     error_message = Column(Text, nullable=True)
