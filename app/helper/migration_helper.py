@@ -2,6 +2,7 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Optional, List
+from botocore.exceptions import ClientError, NoCredentialsError
 
 from app.config.config import config
 from app.config.logger_config import logger
@@ -25,7 +26,7 @@ class MigrationHelper:
             region=config.WASABI_REGION
         )
         
-        if self.wasabi_helper._is_configured():
+        if self.wasabi_helper.s3_client:
             logger.info("Migration helper initialized with Wasabi/S3")
         else:
             logger.warning(
@@ -36,7 +37,7 @@ class MigrationHelper:
     
     def _is_configured(self) -> bool:
         """Check if Wasabi/S3 is properly configured."""
-        return self.wasabi_helper._is_configured()
+        return bool(self.wasabi_helper.s3_client)
     
     def upload_migrations(
         self,
@@ -86,11 +87,11 @@ class MigrationHelper:
                     f"(version: {version or 'latest'})"
                 )
                 return True
-            else:
-                logger.error("Failed to upload migrations to any location")
-                return False
+
+            logger.error("Failed to upload migrations to any location")
+            return False
             
-        except Exception as e:
+        except (ClientError, NoCredentialsError) as e:
             logger.error(f"Error uploading migrations: {str(e)}", exc_info=True)
             return False
     
@@ -136,7 +137,7 @@ class MigrationHelper:
             
             return success
             
-        except Exception as e:
+        except (ClientError, NoCredentialsError) as e:
             logger.error(f"Error downloading migrations: {str(e)}", exc_info=True)
             return False
     
@@ -191,7 +192,6 @@ class MigrationHelper:
             versions = [p for p in prefixes if p and p != 'latest']
             
             return sorted(versions)
-        except Exception as e:
+        except (ClientError, NoCredentialsError) as e:
             logger.error(f"Error listing migration versions: {str(e)}")
             return []
-

