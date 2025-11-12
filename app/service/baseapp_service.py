@@ -3,7 +3,7 @@ from __future__ import annotations
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class BaseAppService:
+class BaseAppService:  # pylint: disable=R0903
     """Base service class that can be reused by all services."""
     
     def __init__(self, db: AsyncSession):

@@ -37,7 +37,6 @@ async def create_revision(
     Requires a message in the request body: {"message": "your migration message"}
     """
     result = await migration_service.create_revision(request.message)
-    logger.info(f"Revision created: {result.revision_id}")
     return ApiResponseSchema[MigrationResponseSchema](
         success=True, data=result, message="Revision created successfully"
     )
@@ -56,7 +55,6 @@ async def upgrade_database(
     Automatically upgrades to the latest migration without requiring any request body.
     """
     result = await migration_service.upgrade_database()
-    logger.info(f"Database upgrade completed. Current revision: {result.current_revision}")
     return ApiResponseSchema[MigrationResponseSchema](
         success=True,
         data=result,
@@ -73,7 +71,6 @@ async def upload_migrations(
 ):
     """Upload migration files to Wasabi/S3."""
     result = await migration_service.upload_migrations()
-    logger.info(f"Migration upload completed: {result.location}")
     return ApiResponseSchema[MigrationResponseSchema](
         success=True,
         data=result,
@@ -90,9 +87,6 @@ async def download_migrations(
 ):
     """Download migration files from Wasabi/S3."""
     result = await migration_service.download_migrations()
-    logger.info(
-        f"Migration download completed: {result.file_count} files in {result.location}"
-    )
     return ApiResponseSchema[MigrationResponseSchema](
         success=True,
         data=result,

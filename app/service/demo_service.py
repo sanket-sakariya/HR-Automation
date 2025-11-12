@@ -18,7 +18,7 @@ from app.exception.demo_exception import (
 
 from app.service.baseapp_service import BaseAppService
 from app.repository.demo_repository import DemoRepository
-from app.config.config import config
+
 
 class DemoService(BaseAppService):
     """Demo service."""
@@ -48,14 +48,14 @@ class DemoService(BaseAppService):
         
         return DemoReadSchema.model_validate(demo)
 
-    async def read(self, demo_id: UUID, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:
+    async def read(self, demo_id: UUID, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:  # pylint: disable=W0613
         """Read a demo."""
         demo = await self.demo_repo.get_by_id(demo_id=demo_id, workspace_id=workspace_id)
         if not demo:
             raise DemoNotFoundException(demo_id=demo_id)
         return DemoReadSchema.model_validate(demo)
     
-    async def list_all(
+    async def list_all(  # pylint: disable=R0913, R0917
         self,
         filters: Optional[List[Dict[str, Any]]] = None,
         search: Optional[str] = None,
@@ -83,10 +83,10 @@ class DemoService(BaseAppService):
             pagination = result.get("pagination", {})
             schema_data = [DemoReadSchema.model_validate(ws) for ws in data]
             return {"data": schema_data, "pagination": pagination}
-        else:
-            # Fallback for non-dict results
-            schema_data = [DemoReadSchema.model_validate(ws) for ws in result]
-            return {"data": schema_data, "pagination": {}}
+
+        # Fallback for non-dict results
+        schema_data = [DemoReadSchema.model_validate(ws) for ws in result]
+        return {"data": schema_data, "pagination": {}}
 
     
     async def update(self, demo_id: UUID, payload: DemoUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:

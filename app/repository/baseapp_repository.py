@@ -126,7 +126,8 @@ class BaseAppRepository(Generic[ModelType]):
         order_by: Optional[str] = None,
         skip: int = 0,
         limit: int = 20,
-        user_id: Optional[UUID] = None
+        user_id: Optional[UUID] = None,
+        workspace_id: Optional[UUID] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Get all records with dynamic filters + search + ordering + pagination.
