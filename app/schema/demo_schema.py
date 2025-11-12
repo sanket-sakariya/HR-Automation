@@ -10,6 +10,7 @@ from app.schema.baseapp_schema import (
 
 
 class SocialAccountSchema(BaseModel):
+    """Schema for social account details."""
     platform: str
     username: str
     url: AnyHttpUrl
@@ -17,6 +18,7 @@ class SocialAccountSchema(BaseModel):
     verified: bool
 
 class PreferencesSchema(BaseModel):
+    """Schema for user preferences."""
     newsletter: bool
     notifications_enabled: bool
 

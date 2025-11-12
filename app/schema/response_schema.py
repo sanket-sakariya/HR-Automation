@@ -24,7 +24,7 @@ class StandardResponse(BaseModel, Generic[T]):
     errors: List[ErrorDetail] = Field(default_factory=list, description="Detailed error information")
 
 
-class SuccessResponse(StandardResponse[T]):
+class SuccessResponse(StandardResponse[T]):  # pylint: disable=R0903
     """Success response format."""
     success: bool = Field(True, description="Operation was successful")
     error_message: Optional[str] = Field(None, description="No error message for success")
@@ -65,6 +65,7 @@ class PaginatedResponseSchema(BaseModel, Generic[T]):
 
 
 class ListParamsSchema(BaseModel):
+    """Schema for list parameters."""
     offset: int
     limit: int
     order_by: str
