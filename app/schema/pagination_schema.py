@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 
 class PaginationParams(BaseModel):
+    """ Pagination Schema """
     filters: Optional[List[Dict[str, Any]]] = Field(None, description="Filters to apply")
     search: Optional[str] = Field(None, description="Search query")
     order_by: Optional[str] = Field(None, description="Order by field")

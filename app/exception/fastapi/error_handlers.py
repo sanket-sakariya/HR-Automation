@@ -1,6 +1,6 @@
-from fastapi import HTTPException, Request, status
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi import HTTPException, Request, status 
+from fastapi.exceptions import RequestValidationError # pylint: disable=import-error
+from fastapi.responses import JSONResponse # pylint: disable=import-error
 
 from app.config.logger_config import log_central
 from app.exception.baseapp_exception import BaseAppException
