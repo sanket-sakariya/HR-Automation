@@ -146,7 +146,7 @@ class MigrationService(BaseAppService):
 
     async def upload_migrations(self) -> MigrationResponseSchema:
         """Upload migration files to Wasabi/S3."""
-        if not self.migration_helper._is_configured():  # pylint: disable=protected-access
+        if not self.migration_helper._is_configured(): 
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Wasabi/S3 not configured.",
@@ -181,7 +181,7 @@ class MigrationService(BaseAppService):
 
     async def download_migrations(self) -> MigrationResponseSchema:
         """Download migration files from Wasabi/S3."""
-        if not self.migration_helper._is_configured():  # pylint: disable=protected-access
+        if not self.migration_helper._is_configured():  
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Wasabi/S3 not configured.",

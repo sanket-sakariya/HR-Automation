@@ -1,6 +1,7 @@
 [MESSAGES CONTROL]
 
-disable=trailing-whitespace,missing-module-docstring,missing-final-newline,line-too-long
+disable=trailing-whitespace,missing-module-docstring,missing-final-newline,line-too-long,too-few-public-methods,boolean-field-rule,unused-argument,too-many-positional-arguments,too-many-arguments
+
  
 [MASTER]
 

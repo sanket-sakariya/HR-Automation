@@ -12,7 +12,7 @@ from app.exception.fastapi.error_handlers import setup_error_handlers
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # pylint: disable=unused-argument
+async def lifespan(app: FastAPI): 
     """Manage application lifespan events."""
     from app.config.baseapp_config import get_base_config
     base_config = get_base_config()

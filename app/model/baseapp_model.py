@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-class BaseAppModel(Base):  # pylint: disable=R0903
+class BaseAppModel(Base):  
     """Base model for all models."""
     __abstract__ = True
 

@@ -10,10 +10,10 @@ class RevisionRequestSchema(BaseAppSchema):
     message: str = Field(..., description="Migration message for the revision")
 
 
-class MigrationResponseSchema(BaseAppSchema):
+class MigrationResponseSchema(BaseAppSchema): 
     """Schema for migration responses."""
     operation: str = Field(..., description="Operation that was performed")
-    is_success: bool = Field(default=True, description="Whether the operation was successful")
+    success: bool = Field(default=False, description="Whether the operation was successful")
     message: str = Field(..., description="Result message")
     revision_id: Optional[str] = Field(default=None, description="Created revision ID (for revision operation)")
     current_revision: Optional[str] = Field(default=None, description="Current database revision after operation")

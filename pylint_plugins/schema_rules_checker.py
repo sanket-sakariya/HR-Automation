@@ -1,4 +1,3 @@
-# pylint_plugins/schema_rules_checker.py
 import astroid
 from pylint.checkers import BaseChecker
 from pylint.lint import PyLinter

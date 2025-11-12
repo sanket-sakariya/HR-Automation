@@ -347,7 +347,7 @@ _GLOBAL_QUEUE_HANDLER = None
 
 def configure_logging() -> None:
     """Configure logging with queue integration"""
-    global _GLOBAL_QUEUE_HANDLER  # pylint: disable=global-statement
+    global _GLOBAL_QUEUE_HANDLER  
     config = get_base_config()
 
     logger.remove()
@@ -379,7 +379,7 @@ def configure_logging() -> None:
 
 async def shutdown_logging() -> None:
     """Gracefully shutdown logging and close RabbitMQ connection"""
-    global _GLOBAL_QUEUE_HANDLER  # pylint: disable=global-statement
+    global _GLOBAL_QUEUE_HANDLER 
     
     if _GLOBAL_QUEUE_HANDLER:
         # Stop handler and close RabbitMQ connection

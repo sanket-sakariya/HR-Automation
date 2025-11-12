@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 from app.model.baseapp_model import BaseAppModel
 
 
-class DemoModel(BaseAppModel):  # pylint: disable=R0903
+class DemoModel(BaseAppModel):
     """Demo model."""
     __tablename__ = "demo"
     demo_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)

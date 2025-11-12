@@ -48,14 +48,14 @@ class DemoService(BaseAppService):
         
         return DemoReadSchema.model_validate(demo)
 
-    async def read(self, demo_id: UUID, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:  # pylint: disable=W0613
+    async def read(self, demo_id: UUID, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:  
         """Read a demo."""
         demo = await self.demo_repo.get_by_id(demo_id=demo_id, workspace_id=workspace_id)
         if not demo:
             raise DemoNotFoundException(demo_id=demo_id)
         return DemoReadSchema.model_validate(demo)
     
-    async def list_all(  # pylint: disable=R0913, R0917
+    async def list_all(  
         self,
         filters: Optional[List[Dict[str, Any]]] = None,
         search: Optional[str] = None,
