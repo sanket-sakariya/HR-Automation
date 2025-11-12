@@ -36,3 +36,4 @@ aio-pika==9.5.7
 
 # S3/Wasabi support for migration storage
 boto3==1.34.0
+pylint

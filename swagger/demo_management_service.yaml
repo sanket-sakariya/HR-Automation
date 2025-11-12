@@ -435,7 +435,7 @@ components:
   
   parameters:
     UserIdHeader:
-      name: user_id
+      name: user-id
       in: header
       required: true
       schema:
@@ -445,11 +445,12 @@ components:
       example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
     
     WorkspaceIdHeader:
-      name: workspace_id
+      name: workspace-id
       in: header
       required: true
       schema:
         type: string
+        format: uuid
         format: uuid
       description: ID of the demo
       example: "bd08612-1a9d-4a6e-8431-1workspaceid"
