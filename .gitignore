@@ -31,10 +31,8 @@ pytest_cache/
 
 # Environment files - DO NOT COMMIT
 .env
-.env.*
-!.env.example
-!.env.template
-
+.env.production
 
 # Migrations
-versions/
+versions/*
+
