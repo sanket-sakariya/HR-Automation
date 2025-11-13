@@ -27,6 +27,7 @@ from app.schema.demo_schema import (
     DemoIsActiveUpdateSchema,
     DemoReadSchema,
     DemoUpdateSchema,
+    DemoStatusUpdateSchema
 )
 from app.schema.response_schema import (
     ApiResponseSchema,
@@ -239,7 +240,7 @@ async def delete_demo(
 )
 async def update_demo_status(
     demo_id: UUID,
-    payload: DemoStatusUpdateSchema,
+    payload: DemoStatusUpdateSchema,  # Use the correct schema
     db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
     workspace_id: UUID = Depends(get_workspace_id),
@@ -260,7 +261,7 @@ async def update_demo_status(
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_STATUS_UPDATE_FAILED}: {str(e)}"
         ) from e
 

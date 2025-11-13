@@ -27,3 +27,5 @@ class DemoModel(BaseAppModel):
     social_accounts = Column(JSONB, nullable=True)
     tags = Column(ARRAY(String), nullable=True)
     preferences = Column(JSONB, nullable=True)
+    error_message = Column(Text, nullable=True)
+    error_user_message = Column(Text, nullable=True)

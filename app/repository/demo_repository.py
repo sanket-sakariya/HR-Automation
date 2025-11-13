@@ -74,7 +74,7 @@ class DemoRepository(BaseAppRepository[DemoModel]):
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_UPDATE_ERROR}: {str(e)}") from e
 
 
-    async def update_status(self, demo_id: UUID, status: str, user_id: UUID = None, workspace_id: UUID = None) -> DemoModel:
+    async def update_status(self, demo_id: UUID, status: str, error_message: str = None, error_user_message: str = None, user_id: UUID = None, workspace_id: UUID = None) -> DemoModel:
         """Update only the status of a demo (async). Only works if current status is not 'deleted'."""
         try:
             demo = await self.get_by_id(demo_id, workspace_id=workspace_id)
@@ -82,6 +82,8 @@ class DemoRepository(BaseAppRepository[DemoModel]):
                 raise DemoNotFoundException(demo_id=demo_id)
   
             demo.status = status
+            demo.error_message = error_message
+            demo.error_user_message = error_user_message
             if user_id is not None:
                 demo.updated_by = user_id
 

@@ -9,7 +9,8 @@ from app.schema.demo_schema import (
     DemoCreateSchema, 
     DemoUpdateSchema, 
     DemoReadSchema,
-    DemoIsActiveUpdateSchema
+    DemoIsActiveUpdateSchema,
+    DemoStatusUpdateSchema
 )
 from app.exception.demo_exception import (
     DemoNotFoundException,
@@ -122,16 +123,18 @@ class DemoService(BaseAppService):
         log_user_activity(f"{LogMessages.DEMO_DELETED} {demo_id}", action_type="demo_delete")
 
     
-    async def update_status(self, demo_id: UUID, payload: str, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:
+    async def update_status(self, demo_id: UUID, payload: DemoStatusUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoReadSchema:
         """
         Update demo status and error messages.
         """
-        log_central(message=f"{LogMessages.DEMO_STATUS_UPDATED} {demo_id} status to {payload}", level="info")
+        log_central(message=f"{LogMessages.DEMO_STATUS_UPDATED} {demo_id} status to {payload.status}", level="info")
         
         # Update status via repository
         demo = await self.demo_repo.update_status(
             demo_id=demo_id, 
-            status=payload, 
+            status=payload.status, 
+            error_message=payload.error_message,
+            error_user_message=payload.error_user_message,
             user_id=user_id,
             workspace_id=workspace_id
         )
