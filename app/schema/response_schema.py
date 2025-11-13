@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Generic, TypeVar, Optional, List, Union
+from typing import Any, Generic, TypeVar, Optional, List, Union, Dict
 from pydantic import BaseModel, Field, ConfigDict
 
 T = TypeVar("T")
@@ -70,4 +70,4 @@ class ListParamsSchema(BaseModel):
     limit: int
     order_by: str
     search: Optional[str]
-    filters: Optional[List[str]]
+    filters: Optional[Union[List[Dict[str, Any]], Dict[str, Any]]]
