@@ -1,7 +1,6 @@
 from __future__ import annotations
-from sqlalchemy import Table, Column, String, MetaData, inspect, text
-from sqlalchemy.ext.asyncio import AsyncSession
-
+from sqlalchemy import MetaData, Table, inspect, text, Column, String
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.exception.baseapp_exception import InternalServerErrorException
 from app.config.constants import DatabaseErrorMessages
@@ -12,7 +11,7 @@ from app.model.migration_model import MigrationModel
 class MigrationRepository(BaseAppRepository[MigrationModel]):
     """Repository for migration-related database operations."""
 
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db):
         """
         Initialize migration repository.
         
@@ -32,31 +31,25 @@ class MigrationRepository(BaseAppRepository[MigrationModel]):
         )
     
     async def check_alembic_version_table_exists(self) -> bool:
-        """
-        Check if the alembic_version table exists in the database.
-        
-        Returns:
-            True if the table exists, False otherwise
-        """
+        """Check if the alembic_version table exists."""
         try:
-            def check_table(sync_session):
-                with sync_session.connection() as sync_conn:
-                    inspector = inspect(sync_conn)
-                    return inspector.has_table(self.alembic_version_table.name, schema='public')
+            async with self.db.begin():
+                conn = await self.db.connection()
+                inspector = inspect(conn.sync_connection)
+                return inspector.has_table(self.alembic_version_table.name)
+        except SQLAlchemyError:
+            return False
 
-            table_exists = await self.db.run_sync(check_table)
-            return table_exists
-        except Exception as e:
-            raise InternalServerErrorException(
-                message=f"{DatabaseErrorMessages.DATA_RETRIEVAL_ERROR}: {str(e)}"
-            ) from e
-    
     async def get_current_revision(self) -> str:
         """Get the current revision of the database."""
-        if not await self.check_alembic_version_table_exists():
-            return ""
-        
-        query = text(f"SELECT version_num FROM {self.alembic_version_table.name}")
-        result = await self.db.execute(query)
-        revision = result.scalar_one_or_none()
-        return revision or ""
+        try:
+            if not await self.check_alembic_version_table_exists():
+                return ""
+            
+            async with self.db.begin():
+                query = text(f"SELECT version_num FROM {self.alembic_version_table.name}")
+                result = await self.db.execute(query)
+                revision = result.scalar_one_or_none()
+                return revision or ""
+        except SQLAlchemyError as e:
+            raise InternalServerErrorException(f"Error getting current revision: {e}") from e

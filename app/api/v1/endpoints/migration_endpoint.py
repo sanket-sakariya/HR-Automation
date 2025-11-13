@@ -15,11 +15,9 @@ from app.service.migration_service import MigrationService
 router = APIRouter()
 
 
-def get_migration_service(
-    db: AsyncSession = Depends(get_async_db),
-) -> MigrationService:
-    """Get the migration service with a database session."""
-    return MigrationService(db)
+def get_migration_service() -> MigrationService:
+    """Get the migration service."""
+    return MigrationService()
 
 
 @router.post(

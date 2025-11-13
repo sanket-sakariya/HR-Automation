@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import os
+import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from alembic import command
 from alembic.config import Config
@@ -14,22 +14,19 @@ from alembic.script import ScriptDirectory
 
 from app.config.baseapp_config import get_base_config
 from app.config.database import async_session_local
-
+from app.config.logger_config import logger
 from app.helper.migration_helper import MigrationHelper
 from app.helper.path_helper import PathHelper
 from app.repository.migration_repository import MigrationRepository
 from app.schema.migration_schema import MigrationResponseSchema
-from app.service.baseapp_service import BaseAppService
 
 
-class MigrationService(BaseAppService):
+class MigrationService:
     """Service for handling database migrations."""
 
-    def __init__(self, db: AsyncSession):
-        super().__init__(db)
+    def __init__(self):
         self.base_config = get_base_config()
         self.alembic_cfg = self._get_alembic_config()
-        self.migration_repo = MigrationRepository(db)
         self.migration_helper = MigrationHelper()
 
     def _get_alembic_config(self) -> Config:
@@ -68,21 +65,40 @@ class MigrationService(BaseAppService):
         return alembic_cfg
 
     async def _run_alembic_command(self, command_name: str, **kwargs):
-        """Run an Alembic command in a separate thread to avoid event loop conflicts."""
-        original_cwd = os.getcwd()
+        """Run an Alembic command as a subprocess to avoid event loop conflicts."""
         project_root = PathHelper.find_project_root(Path(__file__))
 
-        def run_command_in_thread():
-            try:
-                os.chdir(str(project_root))
-                alembic_func = getattr(command, command_name)
-                alembic_func(self.alembic_cfg, **kwargs)
-            finally:
-                os.chdir(original_cwd)
+        cmd = ["alembic", command_name]
+        if command_name == "revision":
+            if kwargs.get("autogenerate"):
+                cmd.append("--autogenerate")
+            if "message" in kwargs:
+                cmd.extend(["-m", kwargs["message"]])
+        elif command_name == "upgrade":
+            cmd.append(kwargs.get("revision", "head"))
 
-        loop = asyncio.get_event_loop()
-        with ThreadPoolExecutor() as executor:
-            return await loop.run_in_executor(executor, run_command_in_thread)
+        def run_command_in_subprocess():
+            result = subprocess.run(
+                cmd,
+                cwd=str(project_root),
+                capture_output=True,
+                text=True,
+                check=False,
+                env=os.environ,
+            )
+            if result.returncode != 0:
+                logger.error(f"Alembic command failed: {cmd}")
+                logger.error(f"STDOUT: {result.stdout}")
+                logger.error(f"STDERR: {result.stderr}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Alembic command failed: {result.stderr}",
+                )
+            logger.info(f"Alembic command successful: {cmd}")
+            logger.info(f"STDOUT: {result.stdout}")
+            return result
+
+        await asyncio.to_thread(run_command_in_subprocess)
 
     async def create_revision(self, message: str) -> MigrationResponseSchema:
         """Create a new Alembic revision."""
@@ -92,7 +108,13 @@ class MigrationService(BaseAppService):
                 detail="PostgreSQL is disabled. Set POSTGRES_ENABLED=True.",
             )
 
-        current_db_rev = await self.migration_repo.get_current_revision()
+        # Check current revision in its own session scope
+        current_db_rev = None
+        async with async_session_local() as check_db_session:
+            check_migration_repo = MigrationRepository(check_db_session)
+            current_db_rev = await check_migration_repo.get_current_revision()
+        
+        # Validate the revision exists in local files (outside session scope)
         if current_db_rev:
             script = ScriptDirectory.from_config(self.alembic_cfg)
             try:
@@ -103,10 +125,12 @@ class MigrationService(BaseAppService):
                     detail=f"DB rev '{current_db_rev}' not in local files.",
                 ) from e
 
+        # Run alembic command (no database session needed here)
         await self._run_alembic_command(
             "revision", autogenerate=True, message=message
         )
 
+        # Get the new revision in a fresh session
         async with async_session_local() as new_db_session:
             new_migration_repo = MigrationRepository(new_db_session)
             script = ScriptDirectory.from_config(self.alembic_cfg)
@@ -138,18 +162,20 @@ class MigrationService(BaseAppService):
             )
 
         await self._run_alembic_command("upgrade", revision="head")
-        await asyncio.sleep(0.1)
-        current_rev = await self.migration_repo.get_current_revision()
-        return MigrationResponseSchema(
-            operation="upgrade",
-            success=True,
-            message="Database upgraded successfully",
-            current_revision=current_rev,
-        )
+
+        async with async_session_local() as new_db_session:
+            new_migration_repo = MigrationRepository(new_db_session)
+            current_rev = await new_migration_repo.get_current_revision()
+            return MigrationResponseSchema(
+                operation="upgrade",
+                success=True,
+                message="Database upgraded successfully",
+                current_revision=current_rev,
+            )
 
     async def upload_migrations(self) -> MigrationResponseSchema:
         """Upload migration files to Wasabi/S3."""
-        if not self.migration_helper.wasabi_helper.s3_client: 
+        if not self.migration_helper.wasabi_helper.s3_client:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Wasabi/S3 not configured.",
@@ -183,13 +209,15 @@ class MigrationService(BaseAppService):
 
     async def download_migrations(self) -> MigrationResponseSchema:
         """Download migration files from Wasabi/S3."""
-        if not self.migration_helper.wasabi_helper.s3_client:  
+        if not self.migration_helper.wasabi_helper.s3_client:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Wasabi/S3 not configured.",
             )
 
-        migrations_path = PathHelper.find_project_root(Path(__file__)) / "alembic" / "versions"
+        migrations_path = (
+            PathHelper.find_project_root(Path(__file__)) / "alembic" / "versions"
+        )
         success = await asyncio.get_event_loop().run_in_executor(
             None, self.migration_helper.download_migrations, migrations_path, None
         )
