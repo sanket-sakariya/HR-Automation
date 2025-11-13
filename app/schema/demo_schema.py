@@ -26,6 +26,7 @@ class SocialAccountSchema(BaseModel):
     verified: bool = Field(..., example=True)
 
     class Config:
+        """Pydantic configuration."""
         from_attributes = True
 
 class PreferencesSchema(BaseModel):
@@ -34,6 +35,7 @@ class PreferencesSchema(BaseModel):
     notifications_enabled: bool = Field(..., example=False)
 
     class Config:
+        """Pydantic configuration."""
         from_attributes = True
 
 
