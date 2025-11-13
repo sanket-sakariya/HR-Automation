@@ -3,7 +3,6 @@ from sqlalchemy import MetaData, Table, inspect, text, Column, String
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.exception.baseapp_exception import InternalServerErrorException
-from app.config.constants import DatabaseErrorMessages
 from app.repository.baseapp_repository import BaseAppRepository
 from app.model.migration_model import MigrationModel
 

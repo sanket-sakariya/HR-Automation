@@ -3,12 +3,10 @@ from __future__ import annotations
 import asyncio
 import os
 import subprocess
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from fastapi import HTTPException, status
 
-from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
