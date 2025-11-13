@@ -1,39 +1,56 @@
-# Core dependencies
+aio-pika==9.5.7
+aiofiles==24.1.0
+aiormq==6.9.0
+alembic==1.13.1
+annotated-types==0.7.0
+anyio==3.7.1
+astroid==3.3.11
+asyncpg==0.29.0
+boto3==1.34.0
+certifi==2025.8.3
+charset-normalizer==3.4.3
+click==8.3.0
+colorama==0.4.6
+dill==0.4.0
 fastapi==0.104.1
+greenlet==3.2.4
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.6.4
+httpx==0.25.2
+idna==3.10
+iniconfig==2.1.0
+isort==6.1.0
+loguru==0.7.2
+Mako==1.3.10
+MarkupSafe==3.0.2
+mccabe==0.7.0
+multidict==6.6.4
+packaging==25.0
+pamqp==3.3.0
+pillow==11.3.0
+platformdirs==4.4.0
+pluggy==1.6.0
+propcache==0.3.2
+psycopg2-binary==2.9.9
 pydantic==2.5.0
 pydantic-settings==2.1.0
-
-# Database
-asyncpg==0.29.0
-sqlalchemy[asyncio]==2.0.23
-alembic==1.13.1
-psycopg2-binary==2.9.9
-
-# Configuration
-python-dotenv==1.0.0
-pyyaml==6.0.1
-
-# HTTP Client for inter-service communication
-httpx==0.25.2
-
-# Testing dependencies
+pydantic_core==2.14.1
+pylint==3.3.8
 pytest==7.4.3
 pytest-asyncio==0.21.1
-
-# Form data handling
+python-dotenv==1.0.0
 python-multipart==0.0.20
-
-# Image processing
-Pillow==11.3.0
-
-# Async file operations
-aiofiles==24.1.0
-
-uvicorn[standard]==0.30.1
-loguru==0.7.2
-
-aio-pika==9.5.7
-
-# S3/Wasabi support for migration storage
-boto3==1.34.0
-pylint
+PyYAML==6.0.1
+requests==2.32.5
+sniffio==1.3.1
+SQLAlchemy==2.0.23
+starlette==0.27.0
+tomlkit==0.13.3
+typing_extensions==4.15.0
+urllib3==2.5.0
+uvicorn==0.30.1
+watchfiles==1.1.0
+websockets==15.0.1
+win32_setctime==1.2.0
+yarl==1.20.1
