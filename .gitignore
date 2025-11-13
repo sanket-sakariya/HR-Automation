@@ -34,5 +34,5 @@ pytest_cache/
 .env.production
 
 # Migrations
-versions/*
+alembic/versions/*
 
