@@ -1,6 +1,8 @@
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -104,6 +106,5 @@ def create_app() -> FastAPI:
     return fastapi_app
 
 if __name__ == "__main__":
-    import uvicorn
     app = create_app()
-    uvicorn.run(app, host="0.0.0.0", port=8801)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8801")))

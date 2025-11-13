@@ -39,10 +39,11 @@ class MigrationRepository(BaseAppRepository[MigrationModel]):
             True if the table exists, False otherwise
         """
         try:
-            def check_table(sync_conn):
-                inspector = inspect(sync_conn)
-                return 'alembic_version' in inspector.get_table_names(schema='public')
-            
+            def check_table(sync_session):
+                with sync_session.connection() as sync_conn:
+                    inspector = inspect(sync_conn)
+                    return inspector.has_table(self.alembic_version_table.name, schema='public')
+
             table_exists = await self.db.run_sync(check_table)
             return table_exists
         except Exception as e:

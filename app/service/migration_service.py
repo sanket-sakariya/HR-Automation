@@ -13,6 +13,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 
 from app.config.baseapp_config import get_base_config
+from app.config.database import async_session_local
 
 from app.helper.migration_helper import MigrationHelper
 from app.helper.path_helper import PathHelper
@@ -54,6 +55,8 @@ class MigrationService(BaseAppService):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Alembic directory not found: {alembic_dir}",
             )
+
+        (alembic_dir / "versions").mkdir(exist_ok=True)
 
         alembic_cfg = Config(str(alembic_ini_path))
         database_url = get_base_config().ASYNC_DATABASE_URL
@@ -104,17 +107,19 @@ class MigrationService(BaseAppService):
             "revision", autogenerate=True, message=message
         )
 
-        script = ScriptDirectory.from_config(self.alembic_cfg)
-        head_revision = script.get_current_head()
-        current_rev = await self.migration_repo.get_current_revision()
+        async with async_session_local() as new_db_session:
+            new_migration_repo = MigrationRepository(new_db_session)
+            script = ScriptDirectory.from_config(self.alembic_cfg)
+            head_revision = script.get_current_head()
+            current_rev = await new_migration_repo.get_current_revision()
 
-        return MigrationResponseSchema(
-            operation="revision",
-            success=True,
-            message=f"Revision created successfully with message: '{message}'",
-            revision_id=head_revision,
-            current_revision=current_rev,
-        )
+            return MigrationResponseSchema(
+                operation="revision",
+                success=True,
+                message=f"Revision created successfully with message: '{message}'",
+                revision_id=head_revision,
+                current_revision=current_rev,
+            )
 
     async def upgrade_database(self) -> MigrationResponseSchema:
         """Upgrade database to the latest revision."""
