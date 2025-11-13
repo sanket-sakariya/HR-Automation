@@ -232,6 +232,37 @@ async def delete_demo(
             detail=f"{ApiErrorMessages.DEMO_DELETION_FAILED}: {str(e)}",
         ) from e
 
+# Update Demo status
+@router.patch(
+    "/demo/update/status/{demo_id}/", 
+    response_model=ApiResponseSchema[DemoReadSchema]
+)
+async def update_demo_status(
+    demo_id: UUID,
+    payload: DemoStatusUpdateSchema,
+    db: AsyncSession = Depends(get_async_db),
+    user_id: UUID = Depends(get_user_id),
+    workspace_id: UUID = Depends(get_workspace_id),
+):
+    """
+    Update demo status and error messages.
+    
+    Updates the demo status, error_message, and error_user_message fields.
+    """
+    try:
+        data = await DemoService(db).update_status(
+            demo_id=demo_id, payload=payload, user_id=user_id, workspace_id=workspace_id
+        )
+        return ApiResponseSchema[DemoReadSchema](
+            success=True, data=data, message=SuccessMessages.DEMO_STATUS_UPDATED
+        )
+    except (DemoNotFoundException, DemoUpdateException, DemoPermissionDeniedException, DemoInvalidDataException) as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_STATUS_UPDATE_FAILED}: {str(e)}"
+        ) from e
 
 # Update is_active of an Demo
 @router.patch(
