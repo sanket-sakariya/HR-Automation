@@ -1,0 +1,1 @@
+i want to remove list of files like .env .end.dev readme.md app/api/v1/router.py app/config/constant.py alembic/versions (folder) 
