@@ -25,36 +25,26 @@ class BaseAppConfig(BaseSettings):
     ENV: str = Field(default="development", env="ENV")
     APP_NAME: str = Field(default="DemoManagementService", env="APP_NAME")
     APP_VERSION: str = Field(default="2.0.1", env="APP_VERSION")
-    PORT: int = Field(default=8801, env="PORT")
+    APP_PORT: int = Field(default=8801, env="APP_PORT")
     LOG_LEVEL: str = Field(default="INFO", env="LOG_LEVEL")
-    STATUS: str = Field(default="active", env="STATUS")
     
+    SERVICE_NAME: str = Field(default="demo-management-service", env="SERVICE_NAME")
+
     # [x]: We also need to add the Dtabase url for Read Replica.
     # Database settings
-    POSTGRES_HOST: str = Field(default="localhost", env="POSTGRES_HOST")
-    POSTGRES_PORT: int = Field(default=5432, env="POSTGRES_PORT")
-    POSTGRES_DB: str = Field(default="demo_management_db", env="POSTGRES_DB")
-    POSTGRES_USER: str = Field(default="postgres", env="POSTGRES_USER")
-    POSTGRES_PASSWORD: str = Field(default="postgres", env="POSTGRES_PASSWORD")
     ASYNC_DATABASE_URL: str = Field(
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/demo_management_db",
         env="ASYNC_DATABASE_URL"
     )
-    SERVICE_NAME: str = Field(default="demo-management-service", env="SERVICE_NAME")
     
     # Read Replica Database settings
-    POSTGRES_READ_HOST: str = Field(default="localhost", env="POSTGRES_READ_HOST")
-    POSTGRES_READ_PORT: int = Field(default=5432, env="POSTGRES_READ_PORT")
-    POSTGRES_READ_DB: str = Field(default="demo_management_db", env="POSTGRES_READ_DB")
-    POSTGRES_READ_USER: str = Field(default="postgres", env="POSTGRES_READ_USER")
-    POSTGRES_READ_PASSWORD: str = Field(default="postgres", env="POSTGRES_READ_PASSWORD")
     ASYNC_READ_DATABASE_URL: str = Field(
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/demo_management_db",
         env="ASYNC_READ_DATABASE_URL"
     )
     
 
-    QUEUE_LOG: bool = Field(default=False, env="QUEUE_LOG")
+    IS_QUEUE_LOG: bool = Field(default=False, env="IS_QUEUE_LOG")
     
     # CORS settings
     CORS_ORIGINS: str = Field(default="*", env="CORS_ORIGINS")
@@ -76,19 +66,19 @@ class BaseAppConfig(BaseSettings):
     
     # Service-level enable/disable flags (for individual service opt-in/opt-out)
     # Note: Project always has access, but individual services can choose to use or not use these services
-    RABBITMQ_ENABLED: bool = Field(
+    IS_RABBITMQ_ENABLED: bool = Field(
         default=True,
-        env="RABBITMQ_ENABLED",
+        env="IS_RABBITMQ_ENABLED",
         description="Enable/disable RabbitMQ usage for this service (service-level opt-in/opt-out)"
     )
-    POSTGRES_ENABLED: bool = Field(
+    IS_POSTGRES_ENABLED: bool = Field(
         default=True,
-        env="POSTGRES_ENABLED",
+        env="IS_POSTGRES_ENABLED",
         description="Enable/disable PostgreSQL usage for this service (service-level opt-in/opt-out)"
     )
     
     # Database routing settings
-    USE_READ_REPLICA: bool = Field(default=False, env="USE_READ_REPLICA")
+    IS_USE_READ_REPLICA: bool = Field(default=False, env="IS_USE_READ_REPLICA")
     
     # Wasabi/S3 settings for migration storage
     WASABI_ENDPOINT_URL: str = Field(

@@ -12,7 +12,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "run:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", "8801")),
+        port=int(os.getenv("APP_PORT", "8801")),
         reload=os.getenv("ENV", "development") == "development",
         reload_dirs=reload_dirs,
         reload_excludes=["alembic/versions/*"],

@@ -252,7 +252,7 @@ def generate_csv_from_schema(schema: dict, output_filename: str, base_url: str):
 
 if __name__ == "__main__":
     load_dotenv(dotenv_path='.env.dev')
-    port = os.getenv("PORT", 8801)
+    port = os.getenv("APP_PORT", 8801)
 
     base_url = f"http://127.0.0.1:{port}"
     openapi_url = f"{base_url}/openapi.json"

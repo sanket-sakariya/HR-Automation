@@ -16,8 +16,6 @@ class Config(BaseAppConfig):
         extra="ignore"
     )
 
-    # Additional fields, if any, can be added similarly
-    STATUS: str = Field(default="active", env="STATUS")  # Example additional field
 
 @lru_cache
 def get_config() -> Config:

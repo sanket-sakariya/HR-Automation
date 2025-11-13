@@ -53,17 +53,17 @@ class RabbitMQHelper:
             rabbitmq_url: Optional RabbitMQ URL. If not provided, uses config.RABBITMQ_URL
             
         Note:
-            If RABBITMQ_ENABLED=False for this service, the helper will be created but all operations will be disabled.
+            If IS_RABBITMQ_ENABLED=False for this service, the helper will be created but all operations will be disabled.
             Methods will raise ConnectionError when RabbitMQ is disabled for this service.
         """
         self.config = get_base_config()
-        self._enabled = self.config.RABBITMQ_ENABLED
+        self._enabled = self.config.IS_RABBITMQ_ENABLED
         
         if self._enabled:
             self.rabbitmq_url = rabbitmq_url or self.config.RABBITMQ_URL
         else:
             self.rabbitmq_url = None
-            logger.warning("RabbitMQ helper initialized but RabbitMQ is disabled for this service (RABBITMQ_ENABLED=False)")
+            logger.warning("RabbitMQ helper initialized but RabbitMQ is disabled for this service (IS_RABBITMQ_ENABLED=False)")
         
         self._connection: Optional[Connection] = None
         self._channel: Optional[Channel] = None
@@ -80,7 +80,7 @@ class RabbitMQHelper:
             ConnectionError: If connection cannot be established or RabbitMQ is disabled for this service
         """
         if not self._enabled:
-            raise ConnectionError("RabbitMQ is disabled for this service. Set RABBITMQ_ENABLED=True to use RabbitMQ operations.")
+            raise ConnectionError("RabbitMQ is disabled for this service. Set IS_RABBITMQ_ENABLED=True to use RabbitMQ operations.")
         
         if self._connection is None or self._connection.is_closed:
             try:

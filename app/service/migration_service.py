@@ -100,10 +100,10 @@ class MigrationService:
 
     async def create_revision(self, message: str) -> MigrationResponseSchema:
         """Create a new Alembic revision."""
-        if not self.base_config.POSTGRES_ENABLED:
+        if not self.base_config.IS_POSTGRES_ENABLED:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="PostgreSQL is disabled. Set POSTGRES_ENABLED=True.",
+                detail="PostgreSQL is disabled. Set IS_POSTGRES_ENABLED=True.",
             )
 
         # Check current revision in its own session scope
@@ -145,10 +145,10 @@ class MigrationService:
 
     async def upgrade_database(self) -> MigrationResponseSchema:
         """Upgrade database to the latest revision."""
-        if not self.base_config.POSTGRES_ENABLED:
+        if not self.base_config.IS_POSTGRES_ENABLED:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="PostgreSQL is disabled. Set POSTGRES_ENABLED=True.",
+                detail="PostgreSQL is disabled. Set IS_POSTGRES_ENABLED=True.",
             )
 
         project_root = PathHelper.find_project_root(Path(__file__))

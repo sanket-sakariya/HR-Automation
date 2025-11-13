@@ -37,20 +37,20 @@ async def lifespan(_app: FastAPI):
         await _GLOBAL_QUEUE_HANDLER.initialize()
     
     # Log service status
-    if base_config.POSTGRES_ENABLED:
+    if base_config.IS_POSTGRES_ENABLED:
         logger.info("✅ PostgreSQL is enabled for this service")
     else:
-        logger.warning("⚠️  PostgreSQL is disabled for this service (POSTGRES_ENABLED=False)")
+        logger.warning("⚠️  PostgreSQL is disabled for this service (IS_POSTGRES_ENABLED=False)")
     
-    if base_config.RABBITMQ_ENABLED:
+    if base_config.IS_RABBITMQ_ENABLED:
         logger.info("✅ RabbitMQ is enabled for this service")
     else:
-        logger.warning("⚠️  RabbitMQ is disabled for this service (RABBITMQ_ENABLED=False)")
+        logger.warning("⚠️  RabbitMQ is disabled for this service (IS_RABBITMQ_ENABLED=False)")
     
     # Ensure migration files exist (download from Wasabi if needed)
     # This is critical because migration files are excluded from Docker image via .dockerignore
     # Only check migrations if PostgreSQL is enabled for this service
-    if base_config.POSTGRES_ENABLED:
+    if base_config.IS_POSTGRES_ENABLED:
 
         
         project_root = Path(__file__).parent.parent.parent
@@ -107,4 +107,4 @@ def create_app() -> FastAPI:
 
 if __name__ == "__main__":
     app = create_app()
-    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", "8801")))
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("APP_PORT", "8801")))

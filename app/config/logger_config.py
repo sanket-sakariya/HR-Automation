@@ -174,8 +174,8 @@ class QueueLogHandler:
             return
         
         # Check if RabbitMQ is enabled for this service
-        if not self.config.RABBITMQ_ENABLED:
-            logger.info("Queue log handler: RabbitMQ is disabled for this service (RABBITMQ_ENABLED=False), skipping initialization")
+        if not self.config.IS_RABBITMQ_ENABLED:
+            logger.info("Queue log handler: RabbitMQ is disabled for this service (IS_RABBITMQ_ENABLED=False), skipping initialization")
             return
         
         # Create async queue
@@ -363,8 +363,8 @@ def configure_logging() -> None:
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
     )
 
-    # Conditionally add queue handler (only if both QUEUE_LOG and RABBITMQ_ENABLED are True)
-    if config.QUEUE_LOG and config.RABBITMQ_ENABLED:
+    # Conditionally add queue handler (only if both IS_QUEUE_LOG and IS_RABBITMQ_ENABLED are True)
+    if config.IS_QUEUE_LOG and config.IS_RABBITMQ_ENABLED:
         _GLOBAL_QUEUE_HANDLER = QueueLogHandler()
         # Initialize asynchronously (will be initialized when first log is written or in lifespan)
         logger.add(
@@ -375,8 +375,8 @@ def configure_logging() -> None:
             enqueue=True,
             format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
         )
-    elif config.QUEUE_LOG and not config.RABBITMQ_ENABLED:
-        logger.warning("QUEUE_LOG is enabled but RABBITMQ_ENABLED is False. Queue logging is disabled for this service.")
+    elif config.IS_QUEUE_LOG and not config.IS_RABBITMQ_ENABLED:
+        logger.warning("IS_QUEUE_LOG is enabled but IS_RABBITMQ_ENABLED is False. Queue logging is disabled for this service.")
 
 async def shutdown_logging() -> None:
     """Gracefully shutdown logging and close RabbitMQ connection"""

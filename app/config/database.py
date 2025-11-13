@@ -13,7 +13,7 @@ async_session_local: Optional[orm_sessionmaker] = None
 async_read_replica_engine: Optional[AsyncEngine] = None
 async_read_replica_session_local: Optional[orm_sessionmaker] = None
 
-if config.POSTGRES_ENABLED:
+if config.IS_POSTGRES_ENABLED:
     async_engine = create_async_engine(config.ASYNC_DATABASE_URL, pool_pre_ping=True, future=True)
     async_session_local = orm_sessionmaker(bind=async_engine, class_=AsyncSession, expire_on_commit=False, future=True)
     
@@ -25,27 +25,27 @@ if config.POSTGRES_ENABLED:
 async def get_async_db() -> AsyncGenerator[AsyncSession, None]:
     """Yield an AsyncSession for use in async endpoints/dependencies.
     
-    Uses read replica if USE_READ_REPLICA config is True, otherwise uses primary database.
+    Uses read replica if IS_USE_READ_REPLICA config is True, otherwise uses primary database.
     
     Raises:
         HTTPException: If PostgreSQL is disabled for this service (503 Service Unavailable)
     """
     # Check if PostgreSQL is enabled for this service
-    if not config.POSTGRES_ENABLED:
+    if not config.IS_POSTGRES_ENABLED:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="PostgreSQL is disabled for this service. Set POSTGRES_ENABLED=True to use database operations."
+            detail="PostgreSQL is disabled for this service. Set IS_POSTGRES_ENABLED=True to use database operations."
         )
     
     if not async_session_local:
         raise RuntimeError(
-            "Database session not initialized. Ensure POSTGRES_ENABLED=True and database configuration is correct."
+            "Database session not initialized. Ensure IS_POSTGRES_ENABLED=True and database configuration is correct."
         )
     
-    if config.USE_READ_REPLICA:
+    if config.IS_USE_READ_REPLICA:
         if not async_read_replica_session_local:
             raise RuntimeError(
-                "Read replica session not initialized. Ensure POSTGRES_ENABLED=True and read replica configuration is correct."
+                "Read replica session not initialized. Ensure IS_POSTGRES_ENABLED=True and read replica configuration is correct."
             )
         async with async_read_replica_session_local() as session:
             yield session
