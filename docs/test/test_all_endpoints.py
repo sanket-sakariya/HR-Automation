@@ -111,7 +111,7 @@ def generate_csv_from_schema(schema: dict, output_filename: str, base_url: str):
     static_workspace_id = str(uuid.uuid4())
 
     with open(output_filename, 'w', newline='') as csvfile:
-        fieldnames = ['tags', 'summary', 'endpoint', 'method', 'request_body_schema', 'status_code', 'response']
+        fieldnames = ['tags', 'summary', 'endpoint', 'status_code', 'method', 'request_body_schema', 'response']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -156,6 +156,9 @@ def generate_csv_from_schema(schema: dict, output_filename: str, base_url: str):
             path = op['path']
             method = op['method']
             operation = op['operation']
+
+            if 'migrations' in operation.get('tags', []):
+                continue
 
             # Try to substitute path parameters
             formatted_path = path
@@ -253,7 +256,7 @@ if __name__ == "__main__":
 
     base_url = f"http://127.0.0.1:{port}"
     openapi_url = f"{base_url}/openapi.json"
-    output_csv_file = 'docs/test/endpoints_from_swagger.csv'
+    output_csv_file = 'docs/test/all_endpoints_results.csv'
     
     openapi_schema = fetch_openapi_schema(openapi_url)
     
