@@ -9,6 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
 from app.helper.redis_helper import get_redis_helper
+from app.helper.apisix_helper import get_apisix_helper
 from app.config.baseapp_config import get_base_config
 from app.config.config import config
 from app.config.logger_config import (
@@ -78,6 +79,10 @@ async def lifespan(_app: FastAPI):
             )
         else:
             logger.info("✅ Migration files are ready")
+    
+    # Register service with APISIX Gateway
+    apisix_helper = get_apisix_helper()
+    await apisix_helper.register_route()
     
     yield
     # Shutdown

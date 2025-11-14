@@ -1,0 +1,143 @@
+"""APISIX Gateway Helper for route registration."""
+import httpx
+from app.config.apisix_config import get_apisix_config
+from app.config.logger_config import logger
+
+
+class APISIXHelper:
+    """Helper class to manage APISIX Gateway route registration."""
+    
+    def __init__(self):
+        """Initialize APISIX helper with configuration."""
+        self.config = get_apisix_config()
+        self.admin_url = f"{self.config.APISIX_ADMIN_URL}/apisix/admin/routes/{self.config.APISIX_ROUTE_NAME}"
+        self.headers = {
+            "X-API-KEY": self.config.APISIX_ADMIN_API_KEY,
+            "Content-Type": "application/json"
+        }
+    
+    async def register_route(self) -> bool:
+        """
+        Register the service route with APISIX Gateway.
+        
+        Returns:
+            bool: True if registration successful, False otherwise
+        """
+        if not self.config.IS_APISIX_ENABLED:
+            logger.info("⚠️  APISIX integration is disabled (IS_APISIX_ENABLED=False)")
+            return False
+        
+        # Build the route configuration
+        route_config = {
+            "name": self.config.APISIX_ROUTE_NAME,
+            "uri": f"/{self.config.SERVICE_NAME}/*",
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+            "upstream": {
+                "type": "roundrobin",
+                "scheme": "http",
+                "nodes": {
+                    f"{self.config.SERVICE_NAME}:{self.config.APP_PORT}": 1
+                }
+            },
+            "plugins": {
+                "rbac_abac_workspace": {
+                    "jwt_secret": self.config.APISIX_JWT_SECRET
+                }
+            },
+            "status": 1
+        }
+        
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.put(
+                    self.admin_url,
+                    headers=self.headers,
+                    json=route_config
+                )
+                
+                if response.status_code in [200, 201]:
+                    logger.info(
+                        f"✅ Successfully registered route '{self.config.APISIX_ROUTE_NAME}' with APISIX Gateway"
+                    )
+                    logger.info(
+                        f"   Route URI: /{self.config.SERVICE_NAME}/*"
+                    )
+                    logger.info(
+                        f"   Upstream: {self.config.SERVICE_NAME}:{self.config.APP_PORT}"
+                    )
+                    logger.info(
+                        f"   Methods: GET, POST, PUT, PATCH, DELETE"
+                    )
+                    return True
+                else:
+                    logger.error(
+                        f"❌ Failed to register APISIX route. "
+                        f"Status: {response.status_code}, Response: {response.text}"
+                    )
+                    return False
+                    
+        except httpx.ConnectError as e:
+            logger.error(
+                f"❌ Failed to connect to APISIX Admin API at {self.config.APISIX_ADMIN_URL}: {e}"
+            )
+            return False
+        except Exception as e:
+            logger.error(f"❌ Error registering APISIX route: {e}")
+            return False
+    
+    async def check_route_exists(self) -> bool:
+        """
+        Check if the route already exists in APISIX.
+        
+        Returns:
+            bool: True if route exists, False otherwise
+        """
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    self.admin_url,
+                    headers=self.headers
+                )
+                return response.status_code == 200
+        except Exception:
+            return False
+    
+    async def delete_route(self) -> bool:
+        """
+        Delete the service route from APISIX Gateway.
+        
+        Returns:
+            bool: True if deletion successful, False otherwise
+        """
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.delete(
+                    self.admin_url,
+                    headers=self.headers
+                )
+                
+                if response.status_code in [200, 204]:
+                    logger.info(f"✅ Successfully deleted route '{self.config.APISIX_ROUTE_NAME}' from APISIX")
+                    return True
+                else:
+                    logger.error(
+                        f"❌ Failed to delete APISIX route. "
+                        f"Status: {response.status_code}, Response: {response.text}"
+                    )
+                    return False
+                    
+        except Exception as e:
+            logger.error(f"❌ Error deleting APISIX route: {e}")
+            return False
+
+
+# Global instance
+_apisix_helper: APISIXHelper | None = None
+
+
+def get_apisix_helper() -> APISIXHelper:
+    """Get the APISIX helper instance."""
+    global _apisix_helper
+    if _apisix_helper is None:
+        _apisix_helper = APISIXHelper()
+    return _apisix_helper
