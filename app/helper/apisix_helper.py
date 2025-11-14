@@ -1,6 +1,7 @@
 """APISIX Gateway Helper for route registration."""
 import httpx
 from app.config.apisix_config import get_apisix_config
+from app.config.baseapp_config import get_base_config
 from app.config.logger_config import logger
 
 
@@ -10,6 +11,7 @@ class APISIXHelper:
     def __init__(self):
         """Initialize APISIX helper with configuration."""
         self.config = get_apisix_config()
+        self.base_config = get_base_config()
         self.admin_url = f"{self.config.APISIX_ADMIN_URL}/apisix/admin/routes/{self.config.APISIX_ROUTE_NAME}"
         self.headers = {
             "X-API-KEY": self.config.APISIX_ADMIN_API_KEY,
@@ -30,13 +32,13 @@ class APISIXHelper:
         # Build the route configuration
         route_config = {
             "name": self.config.APISIX_ROUTE_NAME,
-            "uri": f"/{self.config.SERVICE_NAME}/*",
+            "uri": f"/{self.base_config.SERVICE_NAME}/*",
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE"],
             "upstream": {
                 "type": "roundrobin",
                 "scheme": "http",
                 "nodes": {
-                    f"{self.config.SERVICE_NAME}:{self.config.APP_PORT}": 1
+                    f"{self.base_config.SERVICE_NAME}:{self.base_config.APP_PORT}": 1
                 }
             },
             "plugins": {
@@ -60,10 +62,10 @@ class APISIXHelper:
                         f"✅ Successfully registered route '{self.config.APISIX_ROUTE_NAME}' with APISIX Gateway"
                     )
                     logger.info(
-                        f"   Route URI: /{self.config.SERVICE_NAME}/*"
+                        f"   Route URI: /{self.base_config.SERVICE_NAME}/*"
                     )
                     logger.info(
-                        f"   Upstream: {self.config.SERVICE_NAME}:{self.config.APP_PORT}"
+                        f"   Upstream: {self.base_config.SERVICE_NAME}:{self.base_config.APP_PORT}"
                     )
                     logger.info(
                         f"   Methods: GET, POST, PUT, PATCH, DELETE"
