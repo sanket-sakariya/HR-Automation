@@ -5,6 +5,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.helper.redis_cached_route_helper import RedisCachedRoute
+
 from app.config.constants import ApiErrorMessages, SuccessMessages
 from app.config.database import get_async_db
 from app.exception.baseapp_exception import InternalServerErrorException
@@ -37,7 +39,8 @@ from app.schema.response_schema import (
 from app.service.demo_service import DemoService
 
 
-router = APIRouter()
+# Use RedisCachedRoute for automatic caching at route level
+router = APIRouter(route_class=RedisCachedRoute)
 
 
 # Create a new Demo

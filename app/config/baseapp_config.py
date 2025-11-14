@@ -54,6 +54,16 @@ class BaseAppConfig(BaseSettings):
     
     # Cache and messaging settings
     REDIS_URL: str = Field(default="redis://localhost:6379/0", env="REDIS_URL")
+    IS_REDIS_CACHE_ENABLED: bool = Field(
+        default=True,
+        env="IS_REDIS_CACHE_ENABLED",
+        description="Enable/disable Redis caching for this service"
+    )
+    REDIS_CACHE_TTL: int = Field(
+        default=300,
+        env="REDIS_CACHE_TTL",
+        description="Default TTL for Redis cache in seconds (default: 300 = 5 minutes)"
+    )
     RABBITMQ_URL: str = Field(default="amqp://guest:guest@localhost:5672/", env="RABBITMQ_URL")
     
     # RabbitMQ Queue Names (comma-separated list or individual queue names)

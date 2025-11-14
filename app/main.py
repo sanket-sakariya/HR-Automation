@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
+from app.helper.redis_helper import get_redis_helper
 from app.config.baseapp_config import get_base_config
 from app.config.config import config
 from app.config.logger_config import (
@@ -47,6 +48,17 @@ async def lifespan(_app: FastAPI):
     else:
         logger.warning("⚠️  RabbitMQ is disabled for this service (IS_RABBITMQ_ENABLED=False)")
     
+    # Initialize Redis cache if enabled
+    if base_config.IS_REDIS_CACHE_ENABLED:
+        try:
+            redis_helper = get_redis_helper()
+            await redis_helper.initialize()
+            logger.info("✅ Redis cache is enabled for this service")
+        except Exception as e:
+            logger.warning(f"⚠️  Redis cache initialization failed: {e}")
+    else:
+        logger.warning("⚠️  Redis cache is disabled for this service (IS_REDIS_CACHE_ENABLED=False)")
+    
     # Ensure migration files exist (download from Wasabi if needed)
     # This is critical because migration files are excluded from Docker image via .dockerignore
     # Only check migrations if PostgreSQL is enabled for this service
@@ -69,6 +81,8 @@ async def lifespan(_app: FastAPI):
     
     yield
     # Shutdown
+    redis_helper = get_redis_helper()
+    await redis_helper.close()
     await shutdown_logging()
 
 
