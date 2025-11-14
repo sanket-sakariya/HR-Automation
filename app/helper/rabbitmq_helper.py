@@ -172,7 +172,9 @@ class RabbitMQHelper:
                 return existing_queue
             except aio_pika.exceptions.ChannelNotFoundEntity:
                 # Queue doesn't exist, will create it below
-                pass
+                # Channel is closed after passive declaration fails, need to recreate it
+                self._channel = None
+                channel = await self._ensure_channel()
             
             # Queue doesn't exist, create it with specified parameters
             queue = await channel.declare_queue(

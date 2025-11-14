@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api.v1.router import api_router
 from app.helper.redis_helper import get_redis_helper
 from app.helper.apisix_helper import get_apisix_helper
+from app.helper.rabbitmq_helper import RabbitMQHelper
 from app.config.baseapp_config import get_base_config
 from app.config.config import config
 from app.config.logger_config import (
@@ -46,6 +47,13 @@ async def lifespan(_app: FastAPI):
     
     if base_config.IS_RABBITMQ_ENABLED:
         logger.info("✅ RabbitMQ is enabled for this service")
+        # Initialize queues from config
+        try:
+            rabbitmq_helper = RabbitMQHelper()
+            initialized_queues = await rabbitmq_helper.initialize_queues_from_config()
+            logger.info(f"✅ Initialized {len(initialized_queues)} RabbitMQ queues")
+        except Exception as e:
+            logger.warning(f"⚠️  RabbitMQ queue initialization failed: {e}")
     else:
         logger.warning("⚠️  RabbitMQ is disabled for this service (IS_RABBITMQ_ENABLED=False)")
     
