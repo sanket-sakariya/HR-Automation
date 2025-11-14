@@ -30,7 +30,7 @@ import sys
 from typing import Optional, Dict, Any, Union
 
 import aio_pika
-from aio_pika import Connection, Channel, Queue, DeliveryMode
+from aio_pika import Connection, Channel, Queue, DeliveryMode, Exchange, ExchangeType
 from aio_pika.exceptions import AMQPException
 
 from app.config.baseapp_config import get_base_config
@@ -515,3 +515,137 @@ class RabbitMQHelper:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.close()
+    
+    async def ensure_exchange_exists(
+        self,
+        exchange_name: str,
+        exchange_type: str = "fanout",
+        durable: bool = True,
+        auto_delete: bool = False
+    ) -> Exchange:
+        """
+        Ensure an exchange exists, creating it if necessary.
+        
+        Args:
+            exchange_name: Name of the exchange
+            exchange_type: Type of exchange (fanout, direct, topic, headers)
+            durable: If True, exchange survives broker restart
+            auto_delete: If True, exchange is deleted when no longer used
+            
+        Returns:
+            Exchange object
+            
+        Raises:
+            ConnectionError: If connection cannot be established
+            AMQPException: If exchange creation fails
+        """
+        try:
+            channel = await self._ensure_channel()
+            
+            # Map string exchange type to ExchangeType enum
+            exchange_type_map = {
+                "fanout": ExchangeType.FANOUT,
+                "direct": ExchangeType.DIRECT,
+                "topic": ExchangeType.TOPIC,
+                "headers": ExchangeType.HEADERS
+            }
+            
+            exchange_type_enum = exchange_type_map.get(exchange_type.lower(), ExchangeType.FANOUT)
+            
+            exchange = await channel.declare_exchange(
+                exchange_name,
+                exchange_type_enum,
+                durable=durable,
+                auto_delete=auto_delete
+            )
+            
+            logger.info(f"Exchange '{exchange_name}' ensured (type={exchange_type}, durable={durable})")
+            return exchange
+            
+        except (AMQPException, ConnectionError) as e:
+            error_msg = f"Failed to ensure exchange '{exchange_name}': {e}"
+            logger.error(error_msg)
+            raise AMQPException(error_msg) from e
+    
+    async def bind_queue_to_exchange(
+        self,
+        queue_name: str,
+        exchange_name: str,
+        routing_key: str = ""
+    ) -> None:
+        """
+        Bind a queue to an exchange.
+        
+        Args:
+            queue_name: Name of the queue to bind
+            exchange_name: Name of the exchange to bind to
+            routing_key: Routing key for the binding (default: "")
+            
+        Raises:
+            ConnectionError: If connection cannot be established
+            AMQPException: If binding fails
+        """
+        try:
+            channel = await self._ensure_channel()
+            
+            # Ensure queue exists
+            queue = await self.ensure_queue_exists(queue_name)
+            
+            # Bind queue to exchange
+            await queue.bind(exchange_name, routing_key=routing_key)
+            
+            logger.info(f"Queue '{queue_name}' bound to exchange '{exchange_name}' with routing_key '{routing_key}'")
+            
+        except (AMQPException, ConnectionError) as e:
+            error_msg = f"Failed to bind queue '{queue_name}' to exchange '{exchange_name}': {e}"
+            logger.error(error_msg)
+            raise AMQPException(error_msg) from e
+    
+    async def publish_to_exchange(
+        self,
+        exchange_name: str,
+        message: Union[Dict[str, Any], str],
+        routing_key: str = "",
+        priority: int = 3,
+        delivery_mode: DeliveryMode = DeliveryMode.PERSISTENT,
+        headers: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """
+        Publish a message to an exchange.
+        
+        Args:
+            exchange_name: Name of the exchange to publish to
+            message: Message to publish (dict or string)
+            routing_key: Routing key for the message
+            priority: Message priority (0-255)
+            delivery_mode: Message delivery mode (default: PERSISTENT)
+            headers: Optional message headers
+            
+        Returns:
+            True if message was published successfully, False otherwise
+            
+        Raises:
+            ConnectionError: If connection cannot be established
+            AMQPException: If publishing fails
+        """
+        try:
+            channel = await self._ensure_channel()
+            
+            # Create message
+            aio_message = await self._create_aio_message(
+                message, delivery_mode, priority, headers
+            )
+            
+            # Get exchange and publish
+            exchange = await channel.get_exchange(exchange_name)
+            await exchange.publish(aio_message, routing_key=routing_key)
+            
+            logger.debug(f"Message published to exchange '{exchange_name}' with routing_key '{routing_key}'")
+            return True
+            
+        except (AMQPException, ConnectionError, json.JSONEncodeError) as e:
+            error_msg = f"Failed to publish message to exchange '{exchange_name}': {e}"
+            logger.error(error_msg)
+            print(error_msg, file=sys.stderr)
+            return False
+    
