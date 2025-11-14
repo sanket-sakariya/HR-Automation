@@ -1,6 +1,7 @@
 """Custom APIRoute that adds Redis caching for GET and invalidation for mutations.
 
-Cache key namespace: {service_name}:{endpoint}:{user_id}:{workspace_id}
+Cache key namespace: {service_name}:{endpoint}:{user_id}:{params}
+Example: demo-service:/demo/read/{demo_id}/:user-123:demo_id=456
 """
 from __future__ import annotations
 
@@ -17,15 +18,34 @@ from app.config.baseapp_config import get_base_config
 from app.config.logger_config import logger
 
 
-def _extract_ids_from_headers(request: Request) -> tuple[Optional[str], Optional[str]]:
-    """Extract user_id and workspace_id from headers (supports both user-id/x-user-id).
+def _extract_user_id_from_headers(request: Request) -> Optional[str]:
+    """Extract user_id from headers (supports both user-id/x-user-id).
 
-    Returns string forms to avoid UUID parsing exceptions in middleware layer.
+    Returns string form to avoid UUID parsing exceptions in middleware layer.
     """
     headers = request.headers
     user_id = headers.get("user-id") or headers.get("x-user-id")
-    workspace_id = headers.get("workspace-id") or headers.get("x-workspace-id")
-    return user_id, workspace_id
+    return user_id
+
+
+def _build_params_string(request: Request) -> str:
+    """Build a string representation of path params and query params for cache key.
+    
+    Example: "demo_id=123&limit=10&offset=0"
+    """
+    parts = []
+    
+    # Add path parameters
+    if hasattr(request, "path_params") and request.path_params:
+        for key, value in sorted(request.path_params.items()):
+            parts.append(f"{key}={value}")
+    
+    # Add query parameters
+    if request.query_params:
+        for key, value in sorted(request.query_params.items()):
+            parts.append(f"{key}={value}")
+    
+    return "&".join(parts) if parts else "no-params"
 
 
 class RedisCachedRoute(APIRoute):
@@ -47,8 +67,9 @@ class RedisCachedRoute(APIRoute):
             if not cache_enabled or not redis_helper.is_connected():
                 return await original_route_handler(request)
 
-            user_id, workspace_id = _extract_ids_from_headers(request)
-            cache_key = f"{service_name}:{endpoint_path}:{user_id or 'none'}:{workspace_id or 'none'}"
+            user_id = _extract_user_id_from_headers(request)
+            params_str = _build_params_string(request)
+            cache_key = f"{service_name}:{endpoint_path}:{user_id or 'none'}:{params_str}"
 
             # GET: attempt to serve from cache
             if method == "GET":
@@ -126,9 +147,9 @@ class RedisCachedRoute(APIRoute):
 
                 # Only invalidate on success to avoid clearing good cache on failed mutations
                 if 200 <= response.status_code < 300:
-                    # Invalidate ALL cached endpoints for this user/workspace
+                    # Invalidate ALL cached endpoints for this user
                     # This ensures mutations on /demo/create/ also clear /demos/ cache
-                    pattern = f"{service_name}:*:{user_id or '*'}:{workspace_id or '*'}*"
+                    pattern = f"{service_name}:*:{user_id or '*'}:*"
                     deleted = await redis_helper.invalidate_pattern(pattern)
                     if deleted:
                         logger.debug(f"Cache INVALIDATED: {pattern} ({deleted} keys)")
