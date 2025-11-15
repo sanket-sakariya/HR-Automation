@@ -5,7 +5,6 @@ from fastapi import status
 
 from app.exception.baseapp_exception import (
     BaseAppException,
-    NotFoundException,
     AlreadyExistsException,
     InvalidDataException,
     PermissionDeniedException,

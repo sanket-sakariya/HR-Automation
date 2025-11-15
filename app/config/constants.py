@@ -143,5 +143,3 @@ class SuccessMessages:
     DEMO_A_TO_DEMO_B_MAPPINGS_RETRIEVED: Final[str] = "Demo A to demo B mappings retrieved successfully"
     DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED: Final[str] = "Demo A to demo B mapping status updated successfully"
     DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED: Final[str] = "Demo A to demo B mapping active status updated successfully"
-
-

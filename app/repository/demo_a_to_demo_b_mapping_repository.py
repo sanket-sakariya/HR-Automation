@@ -246,8 +246,6 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             await self.db.commit()
             
             return deleted_count
-        except DemoAToDemoBMappingNotFoundException:
-            raise
         except SQLAlchemyError as e:
             raise InternalServerErrorException(
                 message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETION_ERROR}: {str(e)}"
@@ -290,8 +288,6 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             await self.db.commit()
             
             return deleted_count
-        except DemoAToDemoBMappingNotFoundException:
-            raise
         except SQLAlchemyError as e:
             raise InternalServerErrorException(
                 message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETION_ERROR}: {str(e)}"
