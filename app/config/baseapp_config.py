@@ -99,6 +99,7 @@ class BaseAppConfig(BaseSettings):
     WASABI_SECRET_ACCESS_KEY: str = Field(default="", env="WASABI_SECRET_ACCESS_KEY")
     WASABI_REGION: str = Field(default="us-east-1", env="WASABI_REGION")
     MIGRATION_BUCKET_NAME: str = Field(default="", env="MIGRATION_BUCKET_NAME")
+    BACKUP_BUCKET_NAME: str = Field(default="", env="BACKUP_BUCKET_NAME")
 
     def is_production(self) -> bool:
         """Check if running in production environment."""

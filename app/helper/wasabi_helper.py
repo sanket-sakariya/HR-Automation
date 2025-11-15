@@ -285,11 +285,16 @@ class WasabiHelper:
         try:
             objects = []
             paginator = self.s3_client.get_paginator('list_objects_v2')
-            pages = paginator.paginate(
-                Bucket=self.bucket_name,
-                Prefix=prefix,
-                Delimiter=delimiter
-            )
+            
+            # Build pagination params - only include Delimiter if it's not None
+            pagination_params = {
+                'Bucket': self.bucket_name,
+                'Prefix': prefix
+            }
+            if delimiter is not None:
+                pagination_params['Delimiter'] = delimiter
+            
+            pages = paginator.paginate(**pagination_params)
             
             for page in pages:
                 if 'Contents' in page:
