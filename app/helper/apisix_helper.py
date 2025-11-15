@@ -33,7 +33,7 @@ class APISIXHelper:
         route_config = {
             "name": self.config.APISIX_ROUTE_NAME,
             "uri": f"/{self.base_config.SERVICE_NAME}/*",
-            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
             "upstream": {
                 "type": "roundrobin",
                 "scheme": "http",
@@ -42,6 +42,13 @@ class APISIXHelper:
                 }
             },
             "plugins": {
+                "cors": {
+                    "allow_origins": "http://localhost,http://localhost:80,http://localhost:3000,http://localhost:8080,http://127.0.0.1,http://127.0.0.1:80,http://127.0.0.1:3000,http://127.0.0.1:8080,http://articleinnovator.com,http://www.articleinnovator.com,https://articleinnovator.com,https://www.articleinnovator.com,http://botxbyte.com,http://www.botxbyte.com,https://botxbyte.com,https://www.botxbyte.com",
+                    "allow_methods": "GET,POST,PUT,DELETE,OPTIONS",
+                    "allow_headers": "Content-Type,Authorization,X-Correlation-ID,Accept,Origin,X-Requested-With,X-API-KEY",
+                    "allow_credential": True,
+                    "max_age": 3600
+                },
                 "rbac_abac_workspace": {
                     "jwt_secret": self.config.APISIX_JWT_SECRET
                 }
@@ -68,7 +75,7 @@ class APISIXHelper:
                         f"   Upstream: {self.base_config.SERVICE_NAME}:{self.base_config.APP_PORT}"
                     )
                     logger.info(
-                        "   Methods: GET, POST, PUT, PATCH, DELETE"
+                        "   Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS"
                     )
                     return True
                 
