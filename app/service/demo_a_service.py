@@ -82,11 +82,11 @@ class DemoAService(BaseAppService):
         if isinstance(result, dict):
             data = result.get("data", [])
             pagination = result.get("pagination", {})
-            schema_data = [DemoAReadSchema.model_validate(ws) for ws in data]
+            schema_data = [DemoAReadSchema.model_validate(demo_a_item) for demo_a_item in data]
             return {"data": schema_data, "pagination": pagination}
 
         # Fallback for non-dict results
-        schema_data = [DemoAReadSchema.model_validate(ws) for ws in result]
+        schema_data = [DemoAReadSchema.model_validate(demo_a_item) for demo_a_item in result]
         return {"data": schema_data, "pagination": {}}
 
     

@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any, List
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.logger_config import log_user_activity, log_central
+from app.config.constants import LogMessages
 from app.schema.demo_a_to_demo_b_mapping_schema import (
     DemoAToDemoBMappingCreateSchema,
     DemoAToDemoBMappingUpdateSchema,
@@ -46,7 +47,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         
         demo_a_to_demo_b_mapping_data = payload.model_dump()
         demo_a_to_demo_b_mapping = await self.demo_a_to_demo_b_mapping_repo.insert(demo_a_to_demo_b_mapping_data=demo_a_to_demo_b_mapping_data, user_id=user_id, workspace_id=workspace_id)
-        log_user_activity(f"Created mapping: {demo_a_to_demo_b_mapping.demo_a_to_demo_b_mapping_id}", action_type="mapping_create", level="info")
+        log_user_activity(f"{LogMessages.DEMO_A_TO_DEMO_B_MAPPING_CREATED}: {demo_a_to_demo_b_mapping.demo_a_to_demo_b_mapping_id}", action_type="mapping_create", level="info")
         
         # Set initial status
         demo_a_to_demo_b_mapping.status = "created"
@@ -115,7 +116,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         payload_dict["status"] = "updated"
         demo_a_to_demo_b_mapping = await self.demo_a_to_demo_b_mapping_repo.update(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, demo_a_to_demo_b_mapping_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
 
-        log_user_activity(f"Updated mapping: {demo_a_to_demo_b_mapping.demo_a_to_demo_b_mapping_id}", action_type="mapping_update")
+        log_user_activity(f"{LogMessages.DEMO_A_TO_DEMO_B_MAPPING_UPDATED}: {demo_a_to_demo_b_mapping.demo_a_to_demo_b_mapping_id}", action_type="mapping_update")
         return DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping)
 
     async def delete(self, demo_a_to_demo_b_mapping_id: UUID, user_id: UUID, workspace_id: UUID) -> None:
@@ -125,11 +126,11 @@ class DemoAToDemoBMappingService(BaseAppService):
         if not deleted:
             raise DemoAToDemoBMappingNotFoundException(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id)
         
-        log_user_activity(f"Deleted mapping {demo_a_to_demo_b_mapping_id}", action_type="mapping_delete")
+        log_user_activity(f"{LogMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETED} {demo_a_to_demo_b_mapping_id}", action_type="mapping_delete")
     
     async def update_status(self, demo_a_to_demo_b_mapping_id: UUID, payload: DemoAToDemoBMappingStatusUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
         """Update mapping status and error messages."""
-        log_central(message=f"Updating mapping {demo_a_to_demo_b_mapping_id} status to {payload.status}", level="info")
+        log_central(message=f"{LogMessages.DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED} {demo_a_to_demo_b_mapping_id} status to {payload.status}", level="info")
         
         # Update status via repository
         demo_a_to_demo_b_mapping = await self.demo_a_to_demo_b_mapping_repo.update_status(
@@ -238,7 +239,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         )
 
         log_user_activity(
-            f"Deleted {deleted_count} mapping(s) for demo_a_id {demo_a_id}",
+            f"{LogMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETED} {deleted_count} mapping(s) for demo_a_id {demo_a_id}",
             action_type="mapping_delete"
         )
         
@@ -263,7 +264,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         )
 
         log_user_activity(
-            f"Deleted {deleted_count} mapping(s) for demo_b_id {demo_b_id}",
+            f"{LogMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETED} {deleted_count} mapping(s) for demo_b_id {demo_b_id}",
             action_type="mapping_delete"
         )
         

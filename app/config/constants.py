@@ -96,7 +96,22 @@ class ServiceMessages:
 class LogMessages:
     """Constants for log messages."""
     
-    # User activities
+    # User activities - DemoA
+    DEMO_A_CREATED: Final[str] = "Created demo A"
+    DEMO_A_UPDATED: Final[str] = "Updated demo A"
+    DEMO_A_DELETED: Final[str] = "Deleted demo A"
+    
+    # User activities - DemoB
+    DEMO_B_CREATED: Final[str] = "Created demo B"
+    DEMO_B_UPDATED: Final[str] = "Updated demo B"
+    DEMO_B_DELETED: Final[str] = "Deleted demo B"
+    
+    # User activities - DemoA to DemoB Mapping
+    DEMO_A_TO_DEMO_B_MAPPING_CREATED: Final[str] = "Created demo A to demo B mapping"
+    DEMO_A_TO_DEMO_B_MAPPING_UPDATED: Final[str] = "Updated demo A to demo B mapping"
+    DEMO_A_TO_DEMO_B_MAPPING_DELETED: Final[str] = "Deleted demo A to demo B mapping"
+    
+    # Legacy activities (kept for backward compatibility)
     DEMO_CREATED: Final[str] = "Created new demo"
     DEMO_UPDATED: Final[str] = "Updated demo"
     DEMO_DELETED: Final[str] = "Deleted demo"
@@ -105,6 +120,7 @@ class LogMessages:
     
     # Central logs
     DEMO_STATUS_UPDATED: Final[str] = "Updating demo status"
+    DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED: Final[str] = "Updating demo A to demo B mapping status"
     
     # Repository logs
     CANNOT_UPDATE_DELETED_DEMO: Final[str] = "Cannot update deleted demo"
