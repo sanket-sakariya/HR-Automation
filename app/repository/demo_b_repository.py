@@ -41,9 +41,9 @@ class DemoBRepository(BaseAppRepository[DemoBModel]):
     async def get_by_id(self, demo_b_id: UUID, workspace_id: UUID = None) -> DemoBModel:
         """Get a demo by ID and workspace (async)."""
         try:
-            query = select(self.model).where(
-                self.model.demo_b_id == demo_b_id,
-                self.model.workspace_id == workspace_id,
+            query = select(DemoBModel).where(
+                DemoBModel.demo_b_id == demo_b_id,
+                DemoBModel.workspace_id == workspace_id,
             ).limit(1)
             
             result = await self.db.execute(query)

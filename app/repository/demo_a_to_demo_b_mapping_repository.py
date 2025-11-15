@@ -41,9 +41,9 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
     async def get_by_id(self, demo_a_to_demo_b_mapping_id: UUID, workspace_id: UUID = None) -> DemoAToDemoBMappingModel:
         """Get a demo mapping by ID and workspace (async)."""
         try:
-            query = select(self.model).where(
-                self.model.demo_a_to_demo_b_mapping_id == demo_a_to_demo_b_mapping_id,
-                self.model.workspace_id == workspace_id,
+            query = select(DemoAToDemoBMappingModel).where(
+                DemoAToDemoBMappingModel.demo_a_to_demo_b_mapping_id == demo_a_to_demo_b_mapping_id,
+                DemoAToDemoBMappingModel.workspace_id == workspace_id,
             ).limit(1)
             
             result = await self.db.execute(query)
