@@ -14,9 +14,13 @@ from app.schema.demo_a_to_demo_b_mapping_schema import (
 from app.exception.demo_a_to_demo_b_mapping_exception import (
     DemoAToDemoBMappingNotFoundException,
 )
+from app.exception.demo_a_exception import DemoANotFoundException
+from app.exception.demo_b_exception import DemoBNotFoundException
 
 from app.service.baseapp_service import BaseAppService
 from app.repository.demo_a_to_demo_b_mapping_repository import DemoAToDemoBMappingRepository
+from app.repository.demo_a_repository import DemoARepository
+from app.repository.demo_b_repository import DemoBRepository
 
 
 class DemoAToDemoBMappingService(BaseAppService):
@@ -24,9 +28,21 @@ class DemoAToDemoBMappingService(BaseAppService):
     def __init__(self, db: AsyncSession):
         super().__init__(db=db)
         self.mapping_repo = DemoAToDemoBMappingRepository(db=db)
+        self.demo_a_repo = DemoARepository(db=db)
+        self.demo_b_repo = DemoBRepository(db=db)
 
     async def create(self, payload: DemoAToDemoBMappingCreateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
         """Create a new mapping."""
+        
+        # Check if demo_a exists
+        demo_a = await self.demo_a_repo.get_by_id(demo_a_id=payload.demo_a_id, workspace_id=workspace_id)
+        if not demo_a:
+            raise DemoANotFoundException(demo_a_id=payload.demo_a_id)
+        
+        # Check if demo_b exists
+        demo_b = await self.demo_b_repo.get_by_id(demo_b_id=payload.demo_b_id, workspace_id=workspace_id)
+        if not demo_b:
+            raise DemoBNotFoundException(demo_b_id=payload.demo_b_id)
         
         demo_a_to_demo_b_mapping_data = payload.model_dump()
         mapping = await self.mapping_repo.insert(demo_a_to_demo_b_mapping_data=demo_a_to_demo_b_mapping_data, user_id=user_id, workspace_id=workspace_id)
@@ -82,6 +98,18 @@ class DemoAToDemoBMappingService(BaseAppService):
         existing_mapping = await self.mapping_repo.get_by_id(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, workspace_id=workspace_id)
         if not existing_mapping:
             raise DemoAToDemoBMappingNotFoundException(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id)
+        
+        # Check if demo_a exists when updating demo_a_id
+        if payload.demo_a_id:
+            demo_a = await self.demo_a_repo.get_by_id(demo_a_id=payload.demo_a_id, workspace_id=workspace_id)
+            if not demo_a:
+                raise DemoANotFoundException(demo_a_id=payload.demo_a_id)
+        
+        # Check if demo_b exists when updating demo_b_id
+        if payload.demo_b_id:
+            demo_b = await self.demo_b_repo.get_by_id(demo_b_id=payload.demo_b_id, workspace_id=workspace_id)
+            if not demo_b:
+                raise DemoBNotFoundException(demo_b_id=payload.demo_b_id)
         
         payload_dict = payload.model_dump(exclude_unset=True)
         payload_dict["status"] = "updated"

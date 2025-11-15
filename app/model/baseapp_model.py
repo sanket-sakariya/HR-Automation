@@ -9,13 +9,13 @@ class BaseAppModel(Base):
     """Base model for all models."""
     __abstract__ = True
 
+    workspace_id = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime(timezone=True), nullable=True, default=datetime.utcnow, onupdate=datetime.utcnow)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
     created_by = Column(UUID(as_uuid=True), nullable=False)
     updated_by = Column(UUID(as_uuid=True), nullable=True)
     deleted_by = Column(UUID(as_uuid=True), nullable=True)
-    workspace_id = Column(UUID(as_uuid=True), nullable=True)
     status = Column(String(20), nullable=False, default="created")
     is_active = Column(Boolean, nullable=False, default=True)
     error_message = Column(Text, nullable=True)
