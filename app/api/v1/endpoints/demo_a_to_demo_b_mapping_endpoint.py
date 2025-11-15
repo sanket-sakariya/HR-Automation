@@ -38,6 +38,10 @@ from app.exception.demo_a_to_demo_b_mapping_exception import (
     DemoAToDemoBMappingPermissionDeniedException
 )
 
+from app.exception.demo_a_exception import DemoANotFoundException
+
+from app.exception.demo_b_exception import DemoBNotFoundException
+
 from app.exception.baseapp_exception import (
     InternalServerErrorException
 )
@@ -67,6 +71,8 @@ async def create_mapping(
         )
 
     except (
+        DemoANotFoundException,
+        DemoBNotFoundException,
         DemoAToDemoBMappingCreationException,
         DemoAToDemoBMappingInvalidDataException,
         InternalServerErrorException
@@ -90,7 +96,7 @@ async def get_mapping(
 
     try:
         data = await DemoAToDemoBMappingService(db).read(
-            mapping_id=demo_a_to_demo_b_mapping_id, user_id=user_id, workspace_id=workspace_id
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, user_id=user_id, workspace_id=workspace_id
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
             success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_RETRIEVED
@@ -162,7 +168,7 @@ async def list_mappings(
     "/demo-a-to-demo-b-mapping/update/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
 )
 async def update_mapping(
-    mapping_id: UUID,
+    demo_a_to_demo_b_mapping_id: UUID,
     payload: DemoAToDemoBMappingUpdateSchema,
     db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
@@ -171,7 +177,7 @@ async def update_mapping(
     """Update an existing mapping."""
     try:
         data = await DemoAToDemoBMappingService(db).update(
-            mapping_id=mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
         )
 
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
@@ -194,7 +200,7 @@ async def update_mapping(
 
 @router.delete("/demo-a-to-demo-b-mapping/delete/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[dict])
 async def delete_mapping(
-    mapping_id: UUID,
+    demo_a_to_demo_b_mapping_id: UUID,
     db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
     workspace_id: UUID = Depends(get_workspace_id),
@@ -202,7 +208,7 @@ async def delete_mapping(
     """Delete a mapping by ID."""
     try:
         await DemoAToDemoBMappingService(db).delete(
-            mapping_id=mapping_id, user_id=user_id, workspace_id=workspace_id
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, user_id=user_id, workspace_id=workspace_id
         )
         return ApiResponseSchema[dict](
             success=True, data={}, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETED
@@ -225,7 +231,7 @@ async def delete_mapping(
     response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
 )
 async def update_mapping_status(
-    mapping_id: UUID,
+    demo_a_to_demo_b_mapping_id: UUID,
     payload: DemoAToDemoBMappingStatusUpdateSchema,
     db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
@@ -234,7 +240,7 @@ async def update_mapping_status(
     """Update mapping status and error messages."""
     try:
         data = await DemoAToDemoBMappingService(db).update_status(
-            mapping_id=mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
             success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED
@@ -252,7 +258,7 @@ async def update_mapping_status(
     response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema],
 )
 async def update_mapping_is_active(
-    mapping_id: UUID,
+    demo_a_to_demo_b_mapping_id: UUID,
     payload: DemoAToDemoBMappingIsActiveUpdateSchema,
     db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
@@ -261,7 +267,7 @@ async def update_mapping_is_active(
     """Update mapping is_active status."""
     try:
         data = await DemoAToDemoBMappingService(db).update_is_active(
-            mapping_id=mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
             success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED

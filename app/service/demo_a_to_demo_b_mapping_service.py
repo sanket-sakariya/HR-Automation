@@ -30,18 +30,18 @@ class DemoAToDemoBMappingService(BaseAppService):
         
         demo_a_to_demo_b_mapping_data = payload.model_dump()
         mapping = await self.mapping_repo.insert(demo_a_to_demo_b_mapping_data=demo_a_to_demo_b_mapping_data, user_id=user_id, workspace_id=workspace_id)
-        log_user_activity(f"Created mapping: {mapping.mapping_id}", action_type="mapping_create", level="info")
+        log_user_activity(f"Created mapping: {mapping.demo_a_to_demo_b_mapping_id}", action_type="mapping_create", level="info")
         
         # Set initial status
         mapping.status = "created"
         
         return DemoAToDemoBMappingReadSchema.model_validate(mapping)
 
-    async def read(self, mapping_id: UUID, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
+    async def read(self, demo_a_to_demo_b_mapping_id: UUID, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
         """Read a mapping."""
-        mapping = await self.mapping_repo.get_by_id(mapping_id=mapping_id, workspace_id=workspace_id)
+        mapping = await self.mapping_repo.get_by_id(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, workspace_id=workspace_id)
         if not mapping:
-            raise DemoAToDemoBMappingNotFoundException(mapping_id=mapping_id)
+            raise DemoAToDemoBMappingNotFoundException(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id)
         return DemoAToDemoBMappingReadSchema.model_validate(mapping)
     
     async def list_all(
@@ -77,35 +77,35 @@ class DemoAToDemoBMappingService(BaseAppService):
         schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in result]
         return {"data": schema_data, "pagination": {}}
     
-    async def update(self, mapping_id: UUID, payload: DemoAToDemoBMappingUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
+    async def update(self, demo_a_to_demo_b_mapping_id: UUID, payload: DemoAToDemoBMappingUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
         """Update a mapping."""
-        existing_mapping = await self.mapping_repo.get_by_id(mapping_id=mapping_id, workspace_id=workspace_id)
+        existing_mapping = await self.mapping_repo.get_by_id(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, workspace_id=workspace_id)
         if not existing_mapping:
-            raise DemoAToDemoBMappingNotFoundException(mapping_id=mapping_id)
+            raise DemoAToDemoBMappingNotFoundException(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id)
         
         payload_dict = payload.model_dump(exclude_unset=True)
         payload_dict["status"] = "updated"
-        mapping = await self.mapping_repo.update(mapping_id=mapping_id, demo_a_to_demo_b_mapping_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
+        mapping = await self.mapping_repo.update(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, demo_a_to_demo_b_mapping_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
 
-        log_user_activity(f"Updated mapping: {mapping.mapping_id}", action_type="mapping_update")
+        log_user_activity(f"Updated mapping: {mapping.demo_a_to_demo_b_mapping_id}", action_type="mapping_update")
         return DemoAToDemoBMappingReadSchema.model_validate(mapping)
 
-    async def delete(self, mapping_id: UUID, user_id: UUID, workspace_id: UUID) -> None:
+    async def delete(self, demo_a_to_demo_b_mapping_id: UUID, user_id: UUID, workspace_id: UUID) -> None:
         """Delete a mapping."""
-        deleted = await self.mapping_repo.delete(mapping_id=mapping_id, user_id=user_id, workspace_id=workspace_id)
+        deleted = await self.mapping_repo.delete(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, user_id=user_id, workspace_id=workspace_id)
         
         if not deleted:
-            raise DemoAToDemoBMappingNotFoundException(mapping_id=mapping_id)
+            raise DemoAToDemoBMappingNotFoundException(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id)
         
-        log_user_activity(f"Deleted mapping {mapping_id}", action_type="mapping_delete")
+        log_user_activity(f"Deleted mapping {demo_a_to_demo_b_mapping_id}", action_type="mapping_delete")
     
-    async def update_status(self, mapping_id: UUID, payload: DemoAToDemoBMappingStatusUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
+    async def update_status(self, demo_a_to_demo_b_mapping_id: UUID, payload: DemoAToDemoBMappingStatusUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
         """Update mapping status and error messages."""
-        log_central(message=f"Updating mapping {mapping_id} status to {payload.status}", level="info")
+        log_central(message=f"Updating mapping {demo_a_to_demo_b_mapping_id} status to {payload.status}", level="info")
         
         # Update status via repository
         mapping = await self.mapping_repo.update_status(
-            mapping_id=mapping_id,
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
             status=payload.status,
             error_message=payload.error_message,
             error_user_message=payload.error_user_message,
@@ -115,11 +115,11 @@ class DemoAToDemoBMappingService(BaseAppService):
 
         return DemoAToDemoBMappingReadSchema.model_validate(mapping)
 
-    async def update_is_active(self, mapping_id: UUID, payload: DemoAToDemoBMappingIsActiveUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
+    async def update_is_active(self, demo_a_to_demo_b_mapping_id: UUID, payload: DemoAToDemoBMappingIsActiveUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
         """Update mapping is_active status."""
         # Update is_active via repository
         mapping = await self.mapping_repo.update_is_active(
-            mapping_id=mapping_id,
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
             is_active=payload.is_active,
             user_id=user_id,
             workspace_id=workspace_id

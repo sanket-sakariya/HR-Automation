@@ -18,8 +18,8 @@ class DemoAToDemoBMappingException(BaseAppException):
 
 class DemoAToDemoBMappingNotFoundException(NotFoundException):
     """Exception for mapping not found."""
-    def __init__(self, mapping_id: UUID):
-        super().__init__("Mapping", resource_id=str(mapping_id))
+    def __init__(self, demo_a_to_demo_b_mapping_id: UUID):
+        super().__init__("Mapping", resource_id=str(demo_a_to_demo_b_mapping_id))
 
 
 class DemoAToDemoBMappingAlreadyExistsException(AlreadyExistsException):
@@ -36,15 +36,15 @@ class DemoAToDemoBMappingCreationException(InternalServerErrorException):
 
 class DemoAToDemoBMappingUpdateException(InternalServerErrorException):
     """Exception for mapping update failure."""
-    def __init__(self, mapping_id: UUID, message: Optional[str] = None):
-        message = f"Failed to update mapping with ID {mapping_id}."
+    def __init__(self, demo_a_to_demo_b_mapping_id: UUID, message: Optional[str] = None):
+        message = f"Failed to update mapping with ID {demo_a_to_demo_b_mapping_id}."
         super().__init__(message=message)
 
 
 class DemoAToDemoBMappingDeletionException(InternalServerErrorException):
     """Exception for mapping deletion failure."""
-    def __init__(self, mapping_id: UUID):
-        super().__init__(f"Failed to delete mapping with ID {mapping_id}.")
+    def __init__(self, demo_a_to_demo_b_mapping_id: UUID):
+        super().__init__(f"Failed to delete mapping with ID {demo_a_to_demo_b_mapping_id}.")
 
 class DemoAToDemoBMappingInvalidDataException(InvalidDataException):
     """Exception for invalid mapping data."""
@@ -54,8 +54,8 @@ class DemoAToDemoBMappingInvalidDataException(InvalidDataException):
 
 class DemoAToDemoBMappingInactiveException(BaseAppException):
     """Exception for inactive mapping."""
-    def __init__(self, mapping_id: UUID):
-        super().__init__(f"Mapping with ID {mapping_id} is inactive.", status_code=status.HTTP_400_BAD_REQUEST)
+    def __init__(self, demo_a_to_demo_b_mapping_id: UUID):
+        super().__init__(f"Mapping with ID {demo_a_to_demo_b_mapping_id} is inactive.", status_code=status.HTTP_400_BAD_REQUEST)
 
 
 class DemoAToDemoBMappingPermissionDeniedException(PermissionDeniedException):

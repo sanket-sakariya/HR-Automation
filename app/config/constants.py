@@ -145,8 +145,3 @@ class SuccessMessages:
     DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED: Final[str] = "Demo A to demo B mapping active status updated successfully"
 
 
-class SchemaDescriptions:
-    """Constants for schema field descriptions."""
-    
-    # Demo schema descriptions
-    DEMO_STATUS_DESCRIPTION: Final[str] = "Demo status"

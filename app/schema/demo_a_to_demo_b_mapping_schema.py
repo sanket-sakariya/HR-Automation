@@ -47,7 +47,7 @@ class DemoAToDemoBMappingIsActiveUpdateSchema(BaseAppSchema):
 
 class DemoAToDemoBMappingReadSchema(BaseAppSchema):
     """Schema for reading mapping details."""
-    mapping_id: UUID = Field(..., description="Mapping ID", example="c5f0h8d2-5e3d-6g8h-0c4f-be0g9h8c7d6f")
+    demo_a_to_demo_b_mapping_id: UUID = Field(..., description="Mapping ID", example="c5f0h8d2-5e3d-6g8h-0c4f-be0g9h8c7d6f")
     demo_a_id: UUID = Field(..., description="Demo A ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d")
     demo_b_id: UUID = Field(..., description="Demo B ID", example="b4e9g7c1-4d2c-5f7g-9b3e-ad9f8g7b6c5e")
     is_active: bool = Field(default=True, description="Whether the mapping is active", example=True)
