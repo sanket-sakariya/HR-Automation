@@ -41,20 +41,20 @@ class DemoBService(BaseAppService):
                 if account.get("url"):
                     account["url"] = str(account["url"])
 
-        demo = await self.demo_repo.insert(demo_b_data=demo_b_data, user_id=user_id, workspace_id=workspace_id)
-        log_user_activity(f"{LogMessages.DEMO_CREATED}: {demo.name}", action_type="demo_create", level="info")
+        demo_b = await self.demo_repo.insert(demo_b_data=demo_b_data, user_id=user_id, workspace_id=workspace_id)
+        log_user_activity(f"{LogMessages.DEMO_CREATED}: {demo_b.name}", action_type="demo_create", level="info")
         
         # Set initial status
-        demo.status = "created"
+        demo_b.status = "created"
         
-        return DemoBReadSchema.model_validate(demo)
+        return DemoBReadSchema.model_validate(demo_b)
 
     async def read(self, demo_b_id: UUID, user_id: UUID, workspace_id: UUID) -> DemoBReadSchema:  
         """Read a demo."""
-        demo = await self.demo_repo.get_by_id(demo_b_id=demo_b_id, workspace_id=workspace_id)
-        if not demo:
+        demo_b = await self.demo_repo.get_by_id(demo_b_id=demo_b_id, workspace_id=workspace_id)
+        if not demo_b:
             raise DemoBNotFoundException(demo_b_id=demo_b_id)
-        return DemoBReadSchema.model_validate(demo)
+        return DemoBReadSchema.model_validate(demo_b)
     
     async def list_all(  
         self,
@@ -92,8 +92,8 @@ class DemoBService(BaseAppService):
     
     async def update(self, demo_b_id: UUID, payload: DemoBUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoBReadSchema:
         """Update a demo."""
-        existing_demo = await self.demo_repo.get_by_id(demo_b_id=demo_b_id, workspace_id=workspace_id)
-        if not existing_demo:
+        existing_demo_b = await self.demo_repo.get_by_id(demo_b_id=demo_b_id, workspace_id=workspace_id)
+        if not existing_demo_b:
             raise DemoBNotFoundException(demo_b_id=demo_b_id)
         
         payload_dict = payload.model_dump(exclude_unset=True)
@@ -108,10 +108,10 @@ class DemoBService(BaseAppService):
                     account["url"] = str(account["url"])
         
         payload_dict["status"] = "updated"
-        demo = await self.demo_repo.update(demo_b_id=demo_b_id, demo_b_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
+        demo_b = await self.demo_repo.update(demo_b_id=demo_b_id, demo_b_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
 
-        log_user_activity(f"{LogMessages.DEMO_UPDATED}: {demo.name}", action_type="demo_update")
-        return DemoBReadSchema.model_validate(demo)
+        log_user_activity(f"{LogMessages.DEMO_UPDATED}: {demo_b.name}", action_type="demo_update")
+        return DemoBReadSchema.model_validate(demo_b)
 
     async def delete(self, demo_b_id: UUID, user_id: UUID, workspace_id: UUID) -> None:
         """Delete a demo."""
@@ -130,7 +130,7 @@ class DemoBService(BaseAppService):
         log_central(message=f"{LogMessages.DEMO_STATUS_UPDATED} {demo_b_id} status to {payload.status}", level="info")
         
         # Update status via repository
-        demo = await self.demo_repo.update_status(
+        demo_b = await self.demo_repo.update_status(
             demo_b_id=demo_b_id, 
             status=payload.status, 
             error_message=payload.error_message,
@@ -139,7 +139,7 @@ class DemoBService(BaseAppService):
             workspace_id=workspace_id
         )
 
-        return DemoBReadSchema.model_validate(demo)
+        return DemoBReadSchema.model_validate(demo_b)
 
     async def update_is_active(self, demo_b_id: UUID, payload: DemoBIsActiveUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoBReadSchema:
         """
@@ -158,11 +158,11 @@ class DemoBService(BaseAppService):
             DemoBUpdateException: If update fails
         """
         # Update is_active via repository
-        demo = await self.demo_repo.update_is_active(
+        demo_b = await self.demo_repo.update_is_active(
             demo_b_id=demo_b_id, 
             is_active=payload.is_active, 
             user_id=user_id,
             workspace_id=workspace_id
         )
 
-        return DemoBReadSchema.model_validate(demo)
+        return DemoBReadSchema.model_validate(demo_b)

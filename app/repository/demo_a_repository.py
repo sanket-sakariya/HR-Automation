@@ -24,17 +24,17 @@ class DemoARepository(BaseAppRepository[DemoAModel]):
     async def insert(self, demo_a_data: Dict[str, Any], user_id: UUID = None, workspace_id: UUID = None) -> DemoAModel:
         """Insert a new demo (async). user_id optional."""
         try:
-            demo = DemoAModel(**demo_a_data)
+            demo_a = DemoAModel(**demo_a_data)
             if user_id is not None:
-                demo.created_by = user_id
+                demo_a.created_by = user_id
             if workspace_id is not None:
-                demo.workspace_id = workspace_id
+                demo_a.workspace_id = workspace_id
 
-            self.db.add(demo)
+            self.db.add(demo_a)
             await self.db.commit()
-            await self.db.refresh(demo)
+            await self.db.refresh(demo_a)
             
-            return demo
+            return demo_a
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_CREATION_ERROR}: {str(e)}") from e
 
@@ -43,11 +43,11 @@ class DemoARepository(BaseAppRepository[DemoAModel]):
         try:
             stmt = select(self.model).where(self.model.demo_a_id == demo_a_id, self.model.workspace_id == workspace_id)
             result = await self.db.execute(stmt)
-            demo = result.scalar_one_or_none()
+            demo_a = result.scalar_one_or_none()
             # Return None if demo is deleted
-            if demo and demo.status == "deleted":
+            if demo_a and demo_a.status == "deleted":
                 raise DemoANotFoundException(demo_a_id=demo_a_id)
-            return demo
+            return demo_a
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_RETRIEVAL_ERROR}: {str(e)}") from e
 
@@ -55,21 +55,21 @@ class DemoARepository(BaseAppRepository[DemoAModel]):
     async def update(self, demo_a_id: UUID, demo_a_data: Dict[str, Any], user_id: UUID = None, workspace_id: UUID = None) -> DemoAModel:
         """Update an existing demo (async)."""
         try:
-            demo = await self.get_by_id(demo_a_id, workspace_id=workspace_id)
-            if not demo:
+            demo_a = await self.get_by_id(demo_a_id, workspace_id=workspace_id)
+            if not demo_a:
                 raise DemoANotFoundException(demo_a_id=demo_a_id)
             
 
             for key, value in demo_a_data.items():
-                setattr(demo, key, value)
+                setattr(demo_a, key, value)
 
             if user_id is not None:
-                demo.updated_by = user_id
+                demo_a.updated_by = user_id
 
             await self.db.commit()
-            await self.db.refresh(demo)
+            await self.db.refresh(demo_a)
             
-            return demo
+            return demo_a
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_UPDATE_ERROR}: {str(e)}") from e
 
@@ -77,19 +77,19 @@ class DemoARepository(BaseAppRepository[DemoAModel]):
     async def update_status(self, demo_a_id: UUID, status: str, error_message: str = None, error_user_message: str = None, user_id: UUID = None, workspace_id: UUID = None) -> DemoAModel:
         """Update only the status of a demo (async). Only works if current status is not 'deleted'."""
         try:
-            demo = await self.get_by_id(demo_a_id, workspace_id=workspace_id)
-            if not demo:
+            demo_a = await self.get_by_id(demo_a_id, workspace_id=workspace_id)
+            if not demo_a:
                 raise DemoANotFoundException(demo_a_id=demo_a_id)
   
-            demo.status = status
-            demo.error_message = error_message
-            demo.error_user_message = error_user_message
+            demo_a.status = status
+            demo_a.error_message = error_message
+            demo_a.error_user_message = error_user_message
             if user_id is not None:
-                demo.updated_by = user_id
+                demo_a.updated_by = user_id
 
             await self.db.commit()
-            await self.db.refresh(demo)
-            return demo
+            await self.db.refresh(demo_a)
+            return demo_a
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_STATUS_UPDATE_ERROR}: {str(e)}") from e
 
@@ -97,38 +97,38 @@ class DemoARepository(BaseAppRepository[DemoAModel]):
     async def update_is_active(self, demo_a_id: UUID, is_active: bool, user_id: UUID = None, workspace_id: UUID = None) -> DemoAModel:
         """Update only the is_active flag of a demo (async)."""
         try:
-            demo = await self.get_by_id(demo_a_id, workspace_id=workspace_id)
-            if not demo:
+            demo_a = await self.get_by_id(demo_a_id, workspace_id=workspace_id)
+            if not demo_a:
                 raise DemoANotFoundException(demo_a_id=demo_a_id)
 
-            demo.is_active = is_active
+            demo_a.is_active = is_active
             if user_id is not None:
-                demo.updated_by = user_id
+                demo_a.updated_by = user_id
 
             await self.db.commit()
-            await self.db.refresh(demo)
-            return demo
+            await self.db.refresh(demo_a)
+            return demo_a
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_ACTIVE_UPDATE_ERROR}: {str(e)}") from e
 
     async def delete(self, demo_a_id: UUID, user_id: UUID = None, workspace_id: UUID = None) -> bool:
         """Soft delete a demo (update status & is_active) (async)."""
         try:
-            demo = await self.get_by_id(demo_a_id, workspace_id=workspace_id)
-            if not demo:
+            demo_a = await self.get_by_id(demo_a_id, workspace_id=workspace_id)
+            if not demo_a:
                 raise DemoANotFoundException(demo_a_id=demo_a_id)
 
             # mark as deleted (soft delete) 
-            demo.deleted_at = datetime.now(timezone.utc)
-            demo.deleted_by = user_id
-            demo.status = "deleted"
-            demo.is_active = False
+            demo_a.deleted_at = datetime.now(timezone.utc)
+            demo_a.deleted_by = user_id
+            demo_a.status = "deleted"
+            demo_a.is_active = False
             if user_id is not None:
-                demo.updated_by = user_id
+                demo_a.updated_by = user_id
 
             # persist changes
             await self.db.commit()
-            await self.db.refresh(demo)
+            await self.db.refresh(demo_a)
             
             return True
         except SQLAlchemyError as e:
