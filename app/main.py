@@ -52,7 +52,7 @@ async def lifespan(_app: FastAPI):
             rabbitmq_helper = RabbitMQHelper()
             initialized_queues = await rabbitmq_helper.initialize_queues_from_config()
             logger.info(f"✅ Initialized {len(initialized_queues)} RabbitMQ queues")
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"⚠️  RabbitMQ queue initialization failed: {e}")
     else:
         logger.warning("⚠️  RabbitMQ is disabled for this service (IS_RABBITMQ_ENABLED=False)")
@@ -63,7 +63,7 @@ async def lifespan(_app: FastAPI):
             redis_helper = get_redis_helper()
             await redis_helper.initialize()
             logger.info("✅ Redis cache is enabled for this service")
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"⚠️  Redis cache initialization failed: {e}")
     else:
         logger.warning("⚠️  Redis cache is disabled for this service (IS_REDIS_CACHE_ENABLED=False)")

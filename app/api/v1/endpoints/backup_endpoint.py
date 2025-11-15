@@ -4,7 +4,6 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 
 from app.schema.backup_schema import (
-    BackupCreateRequestSchema,
     BackupCreateResponseSchema,
     BackupListResponseSchema,
     BackupRestoreRequestSchema,

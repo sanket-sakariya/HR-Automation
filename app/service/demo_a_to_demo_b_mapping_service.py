@@ -12,7 +12,7 @@ from app.schema.demo_a_to_demo_b_mapping_schema import (
     DemoAToDemoBMappingStatusUpdateSchema
 )
 from app.exception.demo_a_to_demo_b_mapping_exception import (
-    MappingNotFoundException,
+    DemoAToDemoBMappingNotFoundException,
 )
 
 from app.service.baseapp_service import BaseAppService
@@ -41,7 +41,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         """Read a mapping."""
         mapping = await self.mapping_repo.get_by_id(mapping_id=mapping_id, workspace_id=workspace_id)
         if not mapping:
-            raise MappingNotFoundException(mapping_id=mapping_id)
+            raise DemoAToDemoBMappingNotFoundException(mapping_id=mapping_id)
         return DemoAToDemoBMappingReadSchema.model_validate(mapping)
     
     async def list_all(
@@ -81,7 +81,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         """Update a mapping."""
         existing_mapping = await self.mapping_repo.get_by_id(mapping_id=mapping_id, workspace_id=workspace_id)
         if not existing_mapping:
-            raise MappingNotFoundException(mapping_id=mapping_id)
+            raise DemoAToDemoBMappingNotFoundException(mapping_id=mapping_id)
         
         payload_dict = payload.model_dump(exclude_unset=True)
         payload_dict["status"] = "updated"
@@ -95,7 +95,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         deleted = await self.mapping_repo.delete(mapping_id=mapping_id, user_id=user_id, workspace_id=workspace_id)
         
         if not deleted:
-            raise MappingNotFoundException(mapping_id=mapping_id)
+            raise DemoAToDemoBMappingNotFoundException(mapping_id=mapping_id)
         
         log_user_activity(f"Deleted mapping {mapping_id}", action_type="mapping_delete")
     

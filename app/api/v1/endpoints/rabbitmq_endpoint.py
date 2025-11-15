@@ -114,7 +114,7 @@ async def setup_exchange(payload: ExchangeSetupSchema):
                     routing_key=""
                 )
                 bound_queues.append(queue_name)
-            except Exception as e:
+            except (AMQPException, ConnectionError) as e:
                 logger.error(f"Failed to setup queue '{queue_name}': {e}")
                 failed_queues.append(queue_name)
         

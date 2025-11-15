@@ -66,7 +66,7 @@ class BackupHelper:
             'database': parsed.path.lstrip('/') if parsed.path else 'postgres'
         }
     
-    def create_backup(
+    def create_backup(  # pylint: disable=too-many-locals
         self,
         backup_name: Optional[str] = None,
         description: Optional[str] = None
@@ -82,7 +82,7 @@ class BackupHelper:
             Dictionary with backup details including filename, size, and location
         """
         if not self._is_configured():
-            raise Exception("Wasabi/S3 not configured for backups")
+            raise Exception("Wasabi/S3 not configured for backups")  # pylint: disable=broad-exception-raised
         
         # Parse database connection info
         db_info = self._parse_database_url(config.ASYNC_DATABASE_URL)
@@ -139,7 +139,7 @@ class BackupHelper:
                 
                 # Check for version mismatch and provide helpful message
                 if "server version" in result.stderr and "pg_dump version" in result.stderr:
-                    raise Exception(
+                    raise Exception(  # pylint: disable=broad-exception-raised
                         f"PostgreSQL version mismatch. Server and pg_dump versions must be compatible.\n"
                         f"Error: {result.stderr}\n\n"
                         f"To fix this on macOS, upgrade PostgreSQL client:\n"
@@ -147,10 +147,10 @@ class BackupHelper:
                         f"  brew link postgresql@17 --force"
                     )
                 
-                raise Exception(f"Database backup failed: {result.stderr}")
+                raise Exception(f"Database backup failed: {result.stderr}")  # pylint: disable=broad-exception-raised
             
             if not sql_path.exists():
-                raise Exception("Backup file was not created")
+                raise Exception("Backup file was not created")  # pylint: disable=broad-exception-raised
             
             # Get SQL file size
             sql_size = sql_path.stat().st_size
@@ -172,7 +172,7 @@ class BackupHelper:
             upload_success = self.wasabi_helper.upload_file(zip_path, s3_key)
             
             if not upload_success:
-                raise Exception("Failed to upload backup to Wasabi")
+                raise Exception("Failed to upload backup to Wasabi")  # pylint: disable=broad-exception-raised
             
             # Return metadata for API response
             metadata = {
@@ -207,7 +207,7 @@ class BackupHelper:
             List of backup metadata dictionaries
         """
         if not self._is_configured():
-            raise Exception("Wasabi/S3 not configured for backups")
+            raise Exception("Wasabi/S3 not configured for backups")  # pylint: disable=broad-exception-raised
         
         try:
             prefix = f"backups/{self.service_name}/"
@@ -260,7 +260,7 @@ class BackupHelper:
             Dictionary with restore operation details
         """
         if not self._is_configured():
-            raise Exception("Wasabi/S3 not configured for backups")
+            raise Exception("Wasabi/S3 not configured for backups")  # pylint: disable=broad-exception-raised
         
         # Parse database connection info
         db_info = self._parse_database_url(config.ASYNC_DATABASE_URL)
@@ -280,7 +280,7 @@ class BackupHelper:
             download_success = self.wasabi_helper.download_file(s3_key, zip_path)
             
             if not download_success:
-                raise Exception(f"Failed to download backup: {backup_filename}")
+                raise Exception(f"Failed to download backup: {backup_filename}")  # pylint: disable=broad-exception-raised
             
             # Extract SQL file from ZIP
             logger.info(f"Extracting backup: {backup_filename}")
@@ -288,7 +288,7 @@ class BackupHelper:
                 # Get the first SQL file from the archive
                 sql_files = [f for f in zipf.namelist() if f.endswith('.sql')]
                 if not sql_files:
-                    raise Exception("No SQL file found in backup archive")
+                    raise Exception("No SQL file found in backup archive")  # pylint: disable=broad-exception-raised
                 
                 sql_filename = sql_files[0]
                 zipf.extract(sql_filename, temp_dir)
@@ -322,7 +322,7 @@ class BackupHelper:
             
             if result.returncode != 0:
                 logger.error(f"Database restore failed: {result.stderr}")
-                raise Exception(f"Database restore failed: {result.stderr}")
+                raise Exception(f"Database restore failed: {result.stderr}")  # pylint: disable=broad-exception-raised
             
             logger.info(f"Database restored successfully from {backup_filename}")
             

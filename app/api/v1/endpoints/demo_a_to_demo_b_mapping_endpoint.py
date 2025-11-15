@@ -2,50 +2,53 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status as http_status
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.helper.redis_cached_route_helper import RedisCachedRoute
-
-from app.config.constants import ApiErrorMessages, SuccessMessages
 from app.config.database import get_async_db
-from app.exception.baseapp_exception import InternalServerErrorException
-from app.exception.demo_a_to_demo_b_mapping_exception import (
-    MappingCreationException,
-    MappingDeletionException,
-    MappingInvalidDataException,
-    MappingNotFoundException,
-    MappingPermissionDeniedException,
-    MappingUpdateException,
-)
-from app.helper.fastapi.get_header import (
-    ListParamsSchema,
-    get_list_params,
-    get_user_id,
-    get_workspace_id,
-)
-from app.schema.demo_a_to_demo_b_mapping_schema import (
-    DemoAToDemoBMappingCreateSchema,
-    DemoAToDemoBMappingIsActiveUpdateSchema,
-    DemoAToDemoBMappingReadSchema,
-    DemoAToDemoBMappingUpdateSchema,
-    DemoAToDemoBMappingStatusUpdateSchema
-)
+
+from app.config.constants import SuccessMessages, ApiErrorMessages
+
+from app.helper.fastapi.get_header import get_list_params, get_user_id, get_workspace_id
+
 from app.schema.response_schema import (
-    ApiResponseSchema,
-    PaginatedResponseSchema,
+    ApiResponseSchema, 
+    PaginatedResponseSchema, 
     PaginationMeta,
+    ListParamsSchema
 )
+
+from app.schema.demo_a_to_demo_b_mapping_schema import (
+    DemoAToDemoBMappingCreateSchema, 
+    DemoAToDemoBMappingUpdateSchema, 
+    DemoAToDemoBMappingReadSchema,
+    DemoAToDemoBMappingStatusUpdateSchema,
+    DemoAToDemoBMappingIsActiveUpdateSchema
+)
+
 from app.service.demo_a_to_demo_b_mapping_service import DemoAToDemoBMappingService
 
+from app.exception.demo_a_to_demo_b_mapping_exception import (
+    DemoAToDemoBMappingNotFoundException,
+    DemoAToDemoBMappingCreationException,
+    DemoAToDemoBMappingUpdateException,
+    DemoAToDemoBMappingDeletionException,
+    DemoAToDemoBMappingInvalidDataException,
+    DemoAToDemoBMappingPermissionDeniedException
+)
 
-router = APIRouter(route_class=RedisCachedRoute)
+from app.exception.baseapp_exception import (
+    InternalServerErrorException
+)
+
+router = APIRouter()
 
 
 @router.post(
     "/mapping/create/",
     response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema],
-    status_code=status.HTTP_201_CREATED,
+    status_code=http_status.HTTP_201_CREATED,
 )
 async def create_mapping(
     payload: DemoAToDemoBMappingCreateSchema,
@@ -60,19 +63,19 @@ async def create_mapping(
         )
 
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
-            success=True, data=data, message=SuccessMessages.MAPPING_CREATED
+            success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_CREATED
         )
 
     except (
-        MappingCreationException,
-        MappingInvalidDataException,
+        DemoAToDemoBMappingCreationException,
+        DemoAToDemoBMappingInvalidDataException,
         InternalServerErrorException
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.MAPPING_CREATION_FAILED}: {str(e)}",
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_CREATION_FAILED}: {str(e)}",
         ) from e
 
 
@@ -87,21 +90,21 @@ async def get_mapping(
 
     try:
         data = await DemoAToDemoBMappingService(db).read(
-            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, user_id=user_id, workspace_id=workspace_id
+            mapping_id=demo_a_to_demo_b_mapping_id, user_id=user_id, workspace_id=workspace_id
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
-            success=True, data=data, message=SuccessMessages.MAPPING_RETRIEVED
+            success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_RETRIEVED
         )
     except (
-        MappingNotFoundException,
-        MappingPermissionDeniedException,
+        DemoAToDemoBMappingNotFoundException,
+        DemoAToDemoBMappingPermissionDeniedException,
         InternalServerErrorException,
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.MAPPING_RETRIEVAL_FAILED}: {str(e)}",
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_RETRIEVAL_FAILED}: {str(e)}",
         ) from e
 
 
@@ -144,14 +147,14 @@ async def list_mappings(
             success=True,
             data=data,
             pagination=pagination,
-            message=SuccessMessages.MAPPINGS_RETRIEVED,
+            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPINGS_RETRIEVED,
         )
-    except (MappingPermissionDeniedException, InternalServerErrorException) as e:
+    except (DemoAToDemoBMappingPermissionDeniedException, InternalServerErrorException) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.MAPPINGS_RETRIEVAL_FAILED}: {str(e)}",
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPINGS_RETRIEVAL_FAILED}: {str(e)}",
         ) from e
 
 
@@ -172,20 +175,20 @@ async def update_mapping(
         )
 
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
-            success=True, data=data, message=SuccessMessages.MAPPING_UPDATED
+            success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_UPDATED
         )
 
     except (
-        MappingNotFoundException,
-        MappingUpdateException,
-        MappingInvalidDataException,
-        MappingPermissionDeniedException,
+        DemoAToDemoBMappingNotFoundException,
+        DemoAToDemoBMappingUpdateException,
+        DemoAToDemoBMappingInvalidDataException,
+        DemoAToDemoBMappingPermissionDeniedException,
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.MAPPING_UPDATE_FAILED}: {str(e)}",
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_UPDATE_FAILED}: {str(e)}",
         ) from e
 
 
@@ -202,19 +205,19 @@ async def delete_mapping(
             mapping_id=mapping_id, user_id=user_id, workspace_id=workspace_id
         )
         return ApiResponseSchema[dict](
-            success=True, data={}, message=SuccessMessages.MAPPING_DELETED
+            success=True, data={}, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETED
         )
     except (
-        MappingNotFoundException,
-        MappingDeletionException,
-        MappingPermissionDeniedException,
-        MappingInvalidDataException,
+        DemoAToDemoBMappingNotFoundException,
+        DemoAToDemoBMappingDeletionException,
+        DemoAToDemoBMappingPermissionDeniedException,
+        DemoAToDemoBMappingInvalidDataException,
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.MAPPING_DELETION_FAILED}: {str(e)}",
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETION_FAILED}: {str(e)}",
         ) from e
 
 @router.patch(
@@ -234,14 +237,14 @@ async def update_mapping_status(
             mapping_id=mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
-            success=True, data=data, message=SuccessMessages.MAPPING_STATUS_UPDATED
+            success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED
         )
-    except (MappingNotFoundException, MappingUpdateException, MappingPermissionDeniedException, MappingInvalidDataException) as e:
+    except (DemoAToDemoBMappingNotFoundException, DemoAToDemoBMappingUpdateException, DemoAToDemoBMappingPermissionDeniedException, DemoAToDemoBMappingInvalidDataException) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.MAPPING_STATUS_UPDATE_FAILED}: {str(e)}"
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATE_FAILED}: {str(e)}"
         ) from e
 
 @router.patch(
@@ -261,17 +264,17 @@ async def update_mapping_is_active(
             mapping_id=mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
-            success=True, data=data, message=SuccessMessages.MAPPING_ACTIVE_STATUS_UPDATED
+            success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED
         )
     except (
-        MappingNotFoundException,
-        MappingUpdateException,
-        MappingPermissionDeniedException,
-        MappingInvalidDataException,
+        DemoAToDemoBMappingNotFoundException,
+        DemoAToDemoBMappingUpdateException,
+        DemoAToDemoBMappingPermissionDeniedException,
+        DemoAToDemoBMappingInvalidDataException,
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.MAPPING_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}",
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e

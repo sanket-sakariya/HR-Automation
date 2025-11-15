@@ -36,7 +36,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             
             return demo
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.MAPPING_CREATION_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_CREATION_ERROR}: {str(e)}") from e
 
     async def get_by_id(self, mapping_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingModel:
         """Get a demo by ID (async)."""
@@ -49,7 +49,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
                 raise DemoAToDemoBMappingNotFoundException(mapping_id=mapping_id)
             return demo
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.MAPPING_RETRIEVAL_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_RETRIEVAL_ERROR}: {str(e)}") from e
 
 
     async def update(self, mapping_id: UUID, demo_a_to_demo_b_mapping_data: Dict[str, Any], user_id: UUID = None, workspace_id: UUID = None) -> DemoAToDemoBMappingModel:
@@ -71,7 +71,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             
             return demo
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.MAPPING_UPDATE_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_UPDATE_ERROR}: {str(e)}") from e
 
 
     async def update_status(self, mapping_id: UUID, status: str, error_message: str = None, error_user_message: str = None, user_id: UUID = None, workspace_id: UUID = None) -> DemoAToDemoBMappingModel:
@@ -91,7 +91,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             await self.db.refresh(demo)
             return demo
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.MAPPING_STATUS_UPDATE_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATE_ERROR}: {str(e)}") from e
 
 
     async def update_is_active(self, mapping_id: UUID, is_active: bool, user_id: UUID = None, workspace_id: UUID = None) -> DemoAToDemoBMappingModel:
@@ -109,7 +109,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             await self.db.refresh(demo)
             return demo
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.MAPPING_ACTIVE_UPDATE_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_UPDATE_ERROR}: {str(e)}") from e
 
     async def delete(self, mapping_id: UUID, user_id: UUID = None, workspace_id: UUID = None) -> bool:
         """Soft delete a demo (update status & is_active) (async)."""
@@ -132,7 +132,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             
             return True
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.MAPPING_DELETION_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETION_ERROR}: {str(e)}") from e
 
     async def get_all(
         self,

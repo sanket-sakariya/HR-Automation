@@ -7,11 +7,10 @@ from __future__ import annotations
 
 import json
 from typing import Optional
-from uuid import UUID
 
 from fastapi import Request
-from fastapi.responses import JSONResponse, Response
-from fastapi.routing import APIRoute
+from fastapi.responses import JSONResponse, Response  # pylint: disable=import-error
+from fastapi.routing import APIRoute  # pylint: disable=import-error
 
 from app.helper.redis_helper import get_redis_helper
 from app.config.baseapp_config import get_base_config
@@ -51,7 +50,8 @@ def _build_params_string(request: Request) -> str:
 class RedisCachedRoute(APIRoute):
     """APIRoute that wraps the route handler with Redis caching logic."""
 
-    def get_route_handler(self):  # type: ignore[override]
+    def get_route_handler(self):  # type: ignore[override]  # pylint: disable=too-many-statements
+        """Custom route handler with Redis caching for GET requests and cache invalidation for mutations."""
         original_route_handler = super().get_route_handler()
         base_config = get_base_config()
         service_name = base_config.SERVICE_NAME
@@ -59,7 +59,7 @@ class RedisCachedRoute(APIRoute):
         cache_enabled = base_config.IS_REDIS_CACHE_ENABLED
         endpoint_path = self.path  # e.g., "/demo/read/{demo_id}/"
 
-        async def custom_route_handler(request: Request) -> Response:
+        async def custom_route_handler(request: Request) -> Response:  # pylint: disable=too-many-return-statements,too-many-branches
             method = request.method.upper()
             redis_helper = get_redis_helper()
 
@@ -88,7 +88,7 @@ class RedisCachedRoute(APIRoute):
                 # Only cache successful JSON responses
                 try:
                     content_type = response.headers.get("content-type", "")
-                except Exception:
+                except Exception:  # pylint: disable=broad-exception-caught
                     content_type = ""
 
                 if 200 <= response.status_code < 300 and "application/json" in content_type:

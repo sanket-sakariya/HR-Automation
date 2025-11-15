@@ -37,5 +37,3 @@ class ExchangePublishSchema(BaseModel):
         description="Message to broadcast to all queues bound to this exchange", 
         example="User registered successfully"
     )
-
-

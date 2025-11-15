@@ -462,7 +462,7 @@ class RabbitMQHelper:
             logger.debug(f"Message published to queue '{queue_name}' (priority={priority}, size={len(aio_message.body)} bytes)")
             return True
 
-        except (AMQPException, ConnectionError, json.JSONEncodeError) as e:  # pylint: disable=no-member
+        except (AMQPException, ConnectionError, json.JSONDecodeError) as e:  # pylint: disable=no-member
             error_msg = f"Failed to publish message to queue '{queue_name}': {e}"
             logger.error(error_msg)
             print(error_msg, file=sys.stderr)
@@ -586,7 +586,7 @@ class RabbitMQHelper:
             AMQPException: If binding fails
         """
         try:
-            channel = await self._ensure_channel()
+            await self._ensure_channel()
             
             # Ensure queue exists
             queue = await self.ensure_queue_exists(queue_name)
@@ -643,7 +643,7 @@ class RabbitMQHelper:
             logger.debug(f"Message published to exchange '{exchange_name}' with routing_key '{routing_key}'")
             return True
             
-        except (AMQPException, ConnectionError, json.JSONEncodeError) as e:
+        except (AMQPException, ConnectionError, json.JSONDecodeError) as e:  # pylint: disable=no-member
             error_msg = f"Failed to publish message to exchange '{exchange_name}': {e}"
             logger.error(error_msg)
             print(error_msg, file=sys.stderr)

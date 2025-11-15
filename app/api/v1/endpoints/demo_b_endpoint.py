@@ -2,52 +2,54 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status as http_status
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.helper.redis_cached_route_helper import RedisCachedRoute
-
-from app.config.constants import ApiErrorMessages, SuccessMessages
 from app.config.database import get_async_db
-from app.exception.baseapp_exception import InternalServerErrorException
-from app.exception.demo_b_exception import (
-    DemoBCreationException,
-    DemoBDeletionException,
-    DemoBInvalidDataException,
-    DemoBNotFoundException,
-    DemoBPermissionDeniedException,
-    DemoBUpdateException,
-)
-from app.helper.fastapi.get_header import (
-    ListParamsSchema,
-    get_list_params,
-    get_user_id,
-    get_workspace_id,
-)
-from app.schema.demo_b_schema import (
-    DemoBCreateSchema,
-    DemoBIsActiveUpdateSchema,
-    DemoBReadSchema,
-    DemoBUpdateSchema,
-    DemoBStatusUpdateSchema
-)
+
+from app.config.constants import SuccessMessages, ApiErrorMessages
+
+from app.helper.fastapi.get_header import get_list_params, get_user_id, get_workspace_id
+
 from app.schema.response_schema import (
-    ApiResponseSchema,
-    PaginatedResponseSchema,
+    ApiResponseSchema, 
+    PaginatedResponseSchema, 
     PaginationMeta,
+    ListParamsSchema
 )
+
+from app.schema.demo_b_schema import (
+    DemoBCreateSchema, 
+    DemoBUpdateSchema, 
+    DemoBReadSchema,
+    DemoBStatusUpdateSchema,
+    DemoBIsActiveUpdateSchema
+)
+
 from app.service.demo_b_service import DemoBService
 
+from app.exception.demo_b_exception import (
+    DemoBNotFoundException,
+    DemoBCreationException,
+    DemoBUpdateException,
+    DemoBDeletionException,
+    DemoBInvalidDataException,
+    DemoBPermissionDeniedException
+)
 
-# Use RedisCachedRoute for automatic caching at route level
-router = APIRouter(route_class=RedisCachedRoute)
+from app.exception.baseapp_exception import (
+    InternalServerErrorException
+)
+
+router = APIRouter()
 
 
 # Create a new DemoB
 @router.post(
     "/demo-b/create/",
     response_model=ApiResponseSchema[DemoBReadSchema],
-    status_code=status.HTTP_201_CREATED,
+    status_code=http_status.HTTP_201_CREATED,
 )
 async def create_demo_b(
     payload: DemoBCreateSchema,
@@ -78,7 +80,7 @@ async def create_demo_b(
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_B_CREATION_FAILED}: {str(e)}",
         ) from e
 
@@ -108,7 +110,7 @@ async def get_demo_b(
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_B_RETRIEVAL_FAILED}: {str(e)}",
         ) from e
 
@@ -162,7 +164,7 @@ async def list_demo_bs(
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_B_RETRIEVAL_FAILED}: {str(e)}",
         ) from e
 
@@ -202,7 +204,7 @@ async def update_demo_b(
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_B_UPDATE_FAILED}: {str(e)}",
         ) from e
 
@@ -232,7 +234,7 @@ async def delete_demo_b(
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_B_DELETION_FAILED}: {str(e)}",
         ) from e
 
@@ -264,7 +266,7 @@ async def update_demo_b_status(
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_B_STATUS_UPDATE_FAILED}: {str(e)}"
         ) from e
 
@@ -301,6 +303,6 @@ async def update_demo_b_is_active(
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_B_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e

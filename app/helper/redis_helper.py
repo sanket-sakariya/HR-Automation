@@ -130,7 +130,7 @@ class RedisHelper:
             if value:
                 return json.loads(value)
             return None
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"Redis GET error for key '{key}': {e}")
             return None
     
@@ -163,7 +163,7 @@ class RedisHelper:
             else:
                 await self._redis.set(key, serialized_value)
             return True
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"Redis SET error for key '{key}': {e}")
             return False
     
@@ -183,7 +183,7 @@ class RedisHelper:
         try:
             await self._redis.delete(key)
             return True
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"Redis DELETE error for key '{key}': {e}")
             return False
     
@@ -210,7 +210,7 @@ class RedisHelper:
                 logger.debug(f"Invalidated {deleted} cache keys matching pattern: {pattern}")
                 return deleted
             return 0
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"Redis INVALIDATE error for pattern '{pattern}': {e}")
             return 0
     
@@ -230,7 +230,7 @@ class RedisHelper:
         try:
             result = await self._redis.exists(key)
             return bool(result)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"Redis EXISTS error for key '{key}': {e}")
             return False
     
@@ -251,7 +251,7 @@ class RedisHelper:
         try:
             await self._redis.expire(key, ttl)
             return True
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"Redis EXPIRE error for key '{key}': {e}")
             return False
     
@@ -271,7 +271,7 @@ class RedisHelper:
         
         try:
             return await self._redis.ttl(key)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"Redis TTL error for key '{key}': {e}")
             return None
     
@@ -291,7 +291,7 @@ class RedisHelper:
         
         try:
             return await self._redis.incrby(key, amount)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"Redis INCREMENT error for key '{key}': {e}")
             return None
     
@@ -311,7 +311,7 @@ class RedisHelper:
         
         try:
             return await self._redis.decrby(key, amount)
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"Redis DECREMENT error for key '{key}': {e}")
             return None
     
@@ -354,7 +354,7 @@ def get_redis_helper() -> RedisHelper:
     Returns:
         RedisHelper instance
     """
-    global _redis_helper_instance
+    global _redis_helper_instance  # pylint: disable=global-statement
     if _redis_helper_instance is None:
         _redis_helper_instance = RedisHelper()
     return _redis_helper_instance

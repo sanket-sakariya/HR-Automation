@@ -52,24 +52,24 @@ class DemoAToDemoBMappingInvalidDataException(InvalidDataException):
         super().__init__(message=message)
 
 
-class MappingInactiveException(BaseAppException):
+class DemoAToDemoBMappingInactiveException(BaseAppException):
     """Exception for inactive mapping."""
     def __init__(self, mapping_id: UUID):
         super().__init__(f"Mapping with ID {mapping_id} is inactive.", status_code=status.HTTP_400_BAD_REQUEST)
 
 
-class MappingPermissionDeniedException(PermissionDeniedException):
+class DemoAToDemoBMappingPermissionDeniedException(PermissionDeniedException):
     """Exception for mapping permission denied."""
     def __init__(self, message: str = "You do not have permission to access this mapping."):
         super().__init__(message=message)
 
 
-class MappingAccessForbiddenException(PermissionDeniedException):
+class DemoAToDemoBMappingAccessForbiddenException(PermissionDeniedException):
     """Exception for mapping access forbidden."""
     def __init__(self, message: str = "Access to this mapping is forbidden."):
         super().__init__(message=message)
 
-class MappingDependencyException(ConflictException):
+class DemoAToDemoBMappingDependencyException(ConflictException):
     """Exception for mapping dependency."""
     def __init__(self, message: str = "Cannot delete mapping because dependent resources exist."):
         super().__init__(message=message)

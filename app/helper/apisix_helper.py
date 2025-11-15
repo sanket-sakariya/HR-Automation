@@ -68,22 +68,22 @@ class APISIXHelper:
                         f"   Upstream: {self.base_config.SERVICE_NAME}:{self.base_config.APP_PORT}"
                     )
                     logger.info(
-                        f"   Methods: GET, POST, PUT, PATCH, DELETE"
+                        "   Methods: GET, POST, PUT, PATCH, DELETE"
                     )
                     return True
-                else:
-                    logger.error(
-                        f"❌ Failed to register APISIX route. "
-                        f"Status: {response.status_code}, Response: {response.text}"
-                    )
-                    return False
+                
+                logger.error(
+                    f"❌ Failed to register APISIX route. "
+                    f"Status: {response.status_code}, Response: {response.text}"
+                )
+                return False
                     
         except httpx.ConnectError as e:
             logger.error(
                 f"❌ Failed to connect to APISIX Admin API at {self.config.APISIX_ADMIN_URL}: {e}"
             )
             return False
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error(f"❌ Error registering APISIX route: {e}")
             return False
     
@@ -101,7 +101,7 @@ class APISIXHelper:
                     headers=self.headers
                 )
                 return response.status_code == 200
-        except Exception:
+        except Exception:  # pylint: disable=broad-exception-caught
             return False
     
     async def delete_route(self) -> bool:
@@ -121,14 +121,14 @@ class APISIXHelper:
                 if response.status_code in [200, 204]:
                     logger.info(f"✅ Successfully deleted route '{self.config.APISIX_ROUTE_NAME}' from APISIX")
                     return True
-                else:
-                    logger.error(
-                        f"❌ Failed to delete APISIX route. "
-                        f"Status: {response.status_code}, Response: {response.text}"
-                    )
-                    return False
+                
+                logger.error(
+                    f"❌ Failed to delete APISIX route. "
+                    f"Status: {response.status_code}, Response: {response.text}"
+                )
+                return False
                     
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error(f"❌ Error deleting APISIX route: {e}")
             return False
 
@@ -139,7 +139,7 @@ _apisix_helper: APISIXHelper | None = None
 
 def get_apisix_helper() -> APISIXHelper:
     """Get the APISIX helper instance."""
-    global _apisix_helper
+    global _apisix_helper  # pylint: disable=global-statement
     if _apisix_helper is None:
         _apisix_helper = APISIXHelper()
     return _apisix_helper
