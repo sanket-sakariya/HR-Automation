@@ -46,7 +46,7 @@ router = APIRouter()
 
 
 @router.post(
-    "/mapping/create/",
+    "/demo-a-to-demo-b-mapping/create/",
     response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema],
     status_code=http_status.HTTP_201_CREATED,
 )
@@ -79,7 +79,7 @@ async def create_mapping(
         ) from e
 
 
-@router.get("/mapping/read/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema])
+@router.get("/demo-a-to-demo-b-mapping/read/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema])
 async def get_mapping(
     demo_a_to_demo_b_mapping_id: UUID,
     db: AsyncSession = Depends(get_async_db),
@@ -108,7 +108,7 @@ async def get_mapping(
         ) from e
 
 
-@router.get("/mappings/", response_model=PaginatedResponseSchema[list[DemoAToDemoBMappingReadSchema]])
+@router.get("/demo-a-to-demo-b-mappings/", response_model=PaginatedResponseSchema[list[DemoAToDemoBMappingReadSchema]])
 async def list_mappings(
     params: ListParamsSchema = Depends(get_list_params),
     db: AsyncSession = Depends(get_async_db),
@@ -159,7 +159,7 @@ async def list_mappings(
 
 
 @router.patch(
-    "/mapping/update/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
+    "/demo-a-to-demo-b-mapping/update/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
 )
 async def update_mapping(
     mapping_id: UUID,
@@ -192,7 +192,7 @@ async def update_mapping(
         ) from e
 
 
-@router.delete("/mapping/delete/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[dict])
+@router.delete("/demo-a-to-demo-b-mapping/delete/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[dict])
 async def delete_mapping(
     mapping_id: UUID,
     db: AsyncSession = Depends(get_async_db),
@@ -221,7 +221,7 @@ async def delete_mapping(
         ) from e
 
 @router.patch(
-    "/mapping/update/status/{demo_a_to_demo_b_mapping_id}/",
+    "/demo-a-to-demo-b-mapping/update/status/{demo_a_to_demo_b_mapping_id}/",
     response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
 )
 async def update_mapping_status(
@@ -248,7 +248,7 @@ async def update_mapping_status(
         ) from e
 
 @router.patch(
-    "/mapping/update/is-active/{demo_a_to_demo_b_mapping_id}/",
+    "/demo-a-to-demo-b-mapping/update/is-active/{demo_a_to_demo_b_mapping_id}/",
     response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema],
 )
 async def update_mapping_is_active(

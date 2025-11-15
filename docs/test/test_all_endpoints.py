@@ -125,29 +125,37 @@ def generate_csv_from_schema(schema: dict, output_filename: str, base_url: str):
         def get_operation_order(op):
             path_lower = op['path'].lower()
             method_upper = op['method'].upper()
+            tags = op['operation'].get('tags', [])
+            tags_lower = [tag.lower() for tag in tags]
 
+            # Migration endpoints first
+            if 'migrations' in tags_lower:
+                return 0
             # Create
             if method_upper == 'POST' and 'create' in path_lower:
-                return 0
+                return 1
             # List
             if method_upper == 'GET' and '{' not in path_lower and 'health' not in path_lower:
-                return 1
+                return 2
             # Read
             if method_upper == 'GET' and '{' in path_lower:
-                return 2
+                return 3
             # Update
             if method_upper in ['PATCH', 'PUT']:
-                return 3
+                return 4
             # Delete
             if method_upper == 'DELETE':
-                return 4
+                return 5
             # Other POSTs
             if method_upper == 'POST':
-                return 5
+                return 6
             # Health check
             if method_upper == 'GET' and 'health' in path_lower:
-                return 6
-            return 7
+                return 7
+            # Backup operations last
+            if 'backup' in tags_lower:
+                return 9
+            return 8
 
         # Sort operations based on the desired logical flow
         sorted_operations = sorted(all_operations, key=get_operation_order)
@@ -156,9 +164,6 @@ def generate_csv_from_schema(schema: dict, output_filename: str, base_url: str):
             path = op['path']
             method = op['method']
             operation = op['operation']
-
-            if 'migrations' in operation.get('tags', []):
-                continue
 
             # Try to substitute path parameters
             formatted_path = path
@@ -214,6 +219,30 @@ def generate_csv_from_schema(schema: dict, output_filename: str, base_url: str):
                                 simplified_obj = simplify_schema(schema_component, all_schemas)
                                 request_body_for_request = json.dumps(simplified_obj)
                                 request_body_schema_simplified = request_body_for_request
+
+            # Substitute captured IDs in request body if they exist
+            if request_body_for_request != "{}" and created_ids:
+                try:
+                    body_obj = json.loads(request_body_for_request)
+                    
+                    def replace_ids_in_body(obj, id_map):
+                        """Recursively replace matching keys in the body with captured IDs."""
+                        if isinstance(obj, dict):
+                            for key, value in obj.items():
+                                if key in id_map:
+                                    obj[key] = id_map[key]
+                                    print(f"Substituted '{key}' with '{id_map[key]}' in request body for {path}")
+                                elif isinstance(value, (dict, list)):
+                                    replace_ids_in_body(value, id_map)
+                        elif isinstance(obj, list):
+                            for item in obj:
+                                if isinstance(item, (dict, list)):
+                                    replace_ids_in_body(item, id_map)
+                    
+                    replace_ids_in_body(body_obj, created_ids)
+                    request_body_for_request = json.dumps(body_obj)
+                except json.JSONDecodeError:
+                    pass  # If body is not valid JSON, skip substitution
 
             status_code, response_text = execute_request(base_url, method_upper, formatted_path, request_body_for_request, headers)
 
