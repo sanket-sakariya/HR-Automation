@@ -20,7 +20,7 @@ class MappingStatus(str, Enum):
 class DemoAToDemoBMappingCreateSchema(BaseAppSchema):
     """Schema for creating a new mapping between DemoA and DemoB."""
     demo_a_id: UUID = Field(..., description="Demo A ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d")
-    demo_b_id: UUID = Field(..., description="Demo B ID", example="b4e9g7c1-4d2c-5f7g-9b3e-ad9f8g7b6c5e")
+    demo_b_id: UUID = Field(..., description="Demo B ID", example="b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e")
     is_active: Optional[bool] = Field(default=True, example=True)
     status: MappingStatus = Field(..., description="Current status of the mapping", example=MappingStatus.CREATED)
 
@@ -28,7 +28,7 @@ class DemoAToDemoBMappingCreateSchema(BaseAppSchema):
 class DemoAToDemoBMappingUpdateSchema(BaseAppSchema):
     """Schema for updating an existing mapping."""
     demo_a_id: Optional[UUID] = Field(default=None, description="Demo A ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d")
-    demo_b_id: Optional[UUID] = Field(default=None, description="Demo B ID", example="b4e9g7c1-4d2c-5f7g-9b3e-ad9f8g7b6c5e")
+    demo_b_id: Optional[UUID] = Field(default=None, description="Demo B ID", example="b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e")
     is_active: Optional[bool] = Field(default=None, example=False)
     status: Optional[MappingStatus] = Field(default=None, description="Current status of the mapping", example=MappingStatus.UPDATING)
 
@@ -47,9 +47,9 @@ class DemoAToDemoBMappingIsActiveUpdateSchema(BaseAppSchema):
 
 class DemoAToDemoBMappingReadSchema(BaseAppSchema):
     """Schema for reading mapping details."""
-    demo_a_to_demo_b_mapping_id: UUID = Field(..., description="Mapping ID", example="c5f0h8d2-5e3d-6g8h-0c4f-be0g9h8c7d6f")
+    demo_a_to_demo_b_mapping_id: UUID = Field(..., description="Mapping ID", example="c5f0a8d2-5e3d-6a8b-0c4f-be0a9b8c7d6f")
     demo_a_id: UUID = Field(..., description="Demo A ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d")
-    demo_b_id: UUID = Field(..., description="Demo B ID", example="b4e9g7c1-4d2c-5f7g-9b3e-ad9f8g7b6c5e")
+    demo_b_id: UUID = Field(..., description="Demo B ID", example="b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e")
     is_active: bool = Field(default=True, description="Whether the mapping is active", example=True)
     status: MappingStatus = Field(..., description="Current status of the mapping", example=MappingStatus.CREATED)
     created_at: Optional[datetime] = Field(default=None, description="Created at", example="2023-01-01T12:00:00Z")
