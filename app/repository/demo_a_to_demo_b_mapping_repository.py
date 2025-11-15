@@ -218,10 +218,10 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
         """Soft delete all mappings for a specific demo_a_id (async). Returns count of deleted mappings."""
         try:
             # Find all mappings for this demo_a_id
-            stmt = select(self.model).where(
-                self.model.demo_a_id == demo_a_id,
-                self.model.workspace_id == workspace_id,
-                self.model.status != "deleted"
+            stmt = select(DemoAToDemoBMappingModel).where(
+                DemoAToDemoBMappingModel.demo_a_id == demo_a_id,
+                DemoAToDemoBMappingModel.workspace_id == workspace_id,
+                DemoAToDemoBMappingModel.status != "deleted"
             )
             result = await self.db.execute(stmt)
             mappings = result.scalars().all()
@@ -262,10 +262,10 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
         """Soft delete all mappings for a specific demo_b_id (async). Returns count of deleted mappings."""
         try:
             # Find all mappings for this demo_b_id
-            stmt = select(self.model).where(
-                self.model.demo_b_id == demo_b_id,
-                self.model.workspace_id == workspace_id,
-                self.model.status != "deleted"
+            stmt = select(DemoAToDemoBMappingModel).where(
+                DemoAToDemoBMappingModel.demo_b_id == demo_b_id,
+                DemoAToDemoBMappingModel.workspace_id == workspace_id,
+                DemoAToDemoBMappingModel.status != "deleted"
             )
             result = await self.db.execute(stmt)
             mappings = result.scalars().all()
