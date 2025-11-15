@@ -16,10 +16,19 @@ from app.exception.baseapp_exception import (
 class DemoAToDemoBMappingException(BaseAppException):
     """Base exception for all Demo A to Demo B Mapping related errors."""
 
-class DemoAToDemoBMappingNotFoundException(NotFoundException):
+class DemoAToDemoBMappingNotFoundException(BaseAppException):
     """Exception for mapping not found."""
-    def __init__(self, demo_a_to_demo_b_mapping_id: UUID):
-        super().__init__("Mapping", resource_id=str(demo_a_to_demo_b_mapping_id))
+    def __init__(self, demo_a_to_demo_b_mapping_id: Optional[UUID] = None, message: Optional[str] = None):
+        if message:
+            # Custom message provided
+            error_message = message
+        elif demo_a_to_demo_b_mapping_id:
+            # Standard ID-based message
+            error_message = f"Mapping with ID {demo_a_to_demo_b_mapping_id} not found."
+        else:
+            # Default message
+            error_message = "Mapping not found."
+        super().__init__(message=error_message, status_code=status.HTTP_404_NOT_FOUND)
 
 
 class DemoAToDemoBMappingAlreadyExistsException(AlreadyExistsException):

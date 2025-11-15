@@ -158,3 +158,135 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             user_id=user_id,
             workspace_id=workspace_id
         )
+
+    async def get_by_demo_a_id(
+        self,
+        demo_a_id: UUID,
+        workspace_id: UUID,
+        skip: int = 0,
+        limit: int = 20
+    ) -> Dict[str, Any]:
+        """Get all mappings for a specific demo_a_id (async)."""
+        try:
+            # Use base repository get_all with filters
+            filters = [{"field": "demo_a_id", "operator": "eq", "value": str(demo_a_id)}]
+            return await self.get_all(
+                filters=filters,
+                skip=skip,
+                limit=limit,
+                workspace_id=workspace_id
+            )
+        except SQLAlchemyError as e:
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_RETRIEVAL_ERROR}: {str(e)}"
+            ) from e
+
+    async def get_by_demo_b_id(
+        self,
+        demo_b_id: UUID,
+        workspace_id: UUID,
+        skip: int = 0,
+        limit: int = 20
+    ) -> Dict[str, Any]:
+        """Get all mappings for a specific demo_b_id (async)."""
+        try:
+            # Use base repository get_all with filters
+            filters = [{"field": "demo_b_id", "operator": "eq", "value": str(demo_b_id)}]
+            return await self.get_all(
+                filters=filters,
+                skip=skip,
+                limit=limit,
+                workspace_id=workspace_id
+            )
+        except SQLAlchemyError as e:
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_RETRIEVAL_ERROR}: {str(e)}"
+            ) from e
+
+    async def delete_by_demo_a_id(
+        self,
+        demo_a_id: UUID,
+        user_id: UUID = None,
+        workspace_id: UUID = None
+    ) -> int:
+        """Soft delete all mappings for a specific demo_a_id (async). Returns count of deleted mappings."""
+        try:
+            # Find all mappings for this demo_a_id
+            stmt = select(self.model).where(
+                self.model.demo_a_id == demo_a_id,
+                self.model.workspace_id == workspace_id,
+                self.model.status != "deleted"
+            )
+            result = await self.db.execute(stmt)
+            mappings = result.scalars().all()
+
+            if not mappings:
+                raise DemoAToDemoBMappingNotFoundException(
+                    message=f"No mappings found for demo_a_id: {demo_a_id}"
+                )
+
+            # Mark all as deleted (soft delete)
+            deleted_count = 0
+            for mapping in mappings:
+                mapping.deleted_at = datetime.now(timezone.utc)
+                mapping.deleted_by = user_id
+                mapping.status = "deleted"
+                mapping.is_active = False
+                if user_id is not None:
+                    mapping.updated_by = user_id
+                deleted_count += 1
+
+            # Persist changes
+            await self.db.commit()
+            
+            return deleted_count
+        except DemoAToDemoBMappingNotFoundException:
+            raise
+        except SQLAlchemyError as e:
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETION_ERROR}: {str(e)}"
+            ) from e
+
+    async def delete_by_demo_b_id(
+        self,
+        demo_b_id: UUID,
+        user_id: UUID = None,
+        workspace_id: UUID = None
+    ) -> int:
+        """Soft delete all mappings for a specific demo_b_id (async). Returns count of deleted mappings."""
+        try:
+            # Find all mappings for this demo_b_id
+            stmt = select(self.model).where(
+                self.model.demo_b_id == demo_b_id,
+                self.model.workspace_id == workspace_id,
+                self.model.status != "deleted"
+            )
+            result = await self.db.execute(stmt)
+            mappings = result.scalars().all()
+
+            if not mappings:
+                raise DemoAToDemoBMappingNotFoundException(
+                    message=f"No mappings found for demo_b_id: {demo_b_id}"
+                )
+
+            # Mark all as deleted (soft delete)
+            deleted_count = 0
+            for mapping in mappings:
+                mapping.deleted_at = datetime.now(timezone.utc)
+                mapping.deleted_by = user_id
+                mapping.status = "deleted"
+                mapping.is_active = False
+                if user_id is not None:
+                    mapping.updated_by = user_id
+                deleted_count += 1
+
+            # Persist changes
+            await self.db.commit()
+            
+            return deleted_count
+        except DemoAToDemoBMappingNotFoundException:
+            raise
+        except SQLAlchemyError as e:
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETION_ERROR}: {str(e)}"
+            ) from e

@@ -154,3 +154,117 @@ class DemoAToDemoBMappingService(BaseAppService):
         )
 
         return DemoAToDemoBMappingReadSchema.model_validate(mapping)
+
+    async def get_by_demo_a_id(
+        self,
+        demo_a_id: UUID,
+        workspace_id: UUID,
+        skip: int = 0,
+        limit: int = 20,
+        user_id: Optional[UUID] = None
+    ) -> Dict[str, Any]:
+        """Get all mappings by demo_a_id."""
+        # Verify demo_a exists
+        demo_a = await self.demo_a_repo.get_by_id(demo_a_id=demo_a_id, workspace_id=workspace_id)
+        if not demo_a:
+            raise DemoANotFoundException(demo_a_id=demo_a_id)
+
+        result = await self.mapping_repo.get_by_demo_a_id(
+            demo_a_id=demo_a_id,
+            workspace_id=workspace_id,
+            skip=skip,
+            limit=limit
+        )
+
+        # Convert data to schema objects while preserving pagination structure
+        if isinstance(result, dict):
+            data = result.get("data", [])
+            pagination = result.get("pagination", {})
+            schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in data]
+            return {"data": schema_data, "pagination": pagination}
+
+        # Fallback for non-dict results
+        schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in result]
+        return {"data": schema_data, "pagination": {}}
+
+    async def get_by_demo_b_id(
+        self,
+        demo_b_id: UUID,
+        workspace_id: UUID,
+        skip: int = 0,
+        limit: int = 20,
+        user_id: Optional[UUID] = None
+    ) -> Dict[str, Any]:
+        """Get all mappings by demo_b_id."""
+        # Verify demo_b exists
+        demo_b = await self.demo_b_repo.get_by_id(demo_b_id=demo_b_id, workspace_id=workspace_id)
+        if not demo_b:
+            raise DemoBNotFoundException(demo_b_id=demo_b_id)
+
+        result = await self.mapping_repo.get_by_demo_b_id(
+            demo_b_id=demo_b_id,
+            workspace_id=workspace_id,
+            skip=skip,
+            limit=limit
+        )
+
+        # Convert data to schema objects while preserving pagination structure
+        if isinstance(result, dict):
+            data = result.get("data", [])
+            pagination = result.get("pagination", {})
+            schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in data]
+            return {"data": schema_data, "pagination": pagination}
+
+        # Fallback for non-dict results
+        schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in result]
+        return {"data": schema_data, "pagination": {}}
+
+    async def delete_by_demo_a_id(
+        self,
+        demo_a_id: UUID,
+        user_id: UUID,
+        workspace_id: UUID
+    ) -> int:
+        """Delete all mappings by demo_a_id. Returns count of deleted mappings."""
+        # Verify demo_a exists
+        demo_a = await self.demo_a_repo.get_by_id(demo_a_id=demo_a_id, workspace_id=workspace_id)
+        if not demo_a:
+            raise DemoANotFoundException(demo_a_id=demo_a_id)
+
+        deleted_count = await self.mapping_repo.delete_by_demo_a_id(
+            demo_a_id=demo_a_id,
+            user_id=user_id,
+            workspace_id=workspace_id
+        )
+
+        log_user_activity(
+            f"Deleted {deleted_count} mapping(s) for demo_a_id {demo_a_id}",
+            action_type="mapping_delete"
+        )
+        
+        return deleted_count
+
+    async def delete_by_demo_b_id(
+        self,
+        demo_b_id: UUID,
+        user_id: UUID,
+        workspace_id: UUID
+    ) -> int:
+        """Delete all mappings by demo_b_id. Returns count of deleted mappings."""
+        # Verify demo_b exists
+        demo_b = await self.demo_b_repo.get_by_id(demo_b_id=demo_b_id, workspace_id=workspace_id)
+        if not demo_b:
+            raise DemoBNotFoundException(demo_b_id=demo_b_id)
+
+        deleted_count = await self.mapping_repo.delete_by_demo_b_id(
+            demo_b_id=demo_b_id,
+            user_id=user_id,
+            workspace_id=workspace_id
+        )
+
+        log_user_activity(
+            f"Deleted {deleted_count} mapping(s) for demo_b_id {demo_b_id}",
+            action_type="mapping_delete"
+        )
+        
+        return deleted_count
