@@ -38,15 +38,21 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_CREATION_ERROR}: {str(e)}") from e
 
-    async def get_by_id(self, demo_a_to_demo_b_mapping_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingModel:
-        """Get a demo by ID (async)."""
+    async def get_by_id(self, demo_a_to_demo_b_mapping_id: UUID, workspace_id: UUID = None) -> DemoAToDemoBMappingModel:
+        """Get a demo mapping by ID and workspace (async)."""
         try:
-            stmt = select(self.model).where(self.model.demo_a_to_demo_b_mapping_id == demo_a_to_demo_b_mapping_id, self.model.workspace_id == workspace_id)
-            result = await self.db.execute(stmt)
+            query = select(self.model).where(
+                self.model.demo_a_to_demo_b_mapping_id == demo_a_to_demo_b_mapping_id,
+                self.model.workspace_id == workspace_id,
+            ).limit(1)
+            
+            result = await self.db.execute(query)
             demo_a_to_demo_b_mapping = result.scalar_one_or_none()
+            
             # Return None if demo is deleted
             if demo_a_to_demo_b_mapping and demo_a_to_demo_b_mapping.status == "deleted":
                 raise DemoAToDemoBMappingNotFoundException(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id)
+            
             return demo_a_to_demo_b_mapping
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_RETRIEVAL_ERROR}: {str(e)}") from e

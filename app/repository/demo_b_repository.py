@@ -38,15 +38,21 @@ class DemoBRepository(BaseAppRepository[DemoBModel]):
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_B_CREATION_ERROR}: {str(e)}") from e
 
-    async def get_by_id(self, demo_b_id: UUID, workspace_id: UUID) -> DemoBModel:
-        """Get a demo by ID (async)."""
+    async def get_by_id(self, demo_b_id: UUID, workspace_id: UUID = None) -> DemoBModel:
+        """Get a demo by ID and workspace (async)."""
         try:
-            stmt = select(self.model).where(self.model.demo_b_id == demo_b_id, self.model.workspace_id == workspace_id)
-            result = await self.db.execute(stmt)
+            query = select(self.model).where(
+                self.model.demo_b_id == demo_b_id,
+                self.model.workspace_id == workspace_id,
+            ).limit(1)
+            
+            result = await self.db.execute(query)
             demo_b = result.scalar_one_or_none()
+            
             # Return None if demo is deleted
             if demo_b and demo_b.status == "deleted":
                 raise DemoBNotFoundException(demo_b_id=demo_b_id)
+            
             return demo_b
         except SQLAlchemyError as e:
             raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_B_RETRIEVAL_ERROR}: {str(e)}") from e
