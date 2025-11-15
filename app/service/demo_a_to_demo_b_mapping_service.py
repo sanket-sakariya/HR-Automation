@@ -27,7 +27,7 @@ class DemoAToDemoBMappingService(BaseAppService):
     """Mapping service between DemoA and DemoB."""
     def __init__(self, db: AsyncSession):
         super().__init__(db=db)
-        self.mapping_repo = DemoAToDemoBMappingRepository(db=db)
+        self.demo_a_to_demo_b_mapping_repo = DemoAToDemoBMappingRepository(db=db)
         self.demo_a_repo = DemoARepository(db=db)
         self.demo_b_repo = DemoBRepository(db=db)
 
@@ -45,20 +45,20 @@ class DemoAToDemoBMappingService(BaseAppService):
             raise DemoBNotFoundException(demo_b_id=payload.demo_b_id)
         
         demo_a_to_demo_b_mapping_data = payload.model_dump()
-        mapping = await self.mapping_repo.insert(demo_a_to_demo_b_mapping_data=demo_a_to_demo_b_mapping_data, user_id=user_id, workspace_id=workspace_id)
-        log_user_activity(f"Created mapping: {mapping.demo_a_to_demo_b_mapping_id}", action_type="mapping_create", level="info")
+        demo_a_to_demo_b_mapping = await self.demo_a_to_demo_b_mapping_repo.insert(demo_a_to_demo_b_mapping_data=demo_a_to_demo_b_mapping_data, user_id=user_id, workspace_id=workspace_id)
+        log_user_activity(f"Created mapping: {demo_a_to_demo_b_mapping.demo_a_to_demo_b_mapping_id}", action_type="mapping_create", level="info")
         
         # Set initial status
-        mapping.status = "created"
+        demo_a_to_demo_b_mapping.status = "created"
         
-        return DemoAToDemoBMappingReadSchema.model_validate(mapping)
+        return DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping)
 
     async def read(self, demo_a_to_demo_b_mapping_id: UUID, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
         """Read a mapping."""
-        mapping = await self.mapping_repo.get_by_id(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, workspace_id=workspace_id)
-        if not mapping:
+        demo_a_to_demo_b_mapping = await self.demo_a_to_demo_b_mapping_repo.get_by_id(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, workspace_id=workspace_id)
+        if not demo_a_to_demo_b_mapping:
             raise DemoAToDemoBMappingNotFoundException(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id)
-        return DemoAToDemoBMappingReadSchema.model_validate(mapping)
+        return DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping)
     
     async def list_all(
         self,
@@ -72,7 +72,7 @@ class DemoAToDemoBMappingService(BaseAppService):
     ) -> Dict[str, Any]:
         """List all mappings."""
         
-        result = await self.mapping_repo.get_all(
+        result = await self.demo_a_to_demo_b_mapping_repo.get_all(
             filters=filters,
             search=search,
             order_by=order_by,
@@ -86,17 +86,17 @@ class DemoAToDemoBMappingService(BaseAppService):
         if isinstance(result, dict):
             data = result.get("data", [])
             pagination = result.get("pagination", {})
-            schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in data]
+            schema_data = [DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping_item) for demo_a_to_demo_b_mapping_item in data]
             return {"data": schema_data, "pagination": pagination}
 
         # Fallback for non-dict results
-        schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in result]
+        schema_data = [DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping_item) for demo_a_to_demo_b_mapping_item in result]
         return {"data": schema_data, "pagination": {}}
     
     async def update(self, demo_a_to_demo_b_mapping_id: UUID, payload: DemoAToDemoBMappingUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
         """Update a mapping."""
-        existing_mapping = await self.mapping_repo.get_by_id(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, workspace_id=workspace_id)
-        if not existing_mapping:
+        existing_demo_a_to_demo_b_mapping = await self.demo_a_to_demo_b_mapping_repo.get_by_id(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, workspace_id=workspace_id)
+        if not existing_demo_a_to_demo_b_mapping:
             raise DemoAToDemoBMappingNotFoundException(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id)
         
         # Check if demo_a exists when updating demo_a_id
@@ -113,14 +113,14 @@ class DemoAToDemoBMappingService(BaseAppService):
         
         payload_dict = payload.model_dump(exclude_unset=True)
         payload_dict["status"] = "updated"
-        mapping = await self.mapping_repo.update(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, demo_a_to_demo_b_mapping_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
+        demo_a_to_demo_b_mapping = await self.demo_a_to_demo_b_mapping_repo.update(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, demo_a_to_demo_b_mapping_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
 
-        log_user_activity(f"Updated mapping: {mapping.demo_a_to_demo_b_mapping_id}", action_type="mapping_update")
-        return DemoAToDemoBMappingReadSchema.model_validate(mapping)
+        log_user_activity(f"Updated mapping: {demo_a_to_demo_b_mapping.demo_a_to_demo_b_mapping_id}", action_type="mapping_update")
+        return DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping)
 
     async def delete(self, demo_a_to_demo_b_mapping_id: UUID, user_id: UUID, workspace_id: UUID) -> None:
         """Delete a mapping."""
-        deleted = await self.mapping_repo.delete(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, user_id=user_id, workspace_id=workspace_id)
+        deleted = await self.demo_a_to_demo_b_mapping_repo.delete(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, user_id=user_id, workspace_id=workspace_id)
         
         if not deleted:
             raise DemoAToDemoBMappingNotFoundException(demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id)
@@ -132,7 +132,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         log_central(message=f"Updating mapping {demo_a_to_demo_b_mapping_id} status to {payload.status}", level="info")
         
         # Update status via repository
-        mapping = await self.mapping_repo.update_status(
+        demo_a_to_demo_b_mapping = await self.demo_a_to_demo_b_mapping_repo.update_status(
             demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
             status=payload.status,
             error_message=payload.error_message,
@@ -141,19 +141,19 @@ class DemoAToDemoBMappingService(BaseAppService):
             workspace_id=workspace_id
         )
 
-        return DemoAToDemoBMappingReadSchema.model_validate(mapping)
+        return DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping)
 
     async def update_is_active(self, demo_a_to_demo_b_mapping_id: UUID, payload: DemoAToDemoBMappingIsActiveUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
         """Update mapping is_active status."""
         # Update is_active via repository
-        mapping = await self.mapping_repo.update_is_active(
+        demo_a_to_demo_b_mapping = await self.demo_a_to_demo_b_mapping_repo.update_is_active(
             demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
             is_active=payload.is_active,
             user_id=user_id,
             workspace_id=workspace_id
         )
 
-        return DemoAToDemoBMappingReadSchema.model_validate(mapping)
+        return DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping)
 
     async def get_by_demo_a_id(
         self,
@@ -169,7 +169,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         if not demo_a:
             raise DemoANotFoundException(demo_a_id=demo_a_id)
 
-        result = await self.mapping_repo.get_by_demo_a_id(
+        result = await self.demo_a_to_demo_b_mapping_repo.get_by_demo_a_id(
             demo_a_id=demo_a_id,
             workspace_id=workspace_id,
             skip=skip,
@@ -180,11 +180,11 @@ class DemoAToDemoBMappingService(BaseAppService):
         if isinstance(result, dict):
             data = result.get("data", [])
             pagination = result.get("pagination", {})
-            schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in data]
+            schema_data = [DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping_item) for demo_a_to_demo_b_mapping_item in data]
             return {"data": schema_data, "pagination": pagination}
 
         # Fallback for non-dict results
-        schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in result]
+        schema_data = [DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping_item) for demo_a_to_demo_b_mapping_item in result]
         return {"data": schema_data, "pagination": {}}
 
     async def get_by_demo_b_id(
@@ -201,7 +201,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         if not demo_b:
             raise DemoBNotFoundException(demo_b_id=demo_b_id)
 
-        result = await self.mapping_repo.get_by_demo_b_id(
+        result = await self.demo_a_to_demo_b_mapping_repo.get_by_demo_b_id(
             demo_b_id=demo_b_id,
             workspace_id=workspace_id,
             skip=skip,
@@ -212,11 +212,11 @@ class DemoAToDemoBMappingService(BaseAppService):
         if isinstance(result, dict):
             data = result.get("data", [])
             pagination = result.get("pagination", {})
-            schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in data]
+            schema_data = [DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping_item) for demo_a_to_demo_b_mapping_item in data]
             return {"data": schema_data, "pagination": pagination}
 
         # Fallback for non-dict results
-        schema_data = [DemoAToDemoBMappingReadSchema.model_validate(ws) for ws in result]
+        schema_data = [DemoAToDemoBMappingReadSchema.model_validate(demo_a_to_demo_b_mapping_item) for demo_a_to_demo_b_mapping_item in result]
         return {"data": schema_data, "pagination": {}}
 
     async def delete_by_demo_a_id(
@@ -231,7 +231,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         if not demo_a:
             raise DemoANotFoundException(demo_a_id=demo_a_id)
 
-        deleted_count = await self.mapping_repo.delete_by_demo_a_id(
+        deleted_count = await self.demo_a_to_demo_b_mapping_repo.delete_by_demo_a_id(
             demo_a_id=demo_a_id,
             user_id=user_id,
             workspace_id=workspace_id
@@ -256,7 +256,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         if not demo_b:
             raise DemoBNotFoundException(demo_b_id=demo_b_id)
 
-        deleted_count = await self.mapping_repo.delete_by_demo_b_id(
+        deleted_count = await self.demo_a_to_demo_b_mapping_repo.delete_by_demo_b_id(
             demo_b_id=demo_b_id,
             user_id=user_id,
             workspace_id=workspace_id
