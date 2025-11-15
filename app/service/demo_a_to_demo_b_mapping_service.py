@@ -4,7 +4,6 @@ from typing import Optional, Dict, Any, List
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.logger_config import log_user_activity, log_central
-from app.config.constants import LogMessages
 from app.schema.demo_a_to_demo_b_mapping_schema import (
     DemoAToDemoBMappingCreateSchema,
     DemoAToDemoBMappingUpdateSchema,
@@ -29,8 +28,8 @@ class DemoAToDemoBMappingService(BaseAppService):
     async def create(self, payload: DemoAToDemoBMappingCreateSchema, user_id: UUID, workspace_id: UUID) -> DemoAToDemoBMappingReadSchema:
         """Create a new mapping."""
         
-        mapping_data = payload.model_dump()
-        mapping = await self.mapping_repo.insert(mapping_data=mapping_data, user_id=user_id, workspace_id=workspace_id)
+        demo_a_to_demo_b_mapping_data = payload.model_dump()
+        mapping = await self.mapping_repo.insert(demo_a_to_demo_b_mapping_data=demo_a_to_demo_b_mapping_data, user_id=user_id, workspace_id=workspace_id)
         log_user_activity(f"Created mapping: {mapping.mapping_id}", action_type="mapping_create", level="info")
         
         # Set initial status
@@ -86,7 +85,7 @@ class DemoAToDemoBMappingService(BaseAppService):
         
         payload_dict = payload.model_dump(exclude_unset=True)
         payload_dict["status"] = "updated"
-        mapping = await self.mapping_repo.update(mapping_id=mapping_id, mapping_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
+        mapping = await self.mapping_repo.update(mapping_id=mapping_id, demo_a_to_demo_b_mapping_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
 
         log_user_activity(f"Updated mapping: {mapping.mapping_id}", action_type="mapping_update")
         return DemoAToDemoBMappingReadSchema.model_validate(mapping)

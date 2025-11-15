@@ -30,18 +30,18 @@ class DemoBService(BaseAppService):
     async def create(self, payload: DemoBCreateSchema, user_id: UUID, workspace_id: UUID) -> DemoBReadSchema:        
         """Create a new demo."""
         
-        demo_data = payload.model_dump()
+        demo_b_data = payload.model_dump()
 
         # Convert AnyHttpUrl to string
-        if demo_data.get("website"):
-            demo_data["website"] = str(demo_data["website"])
+        if demo_b_data.get("website"):
+            demo_b_data["website"] = str(demo_b_data["website"])
         
-        if demo_data.get("social_accounts"):
-            for account in demo_data["social_accounts"]:
+        if demo_b_data.get("social_accounts"):
+            for account in demo_b_data["social_accounts"]:
                 if account.get("url"):
                     account["url"] = str(account["url"])
 
-        demo = await self.demo_repo.insert(demo_data=demo_data, user_id=user_id, workspace_id=workspace_id)
+        demo = await self.demo_repo.insert(demo_b_data=demo_b_data, user_id=user_id, workspace_id=workspace_id)
         log_user_activity(f"{LogMessages.DEMO_CREATED}: {demo.name}", action_type="demo_create", level="info")
         
         # Set initial status
@@ -108,7 +108,7 @@ class DemoBService(BaseAppService):
                     account["url"] = str(account["url"])
         
         payload_dict["status"] = "updated"
-        demo = await self.demo_repo.update(demo_b_id=demo_b_id, demo_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
+        demo = await self.demo_repo.update(demo_b_id=demo_b_id, demo_b_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
 
         log_user_activity(f"{LogMessages.DEMO_UPDATED}: {demo.name}", action_type="demo_update")
         return DemoBReadSchema.model_validate(demo)

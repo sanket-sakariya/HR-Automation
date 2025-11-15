@@ -9,7 +9,10 @@ from alembic import context
 from app.config.baseapp_config import get_base_config
 from app.model.baseapp_model import Base
 
-from app.model.demo_model import DemoModel 
+from app.model.demo_a_model import DemoAModel
+from app.model.demo_b_model import DemoBModel
+from app.model.demo_a_to_demo_b_mapping_model import DemoAToDemoBMappingModel
+
 
 # Import your app config
 

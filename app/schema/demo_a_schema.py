@@ -84,7 +84,7 @@ class DemoAUpdateSchema(BaseAppSchema):
     age: Optional[int] = Field(default=None, gt=0, lt=150, example=40)
     progress: Optional[float] = Field(default=None, ge=0.0, le=100.0, example=75.5)
     is_active: Optional[bool] = Field(default=None, example=False)
-    status: Optional[DemoStatus] = Field(default=None, description="Current status of the entity", example=DemoAStatus.UPDATING)
+    status: Optional[DemoAStatus] = Field(default=None, description="Current status of the entity", example=DemoAStatus.UPDATING)
     start_date: Optional[date] = Field(default=None, example="2023-01-01")
     social_accounts: Optional[List[SocialAccountSchema]] = Field(default=None, example=[
         {
@@ -158,10 +158,12 @@ class DemoAReadSchema(BaseAppSchema):
         "newsletter": True,
         "notifications_enabled": False
     })
-    demo_a_id: UUID = Field(..., description="Demo ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d")
+    demo_a_id: UUID = Field(..., description="Demo A ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d")
     created_at: Optional[datetime] = Field(default=None, description="Created at", example="2023-01-01T12:00:00Z")
     updated_at: Optional[datetime] = Field(default=None, description="Updated at", example="2023-01-02T14:30:00Z")
     deleted_at: Optional[datetime] = Field(default=None, description="Deleted at", example="2023-01-03T16:45:00Z")
     deleted_by: Optional[UUID] = Field(default=None, description="Deleted by", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d")
-    status: Optional[DemoStatus]  = Field(..., description="Current status of the demo", example=DemoAStatus.CREATED)
-    is_active: bool = Field(default=True, description="Whether the demo is active", example=True)
+
+DemoACreateSchema.model_rebuild()
+DemoAUpdateSchema.model_rebuild()
+DemoAReadSchema.model_rebuild()

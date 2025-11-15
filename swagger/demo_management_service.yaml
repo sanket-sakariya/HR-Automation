@@ -301,7 +301,7 @@ paths:
       tags:
         - Demo
       summary: Update demo status and error messages
-      operationId: updateDemoStatus
+      operationId: updateDemoAStatus
       description: |
         Updates the demo status and error messages.
         This endpoint allows updating only the status, error_message, and error_user_message fields.
