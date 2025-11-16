@@ -78,7 +78,10 @@ def setup_error_handlers(app):
                     serializable_error[key] = _make_serializable(value)
                 elif isinstance(value, (list, tuple)):
                     # Handle lists/tuples that might contain non-serializable objects
-                    serializable_error[key] = [_make_serializable(item) if isinstance(item, (dict, Exception)) else item for item in value]
+                    serializable_error[key] = [
+                        _make_serializable(item) if isinstance(item, (dict, Exception))
+                        else item for item in value
+                    ]
                 else:
                     serializable_error[key] = value
             errors.append(serializable_error)

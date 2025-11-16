@@ -96,7 +96,8 @@ def _extract_context_from_message(message_text: str) -> tuple[str, str, str, str
     correlation_id = None
     action_type = "general"
     
-    # Check if message contains context information in format [user_id=xxx, workspace_id=yyy, correlation_id=zzz]
+    # Check if message contains context information in format
+    # [user_id=xxx, workspace_id=yyy, correlation_id=zzz]
     context_match = re.search(r'\[([^\]]+)\]$', message_text)
     if context_match:
         context_str = context_match.group(1)
@@ -175,7 +176,10 @@ class QueueLogHandler:
         
         # Check if RabbitMQ is enabled for this service
         if not self.config.IS_RABBITMQ_ENABLED:
-            logger.info("Queue log handler: RabbitMQ is disabled for this service (IS_RABBITMQ_ENABLED=False), skipping initialization")
+            logger.info(
+                "Queue log handler: RabbitMQ is disabled for this service "
+                "(IS_RABBITMQ_ENABLED=False), skipping initialization"
+            )
             return
         
         # Create async queue
@@ -240,7 +244,8 @@ class QueueLogHandler:
                 priority = 3
             
             # Extract context
-            message_text, msg_user_id, msg_workspace_id, msg_correlation_id, msg_action_type = _extract_context_from_message(message_text)
+            (message_text, msg_user_id, msg_workspace_id, 
+             msg_correlation_id, msg_action_type) = _extract_context_from_message(message_text)
             context = _get_context_info()
             
             # Create log message
@@ -373,10 +378,16 @@ def configure_logging() -> None:
             backtrace=False,
             diagnose=False,
             enqueue=True,
-            format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
+            format=(
+                "{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | "
+                "{name}:{function}:{line} - {message}"
+            ),
         )
     elif config.IS_QUEUE_LOG and not config.IS_RABBITMQ_ENABLED:
-        logger.warning("IS_QUEUE_LOG is enabled but IS_RABBITMQ_ENABLED is False. Queue logging is disabled for this service.")
+        logger.warning(
+            "IS_QUEUE_LOG is enabled but IS_RABBITMQ_ENABLED is False. "
+            "Queue logging is disabled for this service."
+        )
 
 async def shutdown_logging() -> None:
     """Gracefully shutdown logging and close RabbitMQ connection"""
@@ -420,7 +431,12 @@ def _log_with_context(message: str, log_type: str, level: str = "info", exc_info
         log_method(f"{log_type}: {{message}}{context_str}", message=message)
 
 
-def log_user_activity(message: str, action_type: str = "general", level: str = "info", exc_info: bool = False):
+def log_user_activity(
+    message: str,
+    action_type: str = "general",
+    level: str = "info",
+    exc_info: bool = False
+):
     """
     Log user activity - goes to user_activities table only
     
@@ -433,7 +449,12 @@ def log_user_activity(message: str, action_type: str = "general", level: str = "
     _log_with_context(f"[{action_type}] {message}", "USER_ACTIVITY", level, exc_info)
 
 
-def log_all(message: str, action_type: str = "general", level: str = "info", exc_info: bool = False):
+def log_all(
+    message: str,
+    action_type: str = "general",
+    level: str = "info",
+    exc_info: bool = False
+):
     """
     Log important events - goes to BOTH tables (user_activities + central_logs)
     

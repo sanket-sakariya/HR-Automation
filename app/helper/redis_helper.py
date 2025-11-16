@@ -65,7 +65,10 @@ class RedisHelper:
         else:
             self.redis_url = None
             self.default_ttl = None
-            logger.warning("Redis helper initialized but Redis cache is disabled for this service (IS_REDIS_CACHE_ENABLED=False)")
+            logger.warning(
+                "Redis helper initialized but Redis cache is disabled for this service "
+                "(IS_REDIS_CACHE_ENABLED=False)"
+            )
         
         self._redis: Optional[redis.Redis] = None
     

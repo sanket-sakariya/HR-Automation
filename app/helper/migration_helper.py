@@ -172,8 +172,8 @@ class MigrationHelper:
         
         # Download failed
         logger.error(
-            f"Failed to download migrations from Wasabi. "
-            f"Please ensure migrations are uploaded to Wasabi bucket: {self.wasabi_helper.bucket_name}"
+            f"Failed to download migrations from Wasabi. Please ensure migrations "
+            f"are uploaded to Wasabi bucket: {self.wasabi_helper.bucket_name}"
         )
         return False
     

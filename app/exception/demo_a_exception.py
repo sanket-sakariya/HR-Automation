@@ -55,7 +55,10 @@ class DemoAInvalidDataException(InvalidDataException):
 class DemoAInactiveException(BaseAppException):
     """Exception for inactive demo_a."""
     def __init__(self, demo_a_id: UUID):
-        super().__init__(f"DemoA with ID {demo_a_id} is inactive.", status_code=status.HTTP_400_BAD_REQUEST)
+        super().__init__(
+            f"DemoA with ID {demo_a_id} is inactive.",
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class DemoAPermissionDeniedException(PermissionDeniedException):
@@ -106,14 +109,20 @@ class DemoAFileValidationException(BaseAppException):
 class DemoAFileSizeExceededException(BaseAppException):
     """Exception for demo_a file size exceeded."""
     def __init__(self, max_size: int, actual_size: int):
-        message = f"File size {actual_size} bytes exceeds maximum allowed size of {max_size} bytes for demo_a."
+        message = (
+            f"File size {actual_size} bytes exceeds maximum allowed size of "
+            f"{max_size} bytes for demo_a."
+        )
         super().__init__(message=message, status_code=status.HTTP_400_BAD_REQUEST)
 
 
 class DemoAUnsupportedFileTypeException(BaseAppException):
     """Exception for demo_a unsupported file type."""
     def __init__(self, file_type: str, allowed_types: list):
-        message = f"File type '{file_type}' is not supported for demo_a. Allowed types: {', '.join(allowed_types)}"
+        message = (
+            f"File type '{file_type}' is not supported for demo_a. "
+            f"Allowed types: {', '.join(allowed_types)}"
+        )
         super().__init__(message=message, status_code=status.HTTP_400_BAD_REQUEST)
 
 

@@ -21,7 +21,9 @@ class StandardResponse(BaseModel, Generic[T]):
     success: bool = Field(..., description="Whether the operation was successful")
     data: Optional[T] = Field(None, description="Response data")
     error_message: Optional[str] = Field(None, description="Error message if any")
-    errors: List[ErrorDetail] = Field(default_factory=list, description="Detailed error information")
+    errors: List[ErrorDetail] = Field(
+        default_factory=list, description="Detailed error information"
+    )
 
 
 class SuccessResponse(StandardResponse[T]):  

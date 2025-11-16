@@ -21,7 +21,12 @@ class DemoBRepository(BaseAppRepository[DemoBModel]):
         super().__init__(db=db, model=DemoBModel)
         
 
-    async def insert(self, demo_b_data: Dict[str, Any], user_id: UUID = None, workspace_id: UUID = None) -> DemoBModel:
+    async def insert(
+        self,
+        demo_b_data: Dict[str, Any],
+        user_id: UUID = None,
+        workspace_id: UUID = None
+    ) -> DemoBModel:
         """Insert a new demo (async). user_id optional."""
         try:
             demo_b = DemoBModel(**demo_b_data)
@@ -36,9 +41,13 @@ class DemoBRepository(BaseAppRepository[DemoBModel]):
             
             return demo_b
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_B_CREATION_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DEMO_B_CREATION_ERROR}: {str(e)}"
+            ) from e
 
-    async def get_by_id(self, demo_b_id: UUID, workspace_id: UUID = None) -> DemoBModel:
+    async def get_by_id(
+        self, demo_b_id: UUID, workspace_id: UUID = None
+    ) -> DemoBModel:
         """Get a demo by ID and workspace (async)."""
         try:
             query = select(DemoBModel).where(
@@ -55,10 +64,18 @@ class DemoBRepository(BaseAppRepository[DemoBModel]):
             
             return demo_b
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_B_RETRIEVAL_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DEMO_B_RETRIEVAL_ERROR}: {str(e)}"
+            ) from e
 
 
-    async def update(self, demo_b_id: UUID, demo_b_data: Dict[str, Any], user_id: UUID = None, workspace_id: UUID = None) -> DemoBModel:
+    async def update(
+        self,
+        demo_b_id: UUID,
+        demo_b_data: Dict[str, Any],
+        user_id: UUID = None,
+        workspace_id: UUID = None
+    ) -> DemoBModel:
         """Update an existing demo (async)."""
         try:
             demo_b = await self.get_by_id(demo_b_id, workspace_id=workspace_id)
@@ -77,11 +94,24 @@ class DemoBRepository(BaseAppRepository[DemoBModel]):
             
             return demo_b
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_B_UPDATE_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DEMO_B_UPDATE_ERROR}: {str(e)}"
+            ) from e
 
 
-    async def update_status(self, demo_b_id: UUID, status: str, error_message: str = None, error_user_message: str = None, user_id: UUID = None, workspace_id: UUID = None) -> DemoBModel:
-        """Update only the status of a demo (async). Only works if current status is not 'deleted'."""
+    async def update_status(
+        self,
+        demo_b_id: UUID,
+        status: str,
+        error_message: str = None,
+        error_user_message: str = None,
+        user_id: UUID = None,
+        workspace_id: UUID = None
+    ) -> DemoBModel:
+        """
+        Update only the status of a demo (async).
+        Only works if current status is not 'deleted'.
+        """
         try:
             demo_b = await self.get_by_id(demo_b_id, workspace_id=workspace_id)
             if not demo_b:
@@ -97,10 +127,18 @@ class DemoBRepository(BaseAppRepository[DemoBModel]):
             await self.db.refresh(demo_b)
             return demo_b
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_B_STATUS_UPDATE_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DEMO_B_STATUS_UPDATE_ERROR}: {str(e)}"
+            ) from e
 
 
-    async def update_is_active(self, demo_b_id: UUID, is_active: bool, user_id: UUID = None, workspace_id: UUID = None) -> DemoBModel:
+    async def update_is_active(
+        self,
+        demo_b_id: UUID,
+        is_active: bool,
+        user_id: UUID = None,
+        workspace_id: UUID = None
+    ) -> DemoBModel:
         """Update only the is_active flag of a demo (async)."""
         try:
             demo_b = await self.get_by_id(demo_b_id, workspace_id=workspace_id)
@@ -115,9 +153,13 @@ class DemoBRepository(BaseAppRepository[DemoBModel]):
             await self.db.refresh(demo_b)
             return demo_b
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_B_ACTIVE_UPDATE_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DEMO_B_ACTIVE_UPDATE_ERROR}: {str(e)}"
+            ) from e
 
-    async def delete(self, demo_b_id: UUID, user_id: UUID = None, workspace_id: UUID = None) -> bool:
+    async def delete(
+        self, demo_b_id: UUID, user_id: UUID = None, workspace_id: UUID = None
+    ) -> bool:
         """Soft delete a demo (update status & is_active) (async)."""
         try:
             demo_b = await self.get_by_id(demo_b_id, workspace_id=workspace_id)
@@ -138,7 +180,9 @@ class DemoBRepository(BaseAppRepository[DemoBModel]):
             
             return True
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DEMO_B_DELETION_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DEMO_B_DELETION_ERROR}: {str(e)}"
+            ) from e
 
     async def get_all(
         self,

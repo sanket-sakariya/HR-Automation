@@ -140,7 +140,8 @@ class BackupHelper:
                 # Check for version mismatch and provide helpful message
                 if "server version" in result.stderr and "pg_dump version" in result.stderr:
                     raise Exception(  # pylint: disable=broad-exception-raised
-                        f"PostgreSQL version mismatch. Server and pg_dump versions must be compatible.\n"
+                        f"PostgreSQL version mismatch. Server and pg_dump versions "
+                        f"must be compatible.\n"
                         f"Error: {result.stderr}\n\n"
                         f"To fix this on macOS, upgrade PostgreSQL client:\n"
                         f"  brew upgrade postgresql@17\n"
@@ -233,7 +234,10 @@ class BackupHelper:
                             'filename': filename,
                             'key': key,
                             'size': response.get('ContentLength', 0),
-                            'last_modified': response.get('LastModified').isoformat() if response.get('LastModified') else None,
+                            'last_modified': (
+                                response.get('LastModified').isoformat()
+                                if response.get('LastModified') else None
+                            ),
                         })
                     except ClientError as e:
                         logger.warning(f"Could not get metadata for {key}: {e}")
@@ -333,7 +337,12 @@ class BackupHelper:
                 'success': True
             }
             
-        except (ClientError, NoCredentialsError, subprocess.CalledProcessError, zipfile.BadZipFile) as e:
+        except (
+            ClientError,
+            NoCredentialsError,
+            subprocess.CalledProcessError,
+            zipfile.BadZipFile
+        ) as e:
             logger.error(f"Error restoring backup: {str(e)}", exc_info=True)
             raise
         finally:

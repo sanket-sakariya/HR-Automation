@@ -11,7 +11,12 @@ class BaseAppModel(Base):
 
     workspace_id = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime(timezone=True), nullable=True, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )
     deleted_at = Column(DateTime(timezone=True), nullable=True)
     created_by = Column(UUID(as_uuid=True), nullable=False)
     updated_by = Column(UUID(as_uuid=True), nullable=True)

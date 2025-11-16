@@ -27,7 +27,9 @@ class DemoAService(BaseAppService):
         super().__init__(db=db)
         self.demo_repo = DemoARepository(db=db)
 
-    async def create(self, payload: DemoACreateSchema, user_id: UUID, workspace_id: UUID) -> DemoAReadSchema:        
+    async def create(
+        self, payload: DemoACreateSchema, user_id: UUID, workspace_id: UUID
+    ) -> DemoAReadSchema:        
         """Create a new demo."""
         
         demo_a_data = payload.model_dump()
@@ -41,8 +43,14 @@ class DemoAService(BaseAppService):
                 if account.get("url"):
                     account["url"] = str(account["url"])
 
-        demo_a = await self.demo_repo.insert(demo_a_data=demo_a_data, user_id=user_id, workspace_id=workspace_id)
-        log_user_activity(f"{LogMessages.DEMO_CREATED}: {demo_a.name}", action_type="demo_create", level="info")
+        demo_a = await self.demo_repo.insert(
+            demo_a_data=demo_a_data, user_id=user_id, workspace_id=workspace_id
+        )
+        log_user_activity(
+            f"{LogMessages.DEMO_CREATED}: {demo_a.name}",
+            action_type="demo_create",
+            level="info"
+        )
         
         # Set initial status
         demo_a.status = "created"
@@ -90,9 +98,13 @@ class DemoAService(BaseAppService):
         return {"data": schema_data, "pagination": {}}
 
     
-    async def update(self, demo_a_id: UUID, payload: DemoAUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAReadSchema:
+    async def update(
+        self, demo_a_id: UUID, payload: DemoAUpdateSchema, user_id: UUID, workspace_id: UUID
+    ) -> DemoAReadSchema:
         """Update a demo."""
-        existing_demo_a = await self.demo_repo.get_by_id(demo_a_id=demo_a_id, workspace_id=workspace_id)
+        existing_demo_a = await self.demo_repo.get_by_id(
+            demo_a_id=demo_a_id, workspace_id=workspace_id
+        )
         if not existing_demo_a:
             raise DemoANotFoundException(demo_a_id=demo_a_id)
         
@@ -108,14 +120,21 @@ class DemoAService(BaseAppService):
                     account["url"] = str(account["url"])
         
         payload_dict["status"] = "updated"
-        demo_a = await self.demo_repo.update(demo_a_id=demo_a_id, demo_a_data=payload_dict, user_id=user_id, workspace_id=workspace_id)
+        demo_a = await self.demo_repo.update(
+            demo_a_id=demo_a_id,
+            demo_a_data=payload_dict,
+            user_id=user_id,
+            workspace_id=workspace_id
+        )
 
         log_user_activity(f"{LogMessages.DEMO_UPDATED}: {demo_a.name}", action_type="demo_update")
         return DemoAReadSchema.model_validate(demo_a)
 
     async def delete(self, demo_a_id: UUID, user_id: UUID, workspace_id: UUID) -> None:
         """Delete a demo."""
-        deleted = await self.demo_repo.delete(demo_a_id=demo_a_id, user_id=user_id, workspace_id=workspace_id)
+        deleted = await self.demo_repo.delete(
+            demo_a_id=demo_a_id, user_id=user_id, workspace_id=workspace_id
+        )
         
         if not deleted:
             raise DemoANotFoundException(demo_a_id=demo_a_id)
@@ -123,11 +142,20 @@ class DemoAService(BaseAppService):
         log_user_activity(f"{LogMessages.DEMO_DELETED} {demo_a_id}", action_type="demo_delete")
 
     
-    async def update_status(self, demo_a_id: UUID, payload: DemoAStatusUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAReadSchema:
+    async def update_status(
+        self,
+        demo_a_id: UUID,
+        payload: DemoAStatusUpdateSchema,
+        user_id: UUID,
+        workspace_id: UUID
+    ) -> DemoAReadSchema:
         """
         Update demo status and error messages.
         """
-        log_central(message=f"{LogMessages.DEMO_STATUS_UPDATED} {demo_a_id} status to {payload.status}", level="info")
+        log_central(
+            message=f"{LogMessages.DEMO_STATUS_UPDATED} {demo_a_id} status to {payload.status}",
+            level="info"
+        )
         
         # Update status via repository
         demo_a = await self.demo_repo.update_status(
@@ -141,7 +169,13 @@ class DemoAService(BaseAppService):
 
         return DemoAReadSchema.model_validate(demo_a)
 
-    async def update_is_active(self, demo_a_id: UUID, payload: DemoAIsActiveUpdateSchema, user_id: UUID, workspace_id: UUID) -> DemoAReadSchema:
+    async def update_is_active(
+        self,
+        demo_a_id: UUID,
+        payload: DemoAIsActiveUpdateSchema,
+        user_id: UUID,
+        workspace_id: UUID
+    ) -> DemoAReadSchema:
         """
         Update demo is_active status.
         

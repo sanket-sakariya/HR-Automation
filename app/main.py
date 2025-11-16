@@ -66,7 +66,10 @@ async def lifespan(_app: FastAPI):
         except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"⚠️  Redis cache initialization failed: {e}")
     else:
-        logger.warning("⚠️  Redis cache is disabled for this service (IS_REDIS_CACHE_ENABLED=False)")
+        logger.warning(
+            "⚠️  Redis cache is disabled for this service "
+            "(IS_REDIS_CACHE_ENABLED=False)"
+        )
     
     # Ensure migration files exist (download from Wasabi if needed)
     # This is critical because migration files are excluded from Docker image via .dockerignore

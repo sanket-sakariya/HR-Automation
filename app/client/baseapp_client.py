@@ -59,13 +59,19 @@ class BaseAppHttpClient:
                 logger.error(f"HTTP error {e.response.status_code}: {e.response.text}")
                 if e.response.status_code >= 500:
                     if attempt == self.retries - 1:
-                        raise ServiceUnavailableException(message=f"External service error: {e.response.status_code}") from e
+                        raise ServiceUnavailableException(
+                            message=f"External service error: {e.response.status_code}"
+                        ) from e
                 else:
-                    raise ServiceUnavailableException(message=f"External service error: {e.response.status_code}") from e
+                    raise ServiceUnavailableException(
+                        message=f"External service error: {e.response.status_code}"
+                    ) from e
             except httpx.RequestError as e:
                 logger.error(f"Unexpected error (attempt {attempt + 1}/{self.retries}): {str(e)}")
                 if attempt == self.retries - 1:
-                    raise ServiceUnavailableException(message=f"External service communication failed: {str(e)}") from e
+                    raise ServiceUnavailableException(
+                        message=f"External service communication failed: {str(e)}"
+                    ) from e
             
             # Wait before retry
             if attempt < self.retries - 1:

@@ -17,7 +17,9 @@ class FileHelper(BaseAppHelper):
         self.base_media_path = Path(base_media_path)
         self.logo_path = self.base_media_path / logo_subdir
         self.max_file_size = 5 * 1024 * 1024  # 5MB
-        self.allowed_extensions = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff", ".tif"}
+        self.allowed_extensions = {
+            ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff", ".tif"
+        }
         self.max_image_size = (1024, 1024)  # Max width/height
         self.webp_quality = 85  # WebP quality (0-100)
         
@@ -27,7 +29,8 @@ class FileHelper(BaseAppHelper):
     def _ensure_directories(self):
         """Create necessary directories if they don't exist."""
         self.logo_path.mkdir(parents=True, exist_ok=True)
-        # logger.info(f" Media directories ensured: {self.logo_path}")  # Disabled to reduce log noise
+        # logger.info(f" Media directories ensured: {self.logo_path}")
+        # Disabled to reduce log noise
     
     def _validate_image_file(self, file: UploadFile) -> None:
         """Validate uploaded image file."""
@@ -104,7 +107,10 @@ class FileHelper(BaseAppHelper):
             raise
         except Exception as e:
             logger.error(f" Logo upload failed: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Logo upload failed: {str(e)}") from e
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Logo upload failed: {str(e)}"
+            ) from e
     
     async def _process_and_save_image(self, content: bytes, file_path: Path) -> None:
         """Process and save image as WebP with optimization."""
@@ -131,7 +137,10 @@ class FileHelper(BaseAppHelper):
             
         except Exception as e:
             logger.error(f" Image processing failed: {str(e)}")
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to process image") from e
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to process image"
+            ) from e
     
     async def delete_logo(self, logo_url: str) -> bool:
         """

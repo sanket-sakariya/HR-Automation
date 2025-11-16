@@ -5,7 +5,9 @@ from app.api.v1.endpoints.health import router as health_router
 from app.api.v1.endpoints.migration_endpoint import router as migration_router
 from app.api.v1.endpoints.demo_a_endpoint import router as demo_a_router
 from app.api.v1.endpoints.demo_b_endpoint import router as demo_b_router
-from app.api.v1.endpoints.demo_a_to_demo_b_mapping_endpoint import router as demo_a_to_demo_b_mapping_router
+from app.api.v1.endpoints.demo_a_to_demo_b_mapping_endpoint import (
+    router as demo_a_to_demo_b_mapping_router
+)
 from app.api.v1.endpoints.backup_endpoint import router as backup_router
 from app.config.baseapp_config import get_base_config
 

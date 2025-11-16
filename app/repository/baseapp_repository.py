@@ -147,10 +147,22 @@ class BaseAppRepository(Generic[T]):
             "is": lambda: cmp_func == cmp_value,
             "is_not": lambda: cmp_func != cmp_value,
             "as_it": lambda: func.lower(column_attr) == cmp_value,
-            "contains": lambda: column_attr.ilike(f"%{value}%") if not case_sensitive else column_attr.like(f"%{value}%"),
-            "not_contains": lambda: ~column_attr.ilike(f"%{value}%") if not case_sensitive else ~column_attr.like(f"%{value}%"),
-            "startswith": lambda: column_attr.ilike(f"{value}%") if not case_sensitive else column_attr.like(f"{value}%"),
-            "endswith": lambda: column_attr.ilike(f"%{value}") if not case_sensitive else column_attr.like(f"%{value}"),
+            "contains": lambda: (
+                column_attr.ilike(f"%{value}%")
+                if not case_sensitive else column_attr.like(f"%{value}%")
+            ),
+            "not_contains": lambda: (
+                ~column_attr.ilike(f"%{value}%")
+                if not case_sensitive else ~column_attr.like(f"%{value}%")
+            ),
+            "startswith": lambda: (
+                column_attr.ilike(f"{value}%")
+                if not case_sensitive else column_attr.like(f"{value}%")
+            ),
+            "endswith": lambda: (
+                column_attr.ilike(f"%{value}")
+                if not case_sensitive else column_attr.like(f"%{value}")
+            ),
             "is_empty": lambda: column_attr.is_(None),
             "not_empty": lambda: column_attr.is_not(None),
         }
@@ -205,13 +217,38 @@ class BaseAppRepository(Generic[T]):
     def _get_time_operator_filter(self, column_attr, operator):
         now = datetime.now()
         operator_map = {
-            "this_hour": lambda: func.date_trunc('hour', column_attr) == now.replace(minute=0, second=0, microsecond=0),
-            "last_hour": lambda: column_attr.between(now - timedelta(hours=1), now),
-            "last_3_hours": lambda: column_attr.between(now - timedelta(hours=3), now),
-            "morning": lambda: func.time(column_attr).between(datetime.min.replace(hour=6).time(), datetime.min.replace(hour=12).time()),
-            "afternoon": lambda: func.time(column_attr).between(datetime.min.replace(hour=12).time(), datetime.min.replace(hour=17).time()),
-            "evening": lambda: func.time(column_attr).between(datetime.min.replace(hour=17).time(), datetime.min.replace(hour=22).time()),
-            "night": lambda: or_(func.time(column_attr) >= datetime.min.replace(hour=22).time(), func.time(column_attr) <= datetime.min.replace(hour=6).time()),
+            "this_hour": lambda: (
+                func.date_trunc('hour', column_attr)
+                == now.replace(minute=0, second=0, microsecond=0)
+            ),
+            "last_hour": lambda: (
+                column_attr.between(now - timedelta(hours=1), now)
+            ),
+            "last_3_hours": lambda: (
+                column_attr.between(now - timedelta(hours=3), now)
+            ),
+            "morning": lambda: (
+                func.time(column_attr).between(
+                    datetime.min.replace(hour=6).time(),
+                    datetime.min.replace(hour=12).time()
+                )
+            ),
+            "afternoon": lambda: (
+                func.time(column_attr).between(
+                    datetime.min.replace(hour=12).time(),
+                    datetime.min.replace(hour=17).time()
+                )
+            ),
+            "evening": lambda: (
+                func.time(column_attr).between(
+                    datetime.min.replace(hour=17).time(),
+                    datetime.min.replace(hour=22).time()
+                )
+            ),
+            "night": lambda: or_(
+                func.time(column_attr) >= datetime.min.replace(hour=22).time(),
+                func.time(column_attr) <= datetime.min.replace(hour=6).time()
+            ),
         }
         return operator_map.get(operator, lambda: None)()
 
@@ -221,7 +258,13 @@ class BaseAppRepository(Generic[T]):
             return None
 
         operator_map = {
-            "between": lambda: column_attr.between(parse_date_value(value), parse_date_value(value2)) if "timestamp" in col_type else column_attr.between(parse_date_value(value).date(), parse_date_value(value2).date()),
+            "between": lambda: (
+                column_attr.between(parse_date_value(value), parse_date_value(value2))
+                if "timestamp" in col_type
+                else column_attr.between(
+                    parse_date_value(value).date(), parse_date_value(value2).date()
+                )
+            ),
             "before": lambda: column_attr < parsed_value,
             "after": lambda: column_attr > parsed_value,
             "on": lambda: func.date(column_attr) == parsed_value.date(),
@@ -333,7 +376,9 @@ class BaseAppRepository(Generic[T]):
             return None
         column_attr = getattr(self.model, col)
         col_type = str(column_attr.type).lower()
-        return self._get_filter_clause(column_attr, operator, value, value2, f, col_type, case_sensitive)
+        return self._get_filter_clause(
+            column_attr, operator, value, value2, f, col_type, case_sensitive
+        )
 
     def _get_filter_clause(self, column_attr, operator, value, value2, f, col_type, case_sensitive):
         col_type_str = str(col_type).lower()
@@ -478,7 +523,9 @@ class BaseAppRepository(Generic[T]):
 
             return {"data": data, "pagination": pagination}
         except Exception as e:
-            raise InternalServerErrorException(message=f"{DatabaseErrorMessages.DATA_RETRIEVAL_ERROR}: {str(e)}") from e
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.DATA_RETRIEVAL_ERROR}: {str(e)}"
+            ) from e
 
     async def get_all(
         self,
@@ -499,7 +546,9 @@ class BaseAppRepository(Generic[T]):
         else:
             count_query = select(literal_column("1"))
 
-        query, count_query = self._apply_filters_and_search(query, count_query, filters, search, user_id, workspace_id)
+        query, count_query = self._apply_filters_and_search(
+            query, count_query, filters, search, user_id, workspace_id
+        )
         query = self._apply_ordering(query, order_by)
         
         return await self._execute_query(query, count_query, skip, limit)

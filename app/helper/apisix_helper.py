@@ -12,7 +12,10 @@ class APISIXHelper:
         """Initialize APISIX helper with configuration."""
         self.config = get_apisix_config()
         self.base_config = get_base_config()
-        self.admin_url = f"{self.config.APISIX_ADMIN_URL}/apisix/admin/routes/{self.config.APISIX_ROUTE_NAME}"
+        self.admin_url = (
+            f"{self.config.APISIX_ADMIN_URL}/apisix/admin/routes/"
+            f"{self.config.APISIX_ROUTE_NAME}"
+        )
         self.headers = {
             "X-API-KEY": self.config.APISIX_ADMIN_API_KEY,
             "Content-Type": "application/json"
@@ -43,10 +46,26 @@ class APISIXHelper:
             },
             "plugins": {
                 "cors": {
-                    "allow_origins": "http://localhost,http://localhost:80,http://localhost:3000,http://localhost:8080,http://127.0.0.1,http://127.0.0.1:80,http://127.0.0.1:3000,http://127.0.0.1:8080,http://articleinnovator.com,http://www.articleinnovator.com,https://articleinnovator.com,https://www.articleinnovator.com,http://botxbyte.com,http://www.botxbyte.com,https://botxbyte.com,https://www.botxbyte.com,https://claude.ai,https://www.claudeusercontent.com",
+                    "allow_origins": (
+                        "http://localhost,http://localhost:80,http://localhost:3000,"
+                        "http://localhost:8080,http://127.0.0.1,http://127.0.0.1:80,"
+                        "http://127.0.0.1:3000,http://127.0.0.1:8080,"
+                        "http://articleinnovator.com,http://www.articleinnovator.com,"
+                        "https://articleinnovator.com,https://www.articleinnovator.com,"
+                        "http://botxbyte.com,http://www.botxbyte.com,"
+                        "https://botxbyte.com,https://www.botxbyte.com,"
+                        "https://claude.ai,https://www.claudeusercontent.com"
+                    ),
                     "allow_methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS,HEAD",
-                    "allow_headers": "Content-Type,Authorization,X-Correlation-ID,Accept,Origin,X-Requested-With,X-API-KEY,Cache-Control,Pragma,Expires,DNT,User-Agent,Keep-Alive,If-Modified-Since,X-CustomHeader,workspace-id,user-id",
-                    "expose_headers": "Content-Length,Content-Type,X-Correlation-ID,Authorization",
+                    "allow_headers": (
+                        "Content-Type,Authorization,X-Correlation-ID,Accept,Origin,"
+                        "X-Requested-With,X-API-KEY,Cache-Control,Pragma,Expires,DNT,"
+                        "User-Agent,Keep-Alive,If-Modified-Since,X-CustomHeader,"
+                        "workspace-id,user-id"
+                    ),
+                    "expose_headers": (
+                        "Content-Length,Content-Type,X-Correlation-ID,Authorization"
+                    ),
                     "allow_credential": True,
                     "max_age": 86400
                 },
@@ -67,7 +86,8 @@ class APISIXHelper:
                 
                 if response.status_code in [200, 201]:
                     logger.info(
-                        f"✅ Successfully registered route '{self.config.APISIX_ROUTE_NAME}' with APISIX Gateway"
+                        f"✅ Successfully registered route '{self.config.APISIX_ROUTE_NAME}' "
+                        f"with APISIX Gateway"
                     )
                     logger.info(
                         f"   Route URI: /{self.base_config.SERVICE_NAME}/*"
@@ -127,7 +147,10 @@ class APISIXHelper:
                 )
                 
                 if response.status_code in [200, 204]:
-                    logger.info(f"✅ Successfully deleted route '{self.config.APISIX_ROUTE_NAME}' from APISIX")
+                    logger.info(
+                        f"✅ Successfully deleted route '{self.config.APISIX_ROUTE_NAME}' "
+                        f"from APISIX"
+                    )
                     return True
                 
                 logger.error(

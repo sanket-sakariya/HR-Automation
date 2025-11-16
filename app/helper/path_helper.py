@@ -24,4 +24,6 @@ class PathHelper:
             if (current_path / marker).exists():
                 return current_path
             current_path = current_path.parent
-        raise FileNotFoundError(f"Project root with marker '{marker}' not found from '{start_path}'")
+        raise FileNotFoundError(
+            f"Project root with marker '{marker}' not found from '{start_path}'"
+        )

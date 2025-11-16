@@ -262,7 +262,12 @@ async def update_demo_b_status(
         return ApiResponseSchema[DemoBReadSchema](
             success=True, data=data, message=SuccessMessages.DEMO_B_STATUS_UPDATED
         )
-    except (DemoBNotFoundException, DemoBUpdateException, DemoBPermissionDeniedException, DemoBInvalidDataException) as e:
+    except (
+        DemoBNotFoundException,
+        DemoBUpdateException,
+        DemoBPermissionDeniedException,
+        DemoBInvalidDataException
+    ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(

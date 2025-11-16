@@ -23,20 +23,44 @@ class DatabaseErrorMessages:
     DEMO_B_DELETION_ERROR: Final[str] = "Database error during demo B deletion"
     
     # DemoA-to-DemoB Mapping-related database errors
-    DEMO_A_TO_DEMO_B_MAPPING_CREATION_ERROR: Final[str] = "Database error during demo A to demo B mapping creation"
-    DEMO_A_TO_DEMO_B_MAPPING_RETRIEVAL_ERROR: Final[str] = "Database error while retrieving demo A to demo B mapping"
-    DEMO_A_TO_DEMO_B_MAPPING_UPDATE_ERROR: Final[str] = "Database error during demo A to demo B mapping update"
-    DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATE_ERROR: Final[str] = "Database error during demo A to demo B mapping status update"
-    DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_UPDATE_ERROR: Final[str] = "Database error during demo A to demo B mapping is_active update"
-    DEMO_A_TO_DEMO_B_MAPPING_DELETION_ERROR: Final[str] = "Database error during demo A to demo B mapping deletion"
+    DEMO_A_TO_DEMO_B_MAPPING_CREATION_ERROR: Final[str] = (
+        "Database error during demo A to demo B mapping creation"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_RETRIEVAL_ERROR: Final[str] = (
+        "Database error while retrieving demo A to demo B mapping"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_UPDATE_ERROR: Final[str] = (
+        "Database error during demo A to demo B mapping update"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATE_ERROR: Final[str] = (
+        "Database error during demo A to demo B mapping status update"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_UPDATE_ERROR: Final[str] = (
+        "Database error during demo A to demo B mapping is_active update"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_DELETION_ERROR: Final[str] = (
+        "Database error during demo A to demo B mapping deletion"
+    )
     
     # User-to-Demo mapping errors
-    USER_DEMO_MAPPING_CREATION_ERROR: Final[str] = "Database error during user-demo mapping creation"
-    USER_DEMO_MAPPING_RETRIEVAL_ERROR: Final[str] = "Database error while retrieving user-demo mapping"
-    USER_DEMO_MAPPING_UPDATE_ERROR: Final[str] = "Database error during user-demo mapping update"
-    USER_DEMO_MAPPING_STATUS_UPDATE_ERROR: Final[str] = "Database error during user-demo mapping status update"
-    USER_DEMO_MAPPING_ACTIVE_UPDATE_ERROR: Final[str] = "Database error during user-demo mapping is_active update"
-    USER_DEMO_MAPPING_DELETION_ERROR: Final[str] = "Database error during user-demo mapping deletion"
+    USER_DEMO_MAPPING_CREATION_ERROR: Final[str] = (
+        "Database error during user-demo mapping creation"
+    )
+    USER_DEMO_MAPPING_RETRIEVAL_ERROR: Final[str] = (
+        "Database error while retrieving user-demo mapping"
+    )
+    USER_DEMO_MAPPING_UPDATE_ERROR: Final[str] = (
+        "Database error during user-demo mapping update"
+    )
+    USER_DEMO_MAPPING_STATUS_UPDATE_ERROR: Final[str] = (
+        "Database error during user-demo mapping status update"
+    )
+    USER_DEMO_MAPPING_ACTIVE_UPDATE_ERROR: Final[str] = (
+        "Database error during user-demo mapping is_active update"
+    )
+    USER_DEMO_MAPPING_DELETION_ERROR: Final[str] = (
+        "Database error during user-demo mapping deletion"
+    )
     USER_DEMO_MAPPING_COUNT_ERROR: Final[str] = "Database error while counting demo users"
 
 
@@ -58,7 +82,9 @@ class ApiErrorMessages:
     DEMO_A_UPDATE_FAILED: Final[str] = "Demo A update failed"
     DEMO_A_DELETION_FAILED: Final[str] = "Failed to delete demo A"
     DEMO_A_STATUS_UPDATE_FAILED: Final[str] = "Failed to update demo A status"
-    DEMO_A_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = "Failed to update demo A active status"
+    DEMO_A_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = (
+        "Failed to update demo A active status"
+    )
     
     # DemoB operations
     DEMO_B_CREATION_FAILED: Final[str] = "Demo B creation failed"
@@ -67,16 +93,32 @@ class ApiErrorMessages:
     DEMO_B_UPDATE_FAILED: Final[str] = "Demo B update failed"
     DEMO_B_DELETION_FAILED: Final[str] = "Failed to delete demo B"
     DEMO_B_STATUS_UPDATE_FAILED: Final[str] = "Failed to update demo B status"
-    DEMO_B_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = "Failed to update demo B active status"
+    DEMO_B_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = (
+        "Failed to update demo B active status"
+    )
     
     # DemoA-to-DemoB Mapping operations
-    DEMO_A_TO_DEMO_B_MAPPING_CREATION_FAILED: Final[str] = "Demo A to demo B mapping creation failed"
-    DEMO_A_TO_DEMO_B_MAPPING_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve demo A to demo B mapping"
-    DEMO_A_TO_DEMO_B_MAPPINGS_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve demo A to demo B mappings"
-    DEMO_A_TO_DEMO_B_MAPPING_UPDATE_FAILED: Final[str] = "Demo A to demo B mapping update failed"
-    DEMO_A_TO_DEMO_B_MAPPING_DELETION_FAILED: Final[str] = "Failed to delete demo A to demo B mapping"
-    DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATE_FAILED: Final[str] = "Failed to update demo A to demo B mapping status"
-    DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = "Failed to update demo A to demo B mapping active status"
+    DEMO_A_TO_DEMO_B_MAPPING_CREATION_FAILED: Final[str] = (
+        "Demo A to demo B mapping creation failed"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_RETRIEVAL_FAILED: Final[str] = (
+        "Failed to retrieve demo A to demo B mapping"
+    )
+    DEMO_A_TO_DEMO_B_MAPPINGS_RETRIEVAL_FAILED: Final[str] = (
+        "Failed to retrieve demo A to demo B mappings"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_UPDATE_FAILED: Final[str] = (
+        "Demo A to demo B mapping update failed"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_DELETION_FAILED: Final[str] = (
+        "Failed to delete demo A to demo B mapping"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATE_FAILED: Final[str] = (
+        "Failed to update demo A to demo B mapping status"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = (
+        "Failed to update demo A to demo B mapping active status"
+    )
 
 
 
@@ -124,9 +166,15 @@ class LogMessages:
     
     # Repository logs
     CANNOT_UPDATE_DELETED_DEMO: Final[str] = "Cannot update deleted demo"
-    CANNOT_UPDATE_STATUS_DELETED_DEMO: Final[str] = "Cannot update status of deleted demo"
-    CANNOT_UPDATE_DELETED_MAPPING: Final[str] = "Cannot update deleted user-to-demo mapping"
-    CANNOT_UPDATE_STATUS_DELETED_MAPPING: Final[str] = "Cannot update status of deleted user-to-demo mapping"
+    CANNOT_UPDATE_STATUS_DELETED_DEMO: Final[str] = (
+        "Cannot update status of deleted demo"
+    )
+    CANNOT_UPDATE_DELETED_MAPPING: Final[str] = (
+        "Cannot update deleted user-to-demo mapping"
+    )
+    CANNOT_UPDATE_STATUS_DELETED_MAPPING: Final[str] = (
+        "Cannot update status of deleted user-to-demo mapping"
+    )
 
 
 
@@ -152,10 +200,24 @@ class SuccessMessages:
     DEMO_B_ACTIVE_STATUS_UPDATED: Final[str] = "Demo B active status updated successfully"
     
     # DemoA-to-DemoB Mapping operations
-    DEMO_A_TO_DEMO_B_MAPPING_CREATED: Final[str] = "Demo A to demo B mapping created successfully"
-    DEMO_A_TO_DEMO_B_MAPPING_UPDATED: Final[str] = "Demo A to demo B mapping updated successfully"
-    DEMO_A_TO_DEMO_B_MAPPING_DELETED: Final[str] = "Demo A to demo B mapping deleted successfully"
-    DEMO_A_TO_DEMO_B_MAPPING_RETRIEVED: Final[str] = "Demo A to demo B mapping retrieved successfully"
-    DEMO_A_TO_DEMO_B_MAPPINGS_RETRIEVED: Final[str] = "Demo A to demo B mappings retrieved successfully"
-    DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED: Final[str] = "Demo A to demo B mapping status updated successfully"
-    DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED: Final[str] = "Demo A to demo B mapping active status updated successfully"
+    DEMO_A_TO_DEMO_B_MAPPING_CREATED: Final[str] = (
+        "Demo A to demo B mapping created successfully"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_UPDATED: Final[str] = (
+        "Demo A to demo B mapping updated successfully"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_DELETED: Final[str] = (
+        "Demo A to demo B mapping deleted successfully"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_RETRIEVED: Final[str] = (
+        "Demo A to demo B mapping retrieved successfully"
+    )
+    DEMO_A_TO_DEMO_B_MAPPINGS_RETRIEVED: Final[str] = (
+        "Demo A to demo B mappings retrieved successfully"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED: Final[str] = (
+        "Demo A to demo B mapping status updated successfully"
+    )
+    DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED: Final[str] = (
+        "Demo A to demo B mapping active status updated successfully"
+    )

@@ -85,7 +85,10 @@ async def create_mapping(
         ) from e
 
 
-@router.get("/demo-a-to-demo-b-mapping/read/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema])
+@router.get(
+    "/demo-a-to-demo-b-mapping/read/{demo_a_to_demo_b_mapping_id}/",
+    response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
+)
 async def get_mapping(
     demo_a_to_demo_b_mapping_id: UUID,
     db: AsyncSession = Depends(get_async_db),
@@ -96,7 +99,9 @@ async def get_mapping(
 
     try:
         data = await DemoAToDemoBMappingService(db).read(
-            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, user_id=user_id, workspace_id=workspace_id
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
+            user_id=user_id,
+            workspace_id=workspace_id
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
             success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_RETRIEVED
@@ -114,7 +119,10 @@ async def get_mapping(
         ) from e
 
 
-@router.get("/demo-a-to-demo-b-mappings/", response_model=PaginatedResponseSchema[list[DemoAToDemoBMappingReadSchema]])
+@router.get(
+    "/demo-a-to-demo-b-mappings/",
+    response_model=PaginatedResponseSchema[list[DemoAToDemoBMappingReadSchema]]
+)
 async def list_mappings(
     params: ListParamsSchema = Depends(get_list_params),
     db: AsyncSession = Depends(get_async_db),
@@ -165,7 +173,8 @@ async def list_mappings(
 
 
 @router.patch(
-    "/demo-a-to-demo-b-mapping/update/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
+    "/demo-a-to-demo-b-mapping/update/{demo_a_to_demo_b_mapping_id}/",
+    response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
 )
 async def update_mapping(
     demo_a_to_demo_b_mapping_id: UUID,
@@ -177,7 +186,10 @@ async def update_mapping(
     """Update an existing mapping."""
     try:
         data = await DemoAToDemoBMappingService(db).update(
-            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
+            payload=payload,
+            user_id=user_id,
+            workspace_id=workspace_id
         )
 
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
@@ -198,7 +210,10 @@ async def update_mapping(
         ) from e
 
 
-@router.delete("/demo-a-to-demo-b-mapping/delete/{demo_a_to_demo_b_mapping_id}/", response_model=ApiResponseSchema[dict])
+@router.delete(
+    "/demo-a-to-demo-b-mapping/delete/{demo_a_to_demo_b_mapping_id}/",
+    response_model=ApiResponseSchema[dict]
+)
 async def delete_mapping(
     demo_a_to_demo_b_mapping_id: UUID,
     db: AsyncSession = Depends(get_async_db),
@@ -208,7 +223,9 @@ async def delete_mapping(
     """Delete a mapping by ID."""
     try:
         await DemoAToDemoBMappingService(db).delete(
-            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, user_id=user_id, workspace_id=workspace_id
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
+            user_id=user_id,
+            workspace_id=workspace_id
         )
         return ApiResponseSchema[dict](
             success=True, data={}, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETED
@@ -240,12 +257,20 @@ async def update_mapping_status(
     """Update mapping status and error messages."""
     try:
         data = await DemoAToDemoBMappingService(db).update_status(
-            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
+            payload=payload,
+            user_id=user_id,
+            workspace_id=workspace_id
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
             success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED
         )
-    except (DemoAToDemoBMappingNotFoundException, DemoAToDemoBMappingUpdateException, DemoAToDemoBMappingPermissionDeniedException, DemoAToDemoBMappingInvalidDataException) as e:
+    except (
+        DemoAToDemoBMappingNotFoundException,
+        DemoAToDemoBMappingUpdateException,
+        DemoAToDemoBMappingPermissionDeniedException,
+        DemoAToDemoBMappingInvalidDataException
+    ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
@@ -267,10 +292,15 @@ async def update_mapping_is_active(
     """Update mapping is_active status."""
     try:
         data = await DemoAToDemoBMappingService(db).update_is_active(
-            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id, payload=payload, user_id=user_id, workspace_id=workspace_id
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
+            payload=payload,
+            user_id=user_id,
+            workspace_id=workspace_id
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
-            success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED
+            success=True,
+            data=data,
+            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED
         )
     except (
         DemoAToDemoBMappingNotFoundException,
@@ -282,7 +312,10 @@ async def update_mapping_is_active(
     except Exception as e:
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}",
+            detail=(
+                f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATE_FAILED}: "
+                f"{str(e)}"
+            ),
         ) from e
 
 

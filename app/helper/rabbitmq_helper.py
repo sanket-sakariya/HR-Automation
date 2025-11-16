@@ -53,8 +53,9 @@ class RabbitMQHelper:
             rabbitmq_url: Optional RabbitMQ URL. If not provided, uses config.RABBITMQ_URL
             
         Note:
-            If IS_RABBITMQ_ENABLED=False for this service, the helper will be created but all operations will be disabled.
-            Methods will raise ConnectionError when RabbitMQ is disabled for this service.
+            If IS_RABBITMQ_ENABLED=False for this service, the helper will be created
+            but all operations will be disabled. Methods will raise ConnectionError
+            when RabbitMQ is disabled for this service.
         """
         self.config = get_base_config()
         self._enabled = self.config.IS_RABBITMQ_ENABLED
@@ -63,7 +64,10 @@ class RabbitMQHelper:
             self.rabbitmq_url = rabbitmq_url or self.config.RABBITMQ_URL
         else:
             self.rabbitmq_url = None
-            logger.warning("RabbitMQ helper initialized but RabbitMQ is disabled for this service (IS_RABBITMQ_ENABLED=False)")
+            logger.warning(
+                "RabbitMQ helper initialized but RabbitMQ is disabled for this service "
+                "(IS_RABBITMQ_ENABLED=False)"
+            )
         
         self._connection: Optional[Connection] = None
         self._channel: Optional[Channel] = None
@@ -77,10 +81,14 @@ class RabbitMQHelper:
             Active RabbitMQ connection
             
         Raises:
-            ConnectionError: If connection cannot be established or RabbitMQ is disabled for this service
+            ConnectionError: If connection cannot be established or RabbitMQ
+                            is disabled for this service
         """
         if not self._enabled:
-            raise ConnectionError("RabbitMQ is disabled for this service. Set IS_RABBITMQ_ENABLED=True to use RabbitMQ operations.")
+            raise ConnectionError(
+                "RabbitMQ is disabled for this service. "
+                "Set IS_RABBITMQ_ENABLED=True to use RabbitMQ operations."
+            )
         
         if self._connection is None or self._connection.is_closed:
             try:
@@ -141,9 +149,11 @@ class RabbitMQHelper:
         
         Args:
             queue_name: Name of the queue
-            durable: If True, queue survives broker restart (default: True for permanent storage)
+            durable: If True, queue survives broker restart
+                    (default: True for permanent storage)
             exclusive: If True, queue is only accessible by the current connection (default: False)
-            auto_delete: If True, queue is deleted when no longer used (default: False for permanent storage)
+            auto_delete: If True, queue is deleted when no longer used
+                        (default: False for permanent storage)
             arguments: Optional queue arguments
             
         Returns:
@@ -168,7 +178,13 @@ class RabbitMQHelper:
                 existing_queue = await channel.declare_queue(queue_name, passive=True)
                 # Queue exists, use it directly
                 self._queues[queue_name] = existing_queue
-                logger.info(f"Connected to existing queue '{queue_name}' (durable={existing_queue.durable}, exclusive={existing_queue.exclusive}, auto_delete={existing_queue.auto_delete}, arguments={existing_queue.arguments})")
+                logger.info(
+                    f"Connected to existing queue '{queue_name}' "
+                    f"(durable={existing_queue.durable}, "
+                    f"exclusive={existing_queue.exclusive}, "
+                    f"auto_delete={existing_queue.auto_delete}, "
+                    f"arguments={existing_queue.arguments})"
+                )
                 return existing_queue
             except aio_pika.exceptions.ChannelNotFoundEntity:
                 # Queue doesn't exist, will create it below
@@ -188,7 +204,10 @@ class RabbitMQHelper:
             # Cache the queue
             self._queues[queue_name] = queue
             
-            logger.info(f"Created new queue '{queue_name}' (durable={durable}, exclusive={exclusive}, auto_delete={auto_delete}, arguments={arguments})")
+            logger.info(
+                f"Created new queue '{queue_name}' (durable={durable}, "
+                f"exclusive={exclusive}, auto_delete={auto_delete}, arguments={arguments})"
+            )
             
             return queue
             
@@ -203,8 +222,8 @@ class RabbitMQHelper:
                         error_msg = (
                             f"Queue '{queue_name}' already exists with different arguments. "
                             f"Existing queue arguments: {queue_info.get('arguments', {})}. "
-                            f"Requested arguments: {arguments or {}}. "
-                            f"Please delete the existing queue or use matching arguments."
+                            f"Requested arguments: {arguments or {}}. Please delete the existing "
+                            f"queue or use matching arguments."
                         )
                         logger.error(error_msg)
                         raise AMQPException(error_msg) from e
@@ -219,7 +238,12 @@ class RabbitMQHelper:
             logger.error(error_msg)
             raise ConnectionError(error_msg) from e
     
-    async def delete_queue(self, queue_name: str, if_unused: bool = False, if_empty: bool = False) -> None:
+    async def delete_queue(
+        self,
+        queue_name: str,
+        if_unused: bool = False,
+        if_empty: bool = False
+    ) -> None:
         """
         Delete a queue.
         
@@ -364,7 +388,10 @@ class RabbitMQHelper:
             )
             initialized_queues[queue_name] = queue
         
-        logger.info(f"Initialized {len(initialized_queues)} durable queues from config: {', '.join(initialized_queues.keys())}")
+        logger.info(
+            f"Initialized {len(initialized_queues)} durable queues from config: "
+            f"{', '.join(initialized_queues.keys())}"
+        )
         
         return initialized_queues
     
@@ -459,7 +486,10 @@ class RabbitMQHelper:
                 channel, aio_message, queue_name, exchange, routing_key
             )
 
-            logger.debug(f"Message published to queue '{queue_name}' (priority={priority}, size={len(aio_message.body)} bytes)")
+            logger.debug(
+                f"Message published to queue '{queue_name}' (priority={priority}, "
+                f"size={len(aio_message.body)} bytes)"
+            )
             return True
 
         except (AMQPException, ConnectionError, json.JSONDecodeError) as e:  # pylint: disable=no-member
@@ -559,7 +589,9 @@ class RabbitMQHelper:
                 auto_delete=auto_delete
             )
             
-            logger.info(f"Exchange '{exchange_name}' ensured (type={exchange_type}, durable={durable})")
+            logger.info(
+                f"Exchange '{exchange_name}' ensured (type={exchange_type}, durable={durable})"
+            )
             return exchange
             
         except (AMQPException, ConnectionError) as e:
@@ -594,10 +626,15 @@ class RabbitMQHelper:
             # Bind queue to exchange
             await queue.bind(exchange_name, routing_key=routing_key)
             
-            logger.info(f"Queue '{queue_name}' bound to exchange '{exchange_name}' with routing_key '{routing_key}'")
+            logger.info(
+                f"Queue '{queue_name}' bound to exchange '{exchange_name}' "
+                f"with routing_key '{routing_key}'"
+            )
             
         except (AMQPException, ConnectionError) as e:
-            error_msg = f"Failed to bind queue '{queue_name}' to exchange '{exchange_name}': {e}"
+            error_msg = (
+                f"Failed to bind queue '{queue_name}' to exchange '{exchange_name}': {e}"
+            )
             logger.error(error_msg)
             raise AMQPException(error_msg) from e
     
@@ -640,7 +677,10 @@ class RabbitMQHelper:
             exchange = await channel.get_exchange(exchange_name)
             await exchange.publish(aio_message, routing_key=routing_key)
             
-            logger.debug(f"Message published to exchange '{exchange_name}' with routing_key '{routing_key}'")
+            logger.debug(
+                f"Message published to exchange '{exchange_name}' "
+                f"with routing_key '{routing_key}'"
+            )
             return True
             
         except (AMQPException, ConnectionError, json.JSONDecodeError) as e:  # pylint: disable=no-member

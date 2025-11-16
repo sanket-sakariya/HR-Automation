@@ -165,7 +165,9 @@ class WasabiHelper:
         # Get all files matching pattern
         files_to_zip = list(local_folder_path.glob(file_pattern))
         if not files_to_zip:
-            logger.warning(f"No files found in {local_folder_path} matching pattern: {file_pattern}")
+            logger.warning(
+                f"No files found in {local_folder_path} matching pattern: {file_pattern}"
+            )
             return False
         
         # Determine zip filename

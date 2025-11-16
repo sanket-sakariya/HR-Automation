@@ -136,7 +136,10 @@ async def setup_exchange(payload: ExchangeSetupSchema):
                 "successful": len(bound_queues),
                 "failed": len(failed_queues)
             },
-            message=f"Exchange '{payload.exchange_name}' setup complete with {len(bound_queues)} queues"
+            message=(
+                f"Exchange '{payload.exchange_name}' setup complete "
+                f"with {len(bound_queues)} queues"
+            )
         )
         
     except HTTPException:

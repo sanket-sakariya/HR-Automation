@@ -51,7 +51,10 @@ class RedisCachedRoute(APIRoute):
     """APIRoute that wraps the route handler with Redis caching logic."""
 
     def get_route_handler(self):  # type: ignore[override]  # pylint: disable=too-many-statements
-        """Custom route handler with Redis caching for GET requests and cache invalidation for mutations."""
+        """
+        Custom route handler with Redis caching for GET requests 
+        and cache invalidation for mutations.
+        """
         original_route_handler = super().get_route_handler()
         base_config = get_base_config()
         service_name = base_config.SERVICE_NAME

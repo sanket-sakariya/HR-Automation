@@ -75,16 +75,23 @@ class BaseAppConfig(BaseSettings):
     )
     
     # Service-level enable/disable flags (for individual service opt-in/opt-out)
-    # Note: Project always has access, but individual services can choose to use or not use these services
+    # Note: Project always has access, but individual services can choose
+    # to use or not use these services
     IS_RABBITMQ_ENABLED: bool = Field(
         default=True,
         env="IS_RABBITMQ_ENABLED",
-        description="Enable/disable RabbitMQ usage for this service (service-level opt-in/opt-out)"
+        description=(
+            "Enable/disable RabbitMQ usage for this service "
+            "(service-level opt-in/opt-out)"
+        )
     )
     IS_POSTGRES_ENABLED: bool = Field(
         default=True,
         env="IS_POSTGRES_ENABLED",
-        description="Enable/disable PostgreSQL usage for this service (service-level opt-in/opt-out)"
+        description=(
+            "Enable/disable PostgreSQL usage for this service "
+            "(service-level opt-in/opt-out)"
+        )
     )
     
     # Database routing settings
