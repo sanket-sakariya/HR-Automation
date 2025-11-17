@@ -426,11 +426,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-
-  
-
-
- 
 components:
   
   parameters:
@@ -463,140 +458,112 @@ components:
         created_at:
           type: string
           format: date-time
+          nullable: false
+          readOnly: true
           description: Timestamp when record was created
           example: "2024-01-15T10:30:00Z"
-          x-read-only: true
-          x-sortable: true
+          x-searchable: false
           x-filterable: true
           x-display-name: "Created At"
-          x-ui-group: "Audit Information"
-          x-ui-order: 101
-          x-component-hint: "datetime-display"
+          x-column-hidden: false
         updated_at:
           type: string
           format: date-time
           nullable: true
+          readOnly: true
           description: Timestamp when record was last updated
           example: "2024-01-15T10:30:00Z"
-          x-read-only: true
-          x-sortable: true
+          x-searchable: false
           x-filterable: true
           x-display-name: "Updated At"
-          x-ui-group: "Audit Information"
-          x-ui-order: 102
-          x-component-hint: "datetime-display"
+          x-column-hidden: true
         deleted_at:
           type: string
           format: date-time
           nullable: true
+          readOnly: true
           description: Timestamp when record was deleted
           example: "2024-01-15T10:30:00Z"
-          x-read-only: true
+          x-searchable: false
           x-filterable: true
           x-display-name: "Deleted At"
-          x-ui-group: "Audit Information"
-          x-ui-order: 103
-          x-component-hint: "datetime-display"
-          x-hidden: true
+          x-column-hidden: true
         created_by:
           type: string
           format: uuid
+          nullable: false
+          readOnly: true
           description: ID of user who created the record
           example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
-          x-read-only: true
+          x-searchable: false
           x-filterable: true
           x-display-name: "Created By"
-          x-ui-group: "Audit Information"
-          x-ui-order: 104
-          x-component-hint: "user-selector"
-          x-lookup-endpoint: "/api/v1/users/{value}"
+          x-column-hidden: false
         updated_by:
           type: string
           format: uuid
           nullable: true
+          readOnly: true
           description: ID of user who last updated the record
           example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
-          x-read-only: true
+          x-searchable: false
           x-filterable: true
           x-display-name: "Updated By"
-          x-ui-group: "Audit Information"
-          x-ui-order: 105
-          x-component-hint: "user-selector"
-          x-lookup-endpoint: "/api/v1/users/{value}"
+          x-column-hidden: true
         deleted_by:
           type: string
           format: uuid
           nullable: true
+          readOnly: true
           description: ID of user who deleted the record
           example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
-          x-read-only: true
+          x-searchable: false
           x-filterable: true
           x-display-name: "Deleted By"
-          x-ui-group: "Audit Information"
-          x-ui-order: 106
-          x-component-hint: "user-selector"
-          x-lookup-endpoint: "/api/v1/users/{value}"
-          x-hidden: true
+          x-column-hidden: true
         status:
           type: string
           enum: ['creating', 'created', 'updating', 'updated', 'deleting', 'deleted']
+          nullable: false
+          readOnly: false
           description: Current processing status of the record
           example: "created"
-          x-sortable: true
+          x-searchable: false
           x-filterable: true
           x-display-name: "Status"
-          x-ui-group: "Status Information"
-          x-ui-order: 20
-          x-component-hint: "select"
-          x-state-machine:
-            initial: "creating"
-            states:
-              creating:
-                on:
-                  SUCCESS: "created"
-                  FAILURE: "deleted"
-              created:
-                on:
-                  UPDATE: "updating"
-                  DELETE: "deleting"
-              updating:
-                on:
-                  SUCCESS: "updated"
-                  FAILURE: "created"
+          x-column-hidden: false
         is_active:
           type: boolean
+          nullable: false
+          readOnly: false
           description: Whether the record is active (not the same as status)
           example: true
-          x-sortable: true
+          x-searchable: false
           x-filterable: true
           x-display-name: "Active"
-          x-ui-group: "Status Information"
-          x-ui-order: 21
-          x-component-hint: "toggle-switch"
+          x-column-hidden: false
         error_message:
           type: string
           nullable: true
+          readOnly: true
+          maxLength: 1000
           description: Technical error message for debugging
           example: "Database connection timeout after 30 seconds"
-          x-read-only: true
+          x-searchable: false
+          x-filterable: false
           x-display-name: "Error Message"
-          x-ui-group: "Status Information"
-          x-ui-order: 22
-          x-component-hint: "textarea"
-          x-hidden: true
-          x-internal: true
-          x-log-redact: true
+          x-column-hidden: true
         error_user_message:
           type: string
           nullable: true
+          readOnly: true
+          maxLength: 500
           description: User-friendly error message for display
           example: "Something went wrong. Please try again later."
-          x-read-only: true
-          x-display-name: "User-Friendly Error"
-          x-ui-group: "Status Information"
-          x-ui-order: 23
-          x-component-hint: "alert-message"
-          x-hidden: true
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "User Message"
+          x-column-hidden: true
       
     # Demo
     DemoModel:
@@ -607,30 +574,26 @@ components:
             demo_id:
               type: string
               format: uuid
+              nullable: false
               readOnly: true
               description: Demo identifier
               example: "bd08612-1a9d-4a6e-8431-1demoid"
-              x-read-only: true
+              x-searchable: true
               x-filterable: true
               x-display-name: "Demo ID"
-              x-ui-group: "Primary Details"
-              x-ui-order: 1
-              x-component-hint: "uuid-display"
+              x-column-hidden: false
             name:
               type: string
+              minLength: 1
               maxLength: 200
+              nullable: false
+              readOnly: false
               description: Demo name
               example: "Marketing Team"
               x-searchable: true
-              x-sortable: true
               x-filterable: true
               x-display-name: "Demo Name"
-              x-placeholder: "Enter the name of the demo"
-              x-component-hint: "textfield"
-              x-ui-group: "Primary Details"
-              x-ui-order: 2
-              x-validation-regex: "^[a-zA-Z0-9 ]{1,200}$"
-              x-business-rule: "The demo name must be unique within the workspace."
+              x-column-hidden: false
           required:
             - demo_id
 
