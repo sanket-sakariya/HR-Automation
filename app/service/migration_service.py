@@ -111,7 +111,7 @@ class MigrationService:
         async with async_session_local() as check_db_session:
             check_migration_repo = MigrationRepository(check_db_session)
             current_db_rev = await check_migration_repo.get_current_revision()
-        
+
         # Validate the revision exists in local files (outside session scope)
         if current_db_rev:
             script = ScriptDirectory.from_config(self.alembic_cfg)
@@ -124,9 +124,7 @@ class MigrationService:
                 ) from e
 
         # Run alembic command (no database session needed here)
-        await self._run_alembic_command(
-            "revision", autogenerate=True, message=message
-        )
+        await self._run_alembic_command("revision", autogenerate=True, message=message)
 
         # Get the new revision in a fresh session
         async with async_session_local() as new_db_session:

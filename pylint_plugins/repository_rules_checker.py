@@ -52,7 +52,9 @@ class RepositoryRulesChecker(BaseChecker):
         """Check if current file is *_repository.py (excluding baseapp_repository.py)"""
         filename = node.root().file or ""
         basename = os.path.basename(filename)
-        return basename.endswith("_repository.py") and basename != "baseapp_repository.py"
+        return (
+            basename.endswith("_repository.py") and basename != "baseapp_repository.py"
+        )
 
     def _get_model_name(self, filename: str) -> str:
         """Extract model name from repository filename (workspace_repository.py → workspace)"""
@@ -106,7 +108,9 @@ class RepositoryRulesChecker(BaseChecker):
         """Check async function definition rules for repositories."""
         self._check_function_arguments(node)
 
-    def _check_function_arguments(self, node: astroid.FunctionDef | astroid.AsyncFunctionDef):
+    def _check_function_arguments(
+        self, node: astroid.FunctionDef | astroid.AsyncFunctionDef
+    ):
         if not self._is_repository_file(node):
             return
 
@@ -138,7 +142,13 @@ class RepositoryRulesChecker(BaseChecker):
             ann_str = annotations[i].as_string()
 
             # Rule 1: dict → must be <model>_data
-            if ann_str in ("dict", "Dict", "typing.Dict", "Dict[str, Any]", "typing.Dict[str, Any]"):
+            if ann_str in (
+                "dict",
+                "Dict",
+                "typing.Dict",
+                "Dict[str, Any]",
+                "typing.Dict[str, Any]",
+            ):
                 expected_name = f"{model_name}_data"
                 if arg.name != expected_name:
                     self.add_message(

@@ -13,22 +13,22 @@ class MigrationRepository(BaseAppRepository[MigrationModel]):
     def __init__(self, db):
         """
         Initialize migration repository.
-        
+
         Args:
             db: The asynchronous database session.
         """
         super().__init__(db, MigrationModel)
         self.db = db
-        
+
         # Define alembic_version table structure
         self.metadata = MetaData()
         self.alembic_version_table = Table(
-            'alembic_version',
+            "alembic_version",
             self.metadata,
-            Column('version_num', String, primary_key=True),
-            schema='public'
+            Column("version_num", String, primary_key=True),
+            schema="public",
         )
-    
+
     async def check_alembic_version_table_exists(self) -> bool:
         """Check if the alembic_version table exists."""
         try:
@@ -44,11 +44,15 @@ class MigrationRepository(BaseAppRepository[MigrationModel]):
         try:
             if not await self.check_alembic_version_table_exists():
                 return ""
-            
+
             async with self.db.begin():
-                query = text(f"SELECT version_num FROM {self.alembic_version_table.name}")
+                query = text(
+                    f"SELECT version_num FROM {self.alembic_version_table.name}"
+                )
                 result = await self.db.execute(query)
                 revision = result.scalar_one_or_none()
                 return revision or ""
         except SQLAlchemyError as e:
-            raise InternalServerErrorException(f"Error getting current revision: {e}") from e
+            raise InternalServerErrorException(
+                f"Error getting current revision: {e}"
+            ) from e

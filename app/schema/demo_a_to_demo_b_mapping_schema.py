@@ -10,6 +10,7 @@ from app.schema.baseapp_schema import BaseAppSchema
 
 class MappingStatus(str, Enum):
     """Allowed mapping status values."""
+
     CREATED = "created"
     UPDATING = "updating"
     UPDATED = "updated"
@@ -19,6 +20,7 @@ class MappingStatus(str, Enum):
 
 class DemoAToDemoBMappingCreateSchema(BaseAppSchema):
     """Schema for creating a new mapping between DemoA and DemoB."""
+
     demo_a_id: UUID = Field(
         ..., description="Demo A ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
     )
@@ -33,37 +35,46 @@ class DemoAToDemoBMappingCreateSchema(BaseAppSchema):
 
 class DemoAToDemoBMappingUpdateSchema(BaseAppSchema):
     """Schema for updating an existing mapping."""
+
     demo_a_id: Optional[UUID] = Field(
-        default=None, description="Demo A ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+        default=None,
+        description="Demo A ID",
+        example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d",
     )
     demo_b_id: Optional[UUID] = Field(
-        default=None, description="Demo B ID", example="b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+        default=None,
+        description="Demo B ID",
+        example="b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e",
     )
     is_active: Optional[bool] = Field(default=None, example=False)
     status: Optional[MappingStatus] = Field(
-        default=None, description="Current status of the mapping", example=MappingStatus.UPDATING
+        default=None,
+        description="Current status of the mapping",
+        example=MappingStatus.UPDATING,
     )
 
 
 class DemoAToDemoBMappingStatusUpdateSchema(BaseAppSchema):
     """Schema for updating mapping status and error messages."""
+
     status: MappingStatus = Field(
         ..., description="Current status of the mapping", example=MappingStatus.CREATED
     )
     error_message: Optional[str] = Field(
         default=None,
         description="Technical error message for debugging",
-        example="An unexpected error occurred."
+        example="An unexpected error occurred.",
     )
     error_user_message: Optional[str] = Field(
         default=None,
         description="User-friendly error message for display",
-        example="Something went wrong. Please try again."
+        example="Something went wrong. Please try again.",
     )
 
 
 class DemoAToDemoBMappingIsActiveUpdateSchema(BaseAppSchema):
     """Schema for updating mapping is_active status."""
+
     is_active: bool = Field(
         default=True, description="Whether the mapping is active", example=False
     )
@@ -71,6 +82,7 @@ class DemoAToDemoBMappingIsActiveUpdateSchema(BaseAppSchema):
 
 class DemoAToDemoBMappingReadSchema(BaseAppSchema):
     """Schema for reading mapping details."""
+
     demo_a_to_demo_b_mapping_id: UUID = Field(
         ..., description="Mapping ID", example="c5f0a8d2-5e3d-6a8b-0c4f-be0a9b8c7d6f"
     )
@@ -96,5 +108,7 @@ class DemoAToDemoBMappingReadSchema(BaseAppSchema):
         default=None, description="Deleted at", example="2023-01-03T16:45:00Z"
     )
     deleted_by: Optional[UUID] = Field(
-        default=None, description="Deleted by", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+        default=None,
+        description="Deleted by",
+        example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d",
     )

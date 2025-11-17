@@ -10,6 +10,7 @@ from app.schema.baseapp_schema import BaseAppSchema
 
 class DemoBStatus(str, Enum):
     """Allowed demo B status values."""
+
     CREATED = "created"
     UPDATING = "updating"
     UPDATED = "updated"
@@ -19,9 +20,8 @@ class DemoBStatus(str, Enum):
 
 class DemoBCreateSchema(BaseAppSchema):
     """Schema for creating a new demo B."""
-    name: str = Field(
-        ..., min_length=1, max_length=200, example="Sample Demo B"
-    )
+
+    name: str = Field(..., min_length=1, max_length=200, example="Sample Demo B")
     description: Optional[str] = Field(
         default=None, max_length=500, example="This is a sample demo B description."
     )
@@ -33,6 +33,7 @@ class DemoBCreateSchema(BaseAppSchema):
 
 class DemoBUpdateSchema(BaseAppSchema):
     """Schema for updating an existing demo B."""
+
     name: Optional[str] = Field(
         default=None, min_length=1, max_length=200, example="Updated Demo B Name"
     )
@@ -41,29 +42,33 @@ class DemoBUpdateSchema(BaseAppSchema):
     )
     is_active: Optional[bool] = Field(default=None, example=False)
     status: Optional[DemoBStatus] = Field(
-        default=None, description="Current status of the entity", example=DemoBStatus.UPDATING
+        default=None,
+        description="Current status of the entity",
+        example=DemoBStatus.UPDATING,
     )
 
 
 class DemoBStatusUpdateSchema(BaseAppSchema):
     """Schema for updating demo B status and error messages."""
+
     status: DemoBStatus = Field(
         ..., description="Current status of the entity", example=DemoBStatus.CREATED
     )
     error_message: Optional[str] = Field(
         default=None,
         description="Technical error message for debugging",
-        example="An unexpected error occurred."
+        example="An unexpected error occurred.",
     )
     error_user_message: Optional[str] = Field(
         default=None,
         description="User-friendly error message for display",
-        example="Something went wrong. Please try again."
+        example="Something went wrong. Please try again.",
     )
 
 
 class DemoBIsActiveUpdateSchema(BaseAppSchema):
     """Schema for updating demo B is_active status."""
+
     is_active: bool = Field(
         default=True, description="Whether the demo B is active", example=False
     )
@@ -71,9 +76,8 @@ class DemoBIsActiveUpdateSchema(BaseAppSchema):
 
 class DemoBReadSchema(BaseAppSchema):
     """Schema for reading demo B details."""
-    name: str = Field(
-        ..., min_length=1, max_length=200, example="Sample Demo B"
-    )
+
+    name: str = Field(..., min_length=1, max_length=200, example="Sample Demo B")
     description: Optional[str] = Field(
         default=None, max_length=500, example="This is a sample demo B description."
     )
@@ -94,5 +98,7 @@ class DemoBReadSchema(BaseAppSchema):
         default=None, description="Deleted at", example="2023-01-03T16:45:00Z"
     )
     deleted_by: Optional[UUID] = Field(
-        default=None, description="Deleted by", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+        default=None,
+        description="Deleted by",
+        example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d",
     )

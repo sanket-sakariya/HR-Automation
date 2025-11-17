@@ -25,7 +25,6 @@ class ExceptionAndKeywordChecker(BaseChecker):
             "exception-import-violation",
             "Exception files should only import BaseAppException from baseapp_exception.py.",
         ),
-
         # Status code rules
         "E9953": (
             "Status code must use FastAPI status constants, not hardcoded values",
@@ -68,18 +67,18 @@ class ExceptionAndKeywordChecker(BaseChecker):
                 base_name = base.as_string()
                 if "HTTPException" in base_name:
                     return True
-                
+
                 # Check if inheriting from BaseAppException, which inherits from HTTPException
                 if "BaseAppException" in base_name:
                     return True
-            
+
             # Try to infer ancestors
             for ancestor in node.ancestors():
                 if ancestor.name in ("HTTPException", "BaseAppException"):
                     return True
         except (astroid.InferenceError, AttributeError, TypeError):
             pass
-        
+
         return False
 
     # ---------------- Checks ----------------
@@ -88,7 +87,7 @@ class ExceptionAndKeywordChecker(BaseChecker):
         # Skip BaseAppException itself and non-HTTPException classes
         if node.name == "BaseAppException":
             return
-            
+
         if not self._inherits_from_httpexception(node):
             return
 
@@ -97,22 +96,24 @@ class ExceptionAndKeywordChecker(BaseChecker):
             if isinstance(child, astroid.FunctionDef) and child.name == "__init__":
                 # Check if 'detail' parameter is used (which is wrong for HTTPException subclasses)
                 has_detail_param = False
-                
+
                 if child.args and child.args.args:
                     for arg in child.args.args:
                         if arg.name == "detail":
                             has_detail_param = True
-                
+
                 # If using 'detail' parameter, flag it (should use 'message' instead)
                 if has_detail_param:
-                    self.add_message("http-exception-init-must-accept-message", node=child)
+                    self.add_message(
+                        "http-exception-init-must-accept-message", node=child
+                    )
 
     def _check_super_init_call(self, node: astroid.ClassDef):
         """Check that super().__init__() uses correct keyword argument."""
         # Skip BaseAppException itself
         if node.name == "BaseAppException":
             return
-        
+
         inherits_httpexception = self._inherits_from_httpexception(node)
 
         # Look for __init__ method directly in this class (not nested)
@@ -121,26 +122,33 @@ class ExceptionAndKeywordChecker(BaseChecker):
                 # Now look for super().__init__() calls within this __init__
                 for call_node in child.nodes_of_class(astroid.Call):
                     # Check if this is a super().__init__() call
-                    if isinstance(call_node.func, astroid.Attribute) and call_node.func.attrname == "__init__":
+                    if (
+                        isinstance(call_node.func, astroid.Attribute)
+                        and call_node.func.attrname == "__init__"
+                    ):
                         # Check if it's calling super()
                         if isinstance(call_node.func.expr, astroid.Call):
-                            func_name = getattr(call_node.func.expr.func, 'name', None)
-                            if func_name == 'super':
-                                self._validate_super_init_keywords(call_node, inherits_httpexception, node.name)
+                            func_name = getattr(call_node.func.expr.func, "name", None)
+                            if func_name == "super":
+                                self._validate_super_init_keywords(
+                                    call_node, inherits_httpexception, node.name
+                                )
 
-    def _validate_super_init_keywords(self, call_node: astroid.Call, inherits_httpexception: bool, class_name: str):
+    def _validate_super_init_keywords(
+        self, call_node: astroid.Call, inherits_httpexception: bool, class_name: str
+    ):
         """Validate the keyword arguments in super().__init__() call."""
         if inherits_httpexception:
             # For HTTPException subclasses, both message= and detail= are allowed
             found_message = False
             found_detail = False
-            
+
             for keyword in call_node.keywords:
                 if keyword.arg == "message":
                     found_message = True
                 elif keyword.arg == "detail":
                     found_detail = True
-            
+
             # Both patterns are allowed, so no violations to check
             # message="literal" is allowed
             # detail=message is allowed
@@ -149,19 +157,24 @@ class ExceptionAndKeywordChecker(BaseChecker):
         else:
             # For non-HTTPException subclasses, must use message=message
             has_message_with_message = False
-            
+
             for keyword in call_node.keywords:
                 if keyword.arg == "message":
-                    if isinstance(keyword.value, astroid.Name) and keyword.value.name == "message":
+                    if (
+                        isinstance(keyword.value, astroid.Name)
+                        and keyword.value.name == "message"
+                    ):
                         has_message_with_message = True
                     else:
-                        self.add_message("non-http-exception-use-message", node=call_node)
+                        self.add_message(
+                            "non-http-exception-use-message", node=call_node
+                        )
                         return
                 elif keyword.arg == "detail":
                     # Non-HTTPException should not use detail
                     self.add_message("non-http-exception-use-message", node=call_node)
                     return
-            
+
             if not has_message_with_message:
                 self.add_message("non-http-exception-use-message", node=call_node)
 
@@ -169,7 +182,7 @@ class ExceptionAndKeywordChecker(BaseChecker):
         """Check that HTTPException raise statements use detail= keyword."""
         if node.exc is None:
             return
-        
+
         # Check if raising HTTPException
         if isinstance(node.exc, astroid.Call):
             exc_name = None
@@ -177,7 +190,7 @@ class ExceptionAndKeywordChecker(BaseChecker):
                 exc_name = node.exc.func.name
             elif isinstance(node.exc.func, astroid.Attribute):
                 exc_name = node.exc.func.attrname
-            
+
             if exc_name == "HTTPException":
                 # Check if detail= keyword is used
                 has_detail = False
@@ -185,7 +198,7 @@ class ExceptionAndKeywordChecker(BaseChecker):
                     if keyword.arg == "detail":
                         has_detail = True
                         break
-                
+
                 if not has_detail:
                     self.add_message("http-exception-raise-must-use-detail", node=node)
 
@@ -201,7 +214,9 @@ class ExceptionAndKeywordChecker(BaseChecker):
             if not normalized_path.endswith("app/exception/baseapp_exception.py"):
                 for class_node in node.nodes_of_class(astroid.ClassDef):
                     if class_node.name == "BaseAppException":
-                        self.add_message("baseappexception-location-invalid", node=class_node)
+                        self.add_message(
+                            "baseappexception-location-invalid", node=class_node
+                        )
 
         # Imports check
         if self._is_exception_file(node) and not self._is_baseapp_exception_file(node):
@@ -219,21 +234,24 @@ class ExceptionAndKeywordChecker(BaseChecker):
         # Check ALL exception classes, not just in exception files
         # This ensures we catch exceptions defined anywhere
         is_exception_class = node.name.endswith("Exception")
-        is_in_exception_file = self._is_exception_file(node) or self._is_baseapp_exception_file(node)
-        
+        is_in_exception_file = self._is_exception_file(
+            node
+        ) or self._is_baseapp_exception_file(node)
+
         # If it's an exception class OR in an exception file, perform checks
         if not (is_exception_class or is_in_exception_file):
             return
 
         # Naming convention
         if not node.name.endswith("Exception"):
-            self.add_message("exception-name-must-end-with-exception", node=node, args=(node.name,))
-
+            self.add_message(
+                "exception-name-must-end-with-exception", node=node, args=(node.name,)
+            )
 
         # Check __init__ signature for HTTPException subclasses
         if is_exception_class:
             self._check_init_signature(node)
-        
+
         # Check super().__init__() calls
         if is_exception_class:
             self._check_super_init_call(node)

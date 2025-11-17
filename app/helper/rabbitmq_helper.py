@@ -7,22 +7,23 @@ projects by just configuring queue names in the config file.
 
 Usage:
     from app.helper.rabbitmq_helper import RabbitMQHelper
-    
+
     # Initialize helper
     rabbitmq_helper = RabbitMQHelper()
-    
+
     # Ensure queue exists (creates if doesn't exist)
     await rabbitmq_helper.ensure_queue_exists("my_queue_name")
-    
+
     # Publish a message
     await rabbitmq_helper.publish_message(
         queue_name="my_queue",
         message={"key": "value"}
     )
-    
+
     # Close connection when done
     await rabbitmq_helper.close()
 """
+
 from __future__ import annotations
 import asyncio
 import json
@@ -40,18 +41,18 @@ from app.config.logger_config import logger
 class RabbitMQHelper:
     """
     Universal RabbitMQ helper for managing connections and queues.
-    
+
     This class provides a reusable interface for RabbitMQ operations that can
     be easily ported to other projects by just updating the config.
     """
-    
+
     def __init__(self, rabbitmq_url: Optional[str] = None):
         """
         Initialize RabbitMQ helper.
-        
+
         Args:
             rabbitmq_url: Optional RabbitMQ URL. If not provided, uses config.RABBITMQ_URL
-            
+
         Note:
             If IS_RABBITMQ_ENABLED=False for this service, the helper will be created
             but all operations will be disabled. Methods will raise ConnectionError
@@ -59,7 +60,7 @@ class RabbitMQHelper:
         """
         self.config = get_base_config()
         self._enabled = self.config.IS_RABBITMQ_ENABLED
-        
+
         if self._enabled:
             self.rabbitmq_url = rabbitmq_url or self.config.RABBITMQ_URL
         else:
@@ -68,18 +69,18 @@ class RabbitMQHelper:
                 "RabbitMQ helper initialized but RabbitMQ is disabled for this service "
                 "(IS_RABBITMQ_ENABLED=False)"
             )
-        
+
         self._connection: Optional[Connection] = None
         self._channel: Optional[Channel] = None
         self._queues: Dict[str, Queue] = {}
-    
+
     async def _ensure_connection(self) -> Connection:
         """
         Ensure RabbitMQ connection exists and is open.
-        
+
         Returns:
             Active RabbitMQ connection
-            
+
         Raises:
             ConnectionError: If connection cannot be established or RabbitMQ
                             is disabled for this service
@@ -89,7 +90,7 @@ class RabbitMQHelper:
                 "RabbitMQ is disabled for this service. "
                 "Set IS_RABBITMQ_ENABLED=True to use RabbitMQ operations."
             )
-        
+
         if self._connection is None or self._connection.is_closed:
             try:
                 self._connection = await aio_pika.connect_robust(self.rabbitmq_url)
@@ -100,21 +101,21 @@ class RabbitMQHelper:
                 print(error_msg, file=sys.stderr)
                 self._connection = None
                 raise ConnectionError(error_msg) from e
-        
+
         return self._connection
-    
+
     async def _ensure_channel(self) -> Channel:
         """
         Ensure RabbitMQ channel exists and is open.
-        
+
         Returns:
             Active RabbitMQ channel
-            
+
         Raises:
             ConnectionError: If connection or channel cannot be established
         """
         await self._ensure_connection()
-        
+
         if self._channel is None or self._channel.is_closed:
             try:
                 self._channel = await self._connection.channel()
@@ -125,28 +126,28 @@ class RabbitMQHelper:
                 print(error_msg, file=sys.stderr)
                 self._channel = None
                 raise ConnectionError(error_msg) from e
-        
+
         return self._channel
-    
+
     async def ensure_queue_exists(
         self,
         queue_name: str,
         durable: bool = True,
         exclusive: bool = False,
         auto_delete: bool = False,
-        arguments: Optional[Dict[str, Any]] = None
+        arguments: Optional[Dict[str, Any]] = None,
     ) -> Queue:
         """
         Ensure a queue exists, connecting to existing queue if available, creating it if necessary.
-        
+
         By default, queues are created as DURABLE (permanent storage) to ensure
         they survive RabbitMQ broker restarts. This is the recommended setting
         for production use.
-        
+
         This method first checks if the queue already exists in RabbitMQ. If it does,
         it connects directly to the existing queue. If not, it creates a new queue
         with the specified parameters.
-        
+
         Args:
             queue_name: Name of the queue
             durable: If True, queue survives broker restart
@@ -155,10 +156,10 @@ class RabbitMQHelper:
             auto_delete: If True, queue is deleted when no longer used
                         (default: False for permanent storage)
             arguments: Optional queue arguments
-            
+
         Returns:
             Queue object
-            
+
         Raises:
             ConnectionError: If connection cannot be established
             AMQPException: If queue creation fails or queue exists with incompatible arguments
@@ -169,10 +170,10 @@ class RabbitMQHelper:
             if not queue.channel.is_closed:
                 logger.debug(f"Using cached queue '{queue_name}'")
                 return queue
-        
+
         try:
             channel = await self._ensure_channel()
-            
+
             # First, try to connect to existing queue (passive=True means don't create, just check)
             try:
                 existing_queue = await channel.declare_queue(queue_name, passive=True)
@@ -191,26 +192,26 @@ class RabbitMQHelper:
                 # Channel is closed after passive declaration fails, need to recreate it
                 self._channel = None
                 channel = await self._ensure_channel()
-            
+
             # Queue doesn't exist, create it with specified parameters
             queue = await channel.declare_queue(
                 queue_name,
                 durable=durable,
                 exclusive=exclusive,
                 auto_delete=auto_delete,
-                arguments=arguments or {}
+                arguments=arguments or {},
             )
-            
+
             # Cache the queue
             self._queues[queue_name] = queue
-            
+
             logger.info(
                 f"Created new queue '{queue_name}' (durable={durable}, "
                 f"exclusive={exclusive}, auto_delete={auto_delete}, arguments={arguments})"
             )
-            
+
             return queue
-            
+
         except AMQPException as e:
             error_str = str(e)
             # Handle case where queue exists with different arguments
@@ -229,7 +230,7 @@ class RabbitMQHelper:
                         raise AMQPException(error_msg) from e
                 except AMQPException:
                     pass  # Fall through to original error
-            
+
             error_msg = f"Failed to ensure queue '{queue_name}': {e}"
             logger.error(error_msg)
             raise AMQPException(error_msg) from e
@@ -237,81 +238,80 @@ class RabbitMQHelper:
             error_msg = f"Failed to ensure queue '{queue_name}': {e}"
             logger.error(error_msg)
             raise ConnectionError(error_msg) from e
-    
+
     async def delete_queue(
-        self,
-        queue_name: str,
-        if_unused: bool = False,
-        if_empty: bool = False
+        self, queue_name: str, if_unused: bool = False, if_empty: bool = False
     ) -> None:
         """
         Delete a queue.
-        
+
         Args:
             queue_name: Name of the queue to delete
             if_unused: Only delete if queue has no consumers
             if_empty: Only delete if queue is empty
-            
+
         Raises:
             ConnectionError: If connection cannot be established
             AMQPException: If queue deletion fails
         """
         try:
             channel = await self._ensure_channel()
-            await channel.queue_delete(queue_name, if_unused=if_unused, if_empty=if_empty)
-            
+            await channel.queue_delete(
+                queue_name, if_unused=if_unused, if_empty=if_empty
+            )
+
             # Remove from cache
             if queue_name in self._queues:
                 del self._queues[queue_name]
-            
+
             logger.info(f"Queue '{queue_name}' deleted")
-            
+
         except (AMQPException, ConnectionError) as e:
             error_msg = f"Failed to delete queue '{queue_name}': {e}"
             logger.error(error_msg)
             raise AMQPException(error_msg) from e
-    
+
     async def get_queue_info(self, queue_name: str) -> Optional[Dict[str, Any]]:
         """
         Get information about a queue.
-        
+
         Args:
             queue_name: Name of the queue
-            
+
         Returns:
             Dictionary with queue information or None if queue doesn't exist
-            
+
         Raises:
             ConnectionError: If connection cannot be established
         """
         try:
             channel = await self._ensure_channel()
             queue = await channel.declare_queue(queue_name, passive=True)
-            
+
             return {
                 "name": queue.name,
                 "durable": queue.durable,
                 "exclusive": queue.exclusive,
                 "auto_delete": queue.auto_delete,
-                "arguments": queue.arguments
+                "arguments": queue.arguments,
             }
-            
+
         except AMQPException:
             # Queue doesn't exist
             return None
         except ConnectionError as e:
             logger.error(f"Failed to get queue info for '{queue_name}': {e}")
             raise
-    
+
     def is_connected(self) -> bool:
         """
         Check if RabbitMQ connection is active.
-        
+
         Returns:
             True if connected, False otherwise
         """
         return self._connection is not None and not self._connection.is_closed
-    
+
     async def _close_channel(self):
         if self._channel and not self._channel.is_closed:
             try:
@@ -337,7 +337,7 @@ class RabbitMQHelper:
     async def close(self) -> None:
         """
         Close RabbitMQ connection and channel.
-        
+
         This should be called when the helper is no longer needed,
         typically during application shutdown.
         """
@@ -347,54 +347,58 @@ class RabbitMQHelper:
             await self._close_connection()
         except (AMQPException, asyncio.TimeoutError) as e:
             logger.warning(f"Error during RabbitMQ cleanup: {e}")
-    
+
     async def __aenter__(self):
         """Async context manager entry."""
         await self._ensure_connection()
         return self
-    
+
     async def initialize_queues_from_config(self) -> Dict[str, Queue]:
         """
         Initialize queues from config.RABBITMQ_QUEUE_NAMES.
-        
+
         Parses comma-separated queue names from config and ensures they all exist.
         All queues are created as DURABLE (permanent storage) to survive broker restarts.
-        
+
         Returns:
             Dictionary mapping queue names to Queue objects
-            
+
         Raises:
             ConnectionError: If connection cannot be established
             AMQPException: If queue creation fails
         """
         queue_names_str = self.config.RABBITMQ_QUEUE_NAMES or ""
-        queue_names = [name.strip() for name in queue_names_str.split(",") if name.strip()]
-        
+        queue_names = [
+            name.strip() for name in queue_names_str.split(",") if name.strip()
+        ]
+
         initialized_queues = {}
-        
+
         for queue_name in queue_names:
             # Always create queues as durable (permanent storage) and non-auto-delete
             # Set x-max-priority for log_queue to support message priorities
             queue_args = {}
             if queue_name == "log_queue":
-                queue_args = {"x-max-priority": 10}  # Support message priorities up to 10
-            
+                queue_args = {
+                    "x-max-priority": 10
+                }  # Support message priorities up to 10
+
             queue = await self.ensure_queue_exists(
                 queue_name=queue_name,
                 durable=True,  # Permanent storage - survives broker restart
                 exclusive=False,  # Accessible by multiple connections
                 auto_delete=False,  # Permanent - not deleted when unused
-                arguments=queue_args if queue_args else None
+                arguments=queue_args if queue_args else None,
             )
             initialized_queues[queue_name] = queue
-        
+
         logger.info(
             f"Initialized {len(initialized_queues)} durable queues from config: "
             f"{', '.join(initialized_queues.keys())}"
         )
-        
+
         return initialized_queues
-    
+
     async def _create_aio_message(
         self,
         message: Union[Dict[str, Any], str],
@@ -403,11 +407,11 @@ class RabbitMQHelper:
         headers: Optional[Dict[str, Any]],
     ) -> aio_pika.Message:
         if isinstance(message, dict):
-            body = json.dumps(message).encode('utf-8')
+            body = json.dumps(message).encode("utf-8")
         elif isinstance(message, str):
-            body = message.encode('utf-8')
+            body = message.encode("utf-8")
         else:
-            body = json.dumps(message).encode('utf-8')
+            body = json.dumps(message).encode("utf-8")
 
         return aio_pika.Message(
             body=body,
@@ -426,7 +430,9 @@ class RabbitMQHelper:
     ):
         if exchange:
             exchange_obj = await channel.get_exchange(exchange)
-            await exchange_obj.publish(aio_message, routing_key=routing_key or queue_name)
+            await exchange_obj.publish(
+                aio_message, routing_key=routing_key or queue_name
+            )
         else:
             await channel.default_exchange.publish(
                 aio_message, routing_key=routing_key or queue_name
@@ -442,7 +448,7 @@ class RabbitMQHelper:
         routing_key: Optional[str] = None,
         headers: Optional[Dict[str, Any]] = None,
         ensure_queue: bool = True,
-        queue_durable: bool = True
+        queue_durable: bool = True,
     ) -> bool:
         """
         Publish a message to a RabbitMQ queue.
@@ -475,7 +481,7 @@ class RabbitMQHelper:
                     queue_name=queue_name,
                     durable=queue_durable,
                     exclusive=False,
-                    auto_delete=False
+                    auto_delete=False,
                 )
 
             channel = await self._ensure_channel()
@@ -497,7 +503,7 @@ class RabbitMQHelper:
             logger.error(error_msg)
             print(error_msg, file=sys.stderr)
             return False
-    
+
     async def publish_batch(
         self,
         queue_name: str,
@@ -505,14 +511,14 @@ class RabbitMQHelper:
         priority: int = 3,
         delivery_mode: DeliveryMode = DeliveryMode.PERSISTENT,
         ensure_queue: bool = True,
-        queue_durable: bool = True
+        queue_durable: bool = True,
     ) -> int:
         """
         Publish multiple messages to a RabbitMQ queue in a batch.
-        
+
         By default, messages are published as PERSISTENT (permanent storage) and
         queues are created as DURABLE to ensure they survive broker restarts.
-        
+
         Args:
             queue_name: Name of the queue to publish to
             messages: List of messages to publish
@@ -520,124 +526,125 @@ class RabbitMQHelper:
             delivery_mode: Message delivery mode (default: PERSISTENT for permanent storage)
             ensure_queue: If True, ensures queue exists before publishing (default: True)
             queue_durable: If True, queue will be durable/permanent (default: True)
-            
+
         Returns:
             Number of messages successfully published
         """
         published_count = 0
-        
+
         for message in messages:
             success = await self.publish_message(
                 queue_name=queue_name,
                 message=message,
                 priority=priority,
                 delivery_mode=delivery_mode,
-                ensure_queue=ensure_queue if published_count == 0 else False,  # Only ensure once
-                queue_durable=queue_durable
+                ensure_queue=ensure_queue
+                if published_count == 0
+                else False,  # Only ensure once
+                queue_durable=queue_durable,
             )
-            
+
             if success:
                 published_count += 1
-        
-        logger.info(f"Published {published_count}/{len(messages)} messages to queue '{queue_name}'")
+
+        logger.info(
+            f"Published {published_count}/{len(messages)} messages to queue '{queue_name}'"
+        )
         return published_count
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.close()
-    
+
     async def ensure_exchange_exists(
         self,
         exchange_name: str,
         exchange_type: str = "fanout",
         durable: bool = True,
-        auto_delete: bool = False
+        auto_delete: bool = False,
     ) -> Exchange:
         """
         Ensure an exchange exists, creating it if necessary.
-        
+
         Args:
             exchange_name: Name of the exchange
             exchange_type: Type of exchange (fanout, direct, topic, headers)
             durable: If True, exchange survives broker restart
             auto_delete: If True, exchange is deleted when no longer used
-            
+
         Returns:
             Exchange object
-            
+
         Raises:
             ConnectionError: If connection cannot be established
             AMQPException: If exchange creation fails
         """
         try:
             channel = await self._ensure_channel()
-            
+
             # Map string exchange type to ExchangeType enum
             exchange_type_map = {
                 "fanout": ExchangeType.FANOUT,
                 "direct": ExchangeType.DIRECT,
                 "topic": ExchangeType.TOPIC,
-                "headers": ExchangeType.HEADERS
+                "headers": ExchangeType.HEADERS,
             }
-            
-            exchange_type_enum = exchange_type_map.get(exchange_type.lower(), ExchangeType.FANOUT)
-            
+
+            exchange_type_enum = exchange_type_map.get(
+                exchange_type.lower(), ExchangeType.FANOUT
+            )
+
             exchange = await channel.declare_exchange(
                 exchange_name,
                 exchange_type_enum,
                 durable=durable,
-                auto_delete=auto_delete
+                auto_delete=auto_delete,
             )
-            
+
             logger.info(
                 f"Exchange '{exchange_name}' ensured (type={exchange_type}, durable={durable})"
             )
             return exchange
-            
+
         except (AMQPException, ConnectionError) as e:
             error_msg = f"Failed to ensure exchange '{exchange_name}': {e}"
             logger.error(error_msg)
             raise AMQPException(error_msg) from e
-    
+
     async def bind_queue_to_exchange(
-        self,
-        queue_name: str,
-        exchange_name: str,
-        routing_key: str = ""
+        self, queue_name: str, exchange_name: str, routing_key: str = ""
     ) -> None:
         """
         Bind a queue to an exchange.
-        
+
         Args:
             queue_name: Name of the queue to bind
             exchange_name: Name of the exchange to bind to
             routing_key: Routing key for the binding (default: "")
-            
+
         Raises:
             ConnectionError: If connection cannot be established
             AMQPException: If binding fails
         """
         try:
             await self._ensure_channel()
-            
+
             # Ensure queue exists
             queue = await self.ensure_queue_exists(queue_name)
-            
+
             # Bind queue to exchange
             await queue.bind(exchange_name, routing_key=routing_key)
-            
+
             logger.info(
                 f"Queue '{queue_name}' bound to exchange '{exchange_name}' "
                 f"with routing_key '{routing_key}'"
             )
-            
+
         except (AMQPException, ConnectionError) as e:
-            error_msg = (
-                f"Failed to bind queue '{queue_name}' to exchange '{exchange_name}': {e}"
-            )
+            error_msg = f"Failed to bind queue '{queue_name}' to exchange '{exchange_name}': {e}"
             logger.error(error_msg)
             raise AMQPException(error_msg) from e
-    
+
     async def publish_to_exchange(
         self,
         exchange_name: str,
@@ -645,11 +652,11 @@ class RabbitMQHelper:
         routing_key: str = "",
         priority: int = 3,
         delivery_mode: DeliveryMode = DeliveryMode.PERSISTENT,
-        headers: Optional[Dict[str, Any]] = None
+        headers: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """
         Publish a message to an exchange.
-        
+
         Args:
             exchange_name: Name of the exchange to publish to
             message: Message to publish (dict or string)
@@ -657,35 +664,34 @@ class RabbitMQHelper:
             priority: Message priority (0-255)
             delivery_mode: Message delivery mode (default: PERSISTENT)
             headers: Optional message headers
-            
+
         Returns:
             True if message was published successfully, False otherwise
-            
+
         Raises:
             ConnectionError: If connection cannot be established
             AMQPException: If publishing fails
         """
         try:
             channel = await self._ensure_channel()
-            
+
             # Create message
             aio_message = await self._create_aio_message(
                 message, delivery_mode, priority, headers
             )
-            
+
             # Get exchange and publish
             exchange = await channel.get_exchange(exchange_name)
             await exchange.publish(aio_message, routing_key=routing_key)
-            
+
             logger.debug(
                 f"Message published to exchange '{exchange_name}' "
                 f"with routing_key '{routing_key}'"
             )
             return True
-            
+
         except (AMQPException, ConnectionError, json.JSONDecodeError) as e:  # pylint: disable=no-member
             error_msg = f"Failed to publish message to exchange '{exchange_name}': {e}"
             logger.error(error_msg)
             print(error_msg, file=sys.stderr)
             return False
-    

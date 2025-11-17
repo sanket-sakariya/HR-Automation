@@ -12,9 +12,13 @@ from app.config.baseapp_config import get_base_config
 from app.helper.rabbitmq_helper import RabbitMQHelper
 
 # Context variables
-user_id_context: ContextVar[Optional[str]] = ContextVar('user_id', default=None)
-workspace_id_context: ContextVar[Optional[str]] = ContextVar('workspace_id', default=None)
-correlation_id_context: ContextVar[Optional[str]] = ContextVar('correlation_id', default=None)
+user_id_context: ContextVar[Optional[str]] = ContextVar("user_id", default=None)
+workspace_id_context: ContextVar[Optional[str]] = ContextVar(
+    "workspace_id", default=None
+)
+correlation_id_context: ContextVar[Optional[str]] = ContextVar(
+    "correlation_id", default=None
+)
 
 
 def validate_log_message(log_message: Dict[str, Any]) -> bool:
@@ -22,24 +26,24 @@ def validate_log_message(log_message: Dict[str, Any]) -> bool:
     required_fields = ["service_name", "log_type", "timestamp", "message", "level"]
     valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
     valid_types = ["user_activity", "central_log", "all"]
-    
+
     # Check required fields
     if not all(field in log_message for field in required_fields):
         return False
-    
+
     # Check log level validity
     if log_message.get("level", "").upper() not in valid_levels:
         return False
-    
+
     # Check log type validity
     if log_message.get("log_type") not in valid_types:
         return False
-    
+
     # Check message size (max 10KB)
     message_str = str(log_message.get("message", ""))
-    if len(message_str.encode('utf-8')) > 10240:
+    if len(message_str.encode("utf-8")) > 10240:
         return False
-    
+
     return True
 
 
@@ -48,7 +52,7 @@ def _get_context_info() -> Dict[str, Optional[str]]:
     return {
         "user_id": user_id_context.get(),
         "workspace_id": workspace_id_context.get(),
-        "correlation_id": correlation_id_context.get()
+        "correlation_id": correlation_id_context.get(),
     }
 
 
@@ -67,25 +71,29 @@ def _parse_log_message(message: str) -> tuple[str, str, str, str, str, str, str]
     parts = message.split(" | ", 2)
     if len(parts) < 3:
         return "", "", "", "", "", "", ""
-    
+
     time_str, level, location_and_message = parts
     level = level.strip()
-    
+
     # Split location and message by " - "
     if " - " in location_and_message:
         location, message_text = location_and_message.split(" - ", 1)
     else:
         location = location_and_message
         message_text = ""
-    
+
     message_text = message_text.strip()
-    
+
     # Parse location
     location_parts = location.split(":")
     name = location_parts[0] if len(location_parts) > 0 else ""
     function = location_parts[1] if len(location_parts) > 1 else ""
-    line = int(location_parts[2]) if len(location_parts) > 2 and location_parts[2].isdigit() else 0
-    
+    line = (
+        int(location_parts[2])
+        if len(location_parts) > 2 and location_parts[2].isdigit()
+        else 0
+    )
+
     return time_str, level, name, function, str(line), message_text, location
 
 
@@ -95,33 +103,33 @@ def _extract_context_from_message(message_text: str) -> tuple[str, str, str, str
     workspace_id = None
     correlation_id = None
     action_type = "general"
-    
+
     # Check if message contains context information in format
     # [user_id=xxx, workspace_id=yyy, correlation_id=zzz]
-    context_match = re.search(r'\[([^\]]+)\]$', message_text)
+    context_match = re.search(r"\[([^\]]+)\]$", message_text)
     if context_match:
         context_str = context_match.group(1)
         # Parse individual context values
-        for item in context_str.split(', '):
-            if '=' in item:
-                key, value = item.split('=', 1)
-                if key == 'user_id':
+        for item in context_str.split(", "):
+            if "=" in item:
+                key, value = item.split("=", 1)
+                if key == "user_id":
                     user_id = value
-                elif key == 'workspace_id':
+                elif key == "workspace_id":
                     workspace_id = value
-                elif key == 'correlation_id':
+                elif key == "correlation_id":
                     correlation_id = value
-                elif key == 'action_type':
+                elif key == "action_type":
                     action_type = value
         # Remove context from message text
-        message_text = re.sub(r' \[[^\]]+\]$', '', message_text)
-    
+        message_text = re.sub(r" \[[^\]]+\]$", "", message_text)
+
     # Check if message starts with [action_type] pattern
-    action_match = re.match(r'^\[([^\]]+)\]\s*(.*)$', message_text)
+    action_match = re.match(r"^\[([^\]]+)\]\s*(.*)$", message_text)
     if action_match:
         action_type = action_match.group(1)
         message_text = action_match.group(2)
-    
+
     return message_text, user_id, workspace_id, correlation_id, action_type
 
 
@@ -134,11 +142,11 @@ def _create_log_message(
     workspace_id: Optional[str] = None,
     correlation_id: Optional[str] = None,
     action_type: str = "general",
-    priority: int = 3
+    priority: int = 3,
 ) -> Dict[str, Any]:
     """Create structured log message based on type"""
     config = get_base_config()
-    
+
     base_message = {
         "service_name": config.SERVICE_NAME or "workspace-management-service",
         "log_type": log_type,
@@ -147,20 +155,21 @@ def _create_log_message(
         "message": message_text,
         "level": level.upper(),
         "action_type": action_type,
-        "priority": priority
+        "priority": priority,
     }
-    
+
     # Add optional fields based on log type
     if log_type in ["user_activity", "all"] and user_id:
         base_message["user_id"] = user_id
     if log_type in ["user_activity", "all"] and workspace_id:
         base_message["workspace_id"] = workspace_id
-    
+
     return base_message
+
 
 class QueueLogHandler:
     """Simplified queue log handler using RabbitMQ helper with asyncio tasks"""
-    
+
     def __init__(self):
         self.config = get_base_config()
         self._rabbitmq_helper: Optional[RabbitMQHelper] = None
@@ -168,12 +177,12 @@ class QueueLogHandler:
         self._worker_task: Optional[asyncio.Task] = None
         self._queue_name = "log_queue"
         self._initialized = False
-    
+
     async def initialize(self):
         """Initialize the handler - creates queue and starts worker task"""
         if self._initialized:
             return
-        
+
         # Check if RabbitMQ is enabled for this service
         if not self.config.IS_RABBITMQ_ENABLED:
             logger.info(
@@ -181,10 +190,10 @@ class QueueLogHandler:
                 "(IS_RABBITMQ_ENABLED=False), skipping initialization"
             )
             return
-        
+
         # Create async queue
         self._log_queue = asyncio.Queue(maxsize=1000)
-        
+
         # Initialize RabbitMQ helper
         try:
             self._rabbitmq_helper = RabbitMQHelper()
@@ -195,17 +204,17 @@ class QueueLogHandler:
                 durable=True,
                 exclusive=False,
                 auto_delete=False,
-                arguments={"x-max-priority": 10}  # Support message priorities up to 10
+                arguments={"x-max-priority": 10},  # Support message priorities up to 10
             )
         except (ConnectionError, RuntimeError) as e:
             logger.error(f"Failed to initialize RabbitMQ helper: {e}")
             self._rabbitmq_helper = None
             return
-        
+
         # Start worker task
         self._worker_task = asyncio.create_task(self._worker_loop())
         self._initialized = True
-    
+
     def _ensure_initialized(self):
         """Ensure handler is initialized (called from sync context)"""
         if not self._initialized and self._log_queue is None:
@@ -217,7 +226,7 @@ class QueueLogHandler:
             except RuntimeError:
                 # No event loop running, will initialize on first async call
                 pass
-    
+
     def write(self, message: str):
         """Write method called by loguru - simplified version"""
         try:
@@ -225,7 +234,7 @@ class QueueLogHandler:
             time_str, level, _, _, _, message_text, _ = _parse_log_message(message)
             if not time_str:
                 return
-            
+
             # Determine log type
             if message_text.startswith("USER_ACTIVITY:"):
                 message_text = message_text.replace("USER_ACTIVITY: ", "")
@@ -242,12 +251,17 @@ class QueueLogHandler:
             else:
                 log_type = "central_log"
                 priority = 3
-            
+
             # Extract context
-            (message_text, msg_user_id, msg_workspace_id, 
-             msg_correlation_id, msg_action_type) = _extract_context_from_message(message_text)
+            (
+                message_text,
+                msg_user_id,
+                msg_workspace_id,
+                msg_correlation_id,
+                msg_action_type,
+            ) = _extract_context_from_message(message_text)
             context = _get_context_info()
-            
+
             # Create log message
             log_message = _create_log_message(
                 log_type=log_type,
@@ -258,9 +272,9 @@ class QueueLogHandler:
                 workspace_id=msg_workspace_id or context["workspace_id"],
                 correlation_id=msg_correlation_id or context["correlation_id"],
                 action_type=msg_action_type or "general",
-                priority=priority
+                priority=priority,
             )
-            
+
             # Try to put message in queue (non-blocking)
             if validate_log_message(log_message):
                 self._ensure_initialized()
@@ -271,7 +285,7 @@ class QueueLogHandler:
                     except asyncio.QueueFull:
                         # Queue is full, skip this log message
                         pass
-                
+
         except (ValueError, TypeError, AttributeError, KeyError) as e:
             print(f"Error processing log: {e}", file=sys.stderr)
 
@@ -281,7 +295,9 @@ class QueueLogHandler:
             try:
                 # Wait for message with timeout
                 try:
-                    log_message = await asyncio.wait_for(self._log_queue.get(), timeout=1.0)
+                    log_message = await asyncio.wait_for(
+                        self._log_queue.get(), timeout=1.0
+                    )
                     await self._send_message(log_message)
                     self._log_queue.task_done()
                 except asyncio.TimeoutError:
@@ -306,10 +322,12 @@ class QueueLogHandler:
                     queue_name=self._queue_name,
                     message=log_message,
                     priority=log_message.get("priority", 3),
-                    ensure_queue=False  # Queue already ensured in _initialize
+                    ensure_queue=False,  # Queue already ensured in _initialize
                 )
                 if not success:
-                    logger.warning(f"Failed to publish log message to queue '{self._queue_name}'")
+                    logger.warning(
+                        f"Failed to publish log message to queue '{self._queue_name}'"
+                    )
         except (ConnectionError, ValueError, TypeError, RuntimeError, OSError) as e:
             error_msg = f"Failed to send log to queue: {e}"
             logger.error(error_msg)
@@ -324,18 +342,20 @@ class QueueLogHandler:
                 await self._worker_task
             except asyncio.CancelledError:
                 pass
-        
+
         # Process remaining messages in queue (with timeout)
         if self._log_queue:
             try:
                 # Wait for queue to be processed
                 timeout = 2.0
                 start_time = time.time()
-                while not self._log_queue.empty() and (time.time() - start_time) < timeout:
+                while (
+                    not self._log_queue.empty() and (time.time() - start_time) < timeout
+                ):
                     await asyncio.sleep(0.1)
             except Exception:
                 pass
-        
+
         # Close RabbitMQ connection
         if self._rabbitmq_helper:
             try:
@@ -344,16 +364,17 @@ class QueueLogHandler:
                 logger.warning(f"Error closing RabbitMQ helper: {e}")
             finally:
                 self._rabbitmq_helper = None
-        
+
         self._initialized = False
 
 
 # Global handler instance for proper connection management
 _GLOBAL_QUEUE_HANDLER = None
 
+
 def configure_logging() -> None:
     """Configure logging with queue integration"""
-    global _GLOBAL_QUEUE_HANDLER  
+    global _GLOBAL_QUEUE_HANDLER
     config = get_base_config()
 
     logger.remove()
@@ -389,23 +410,27 @@ def configure_logging() -> None:
             "Queue logging is disabled for this service."
         )
 
+
 async def shutdown_logging() -> None:
     """Gracefully shutdown logging and close RabbitMQ connection"""
-    global _GLOBAL_QUEUE_HANDLER 
-    
+    global _GLOBAL_QUEUE_HANDLER
+
     if _GLOBAL_QUEUE_HANDLER:
         # Stop handler and close RabbitMQ connection
         await _GLOBAL_QUEUE_HANDLER.stop()
         _GLOBAL_QUEUE_HANDLER = None
         logger.info("Logging system shutdown completed")
 
-def get_logger_context(user_id: str = "", workspace_id: str = "", correlation_id: str = ""):
+
+def get_logger_context(
+    user_id: str = "", workspace_id: str = "", correlation_id: str = ""
+):
     """
     Configure logging context for the current request
-    
+
     Args:
         user_id: User ID for user activity logs
-        workspace_id: Workspace ID for user activity logs  
+        workspace_id: Workspace ID for user activity logs
         correlation_id: Correlation ID for request tracing
     """
     # Always set the context variables, even if they're empty strings
@@ -415,18 +440,22 @@ def get_logger_context(user_id: str = "", workspace_id: str = "", correlation_id
     correlation_id_context.set(correlation_id)
 
 
-def _log_with_context(message: str, log_type: str, level: str = "info", exc_info: bool = False):
+def _log_with_context(
+    message: str, log_type: str, level: str = "info", exc_info: bool = False
+):
     """Internal function to log with context - reduces code duplication"""
     context = _get_context_info()
     context_str = _create_context_string(context)
-    
+
     # Get the appropriate logger method
     log_level = level.lower()
     log_method = getattr(logger, log_level, logger.info)
-    
+
     # Log with context information embedded in the message
     if exc_info:
-        log_method(f"{log_type}: {{message}}{context_str}", message=message, exc_info=True)
+        log_method(
+            f"{log_type}: {{message}}{context_str}", message=message, exc_info=True
+        )
     else:
         log_method(f"{log_type}: {{message}}{context_str}", message=message)
 
@@ -435,11 +464,11 @@ def log_user_activity(
     message: str,
     action_type: str = "general",
     level: str = "info",
-    exc_info: bool = False
+    exc_info: bool = False,
 ):
     """
     Log user activity - goes to user_activities table only
-    
+
     Args:
         message: The log message
         action_type: Type of action performed
@@ -453,11 +482,11 @@ def log_all(
     message: str,
     action_type: str = "general",
     level: str = "info",
-    exc_info: bool = False
+    exc_info: bool = False,
 ):
     """
     Log important events - goes to BOTH tables (user_activities + central_logs)
-    
+
     Args:
         message: The log message
         action_type: Type of action performed
@@ -470,7 +499,7 @@ def log_all(
 def log_central(message: str, level: str = "info", exc_info: bool = False):
     """
     Log central system events - goes to central_logs table only
-    
+
     Args:
         message: The log message
         level: Log level ("info", "debug", "warning", "error", "critical")

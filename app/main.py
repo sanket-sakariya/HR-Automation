@@ -30,21 +30,23 @@ async def lifespan(_app: FastAPI):
     Handles application startup and shutdown events.
     """
     base_config = get_base_config()
-    
+
     # Startup
     configure_logging()
-    
+
     # Initialize queue log handler if enabled
 
     if _GLOBAL_QUEUE_HANDLER:
         await _GLOBAL_QUEUE_HANDLER.initialize()
-    
+
     # Log service status
     if base_config.IS_POSTGRES_ENABLED:
         logger.info("✅ PostgreSQL is enabled for this service")
     else:
-        logger.warning("⚠️  PostgreSQL is disabled for this service (IS_POSTGRES_ENABLED=False)")
-    
+        logger.warning(
+            "⚠️  PostgreSQL is disabled for this service (IS_POSTGRES_ENABLED=False)"
+        )
+
     if base_config.IS_RABBITMQ_ENABLED:
         logger.info("✅ RabbitMQ is enabled for this service")
         # Initialize queues from config
@@ -55,8 +57,10 @@ async def lifespan(_app: FastAPI):
         except Exception as e:  # pylint: disable=broad-exception-caught
             logger.warning(f"⚠️  RabbitMQ queue initialization failed: {e}")
     else:
-        logger.warning("⚠️  RabbitMQ is disabled for this service (IS_RABBITMQ_ENABLED=False)")
-    
+        logger.warning(
+            "⚠️  RabbitMQ is disabled for this service (IS_RABBITMQ_ENABLED=False)"
+        )
+
     # Initialize Redis cache if enabled
     if base_config.IS_REDIS_CACHE_ENABLED:
         try:
@@ -67,22 +71,19 @@ async def lifespan(_app: FastAPI):
             logger.warning(f"⚠️  Redis cache initialization failed: {e}")
     else:
         logger.warning(
-            "⚠️  Redis cache is disabled for this service "
-            "(IS_REDIS_CACHE_ENABLED=False)"
+            "⚠️  Redis cache is disabled for this service (IS_REDIS_CACHE_ENABLED=False)"
         )
-    
+
     # Ensure migration files exist (download from Wasabi if needed)
     # This is critical because migration files are excluded from Docker image via .dockerignore
     # Only check migrations if PostgreSQL is enabled for this service
     if base_config.IS_POSTGRES_ENABLED:
-
-        
         project_root = Path(__file__).parent.parent.parent
         migrations_path = project_root / "alembic" / "versions"
-        
+
         migration_helper = MigrationHelper()
         migrations_exist = migration_helper.ensure_migrations_exist(migrations_path)
-        
+
         if not migrations_exist:
             logger.warning(
                 "⚠️  Migration files not found and could not be downloaded from Wasabi. "
@@ -90,11 +91,11 @@ async def lifespan(_app: FastAPI):
             )
         else:
             logger.info("✅ Migration files are ready")
-    
+
     # Register service with APISIX Gateway
     apisix_helper = get_apisix_helper()
     await apisix_helper.register_route()
-    
+
     yield
     # Shutdown
     redis_helper = get_redis_helper()
@@ -116,16 +117,18 @@ def create_app() -> FastAPI:
 
     # Add middleware
     fastapi_app.add_middleware(CorrelationIdMiddleware, header_name="X-Correlation-ID")
-    
+
     # Setup custom error handlers
     setup_error_handlers(fastapi_app)
 
     # Include API routes
-    fastapi_app.include_router(router=api_router, prefix=f"/{config.SERVICE_NAME}/api/v1")
-    
+    fastapi_app.include_router(
+        router=api_router, prefix=f"/{config.SERVICE_NAME}/api/v1"
+    )
+
     # Mount static files for media
     fastapi_app.mount("/media", StaticFiles(directory="app/media"), name="media")
-    
+
     # Custom Swagger UI with sidebar
     @fastapi_app.get("/docs", include_in_schema=False)
     async def custom_swagger_ui_html():
@@ -134,6 +137,7 @@ def create_app() -> FastAPI:
         return HTMLResponse(content=html_content)
 
     return fastapi_app
+
 
 if __name__ == "__main__":
     app = create_app()

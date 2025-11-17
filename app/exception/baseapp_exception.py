@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import HTTPException, status 
+from fastapi import HTTPException, status
 
 
 class BaseAppException(HTTPException):
@@ -12,6 +12,7 @@ class BaseAppException(HTTPException):
 
 class NotFoundException(BaseAppException):
     """Exception for when a resource is not found."""
+
     def __init__(self, resource: str, resource_id: Optional[str] = None):
         message = f"{resource} not found."
         if resource_id:
@@ -21,6 +22,7 @@ class NotFoundException(BaseAppException):
 
 class AlreadyExistsException(BaseAppException):
     """Exception for when a resource already exists."""
+
     def __init__(self, resource: str, field: str = "name"):
         message = f"{resource} with this {field} already exists."
         super().__init__(message=message, status_code=status.HTTP_400_BAD_REQUEST)
@@ -28,47 +30,65 @@ class AlreadyExistsException(BaseAppException):
 
 class InvalidDataException(BaseAppException):
     """Exception for when invalid data is provided."""
+
     def __init__(self, message: str = "Invalid data provided."):
-        super().__init__(message=message, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        super().__init__(
+            message=message, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY
+        )
 
 
 class PermissionDeniedException(BaseAppException):
     """Exception for when a user does not have permission to perform an action."""
-    def __init__(self, message: str = "You do not have permission to perform this action."):
+
+    def __init__(
+        self, message: str = "You do not have permission to perform this action."
+    ):
         super().__init__(message=message, status_code=status.HTTP_403_FORBIDDEN)
 
 
 class UnauthorizedException(BaseAppException):
     """Exception for when a user is not authorized to perform an action."""
+
     def __init__(self, message: str = "Authentication required."):
         super().__init__(message=message, status_code=status.HTTP_401_UNAUTHORIZED)
 
 
 class ConflictException(BaseAppException):
     """Exception for when a conflict occurs."""
+
     def __init__(self, message: str = "Conflict occurred."):
         super().__init__(message=message, status_code=status.HTTP_409_CONFLICT)
 
 
 class DependencyException(BaseAppException):
     """Exception for when an operation cannot be completed due to dependencies."""
-    def __init__(self, message: str = "Operation cannot be completed due to dependencies."):
+
+    def __init__(
+        self, message: str = "Operation cannot be completed due to dependencies."
+    ):
         super().__init__(message=message, status_code=status.HTTP_409_CONFLICT)
 
 
 class RateLimitExceededException(BaseAppException):
     """Exception for when a rate limit is exceeded."""
+
     def __init__(self, message: str = "Rate limit exceeded. Please try again later."):
         super().__init__(message=message, status_code=status.HTTP_429_TOO_MANY_REQUESTS)
 
 
 class ServiceUnavailableException(BaseAppException):
     """Exception for when a service is temporarily unavailable."""
+
     def __init__(self, message: str = "Service is temporarily unavailable."):
-        super().__init__(message=message, status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        super().__init__(
+            message=message, status_code=status.HTTP_503_SERVICE_UNAVAILABLE
+        )
 
 
 class InternalServerErrorException(BaseAppException):
     """Exception for when an unexpected error occurs."""
+
     def __init__(self, message: str = "An unexpected error occurred."):
-        super().__init__(message=message, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        super().__init__(
+            message=message, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

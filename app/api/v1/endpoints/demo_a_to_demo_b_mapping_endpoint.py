@@ -15,18 +15,18 @@ from app.helper.fastapi.get_header import get_list_params, get_user_id, get_work
 from app.helper.redis_cached_route_helper import RedisCachedRoute
 
 from app.schema.response_schema import (
-    ApiResponseSchema, 
-    PaginatedResponseSchema, 
+    ApiResponseSchema,
+    PaginatedResponseSchema,
     PaginationMeta,
-    ListParamsSchema
+    ListParamsSchema,
 )
 
 from app.schema.demo_a_to_demo_b_mapping_schema import (
-    DemoAToDemoBMappingCreateSchema, 
-    DemoAToDemoBMappingUpdateSchema, 
+    DemoAToDemoBMappingCreateSchema,
+    DemoAToDemoBMappingUpdateSchema,
     DemoAToDemoBMappingReadSchema,
     DemoAToDemoBMappingStatusUpdateSchema,
-    DemoAToDemoBMappingIsActiveUpdateSchema
+    DemoAToDemoBMappingIsActiveUpdateSchema,
 )
 
 from app.service.demo_a_to_demo_b_mapping_service import DemoAToDemoBMappingService
@@ -37,16 +37,14 @@ from app.exception.demo_a_to_demo_b_mapping_exception import (
     DemoAToDemoBMappingUpdateException,
     DemoAToDemoBMappingDeletionException,
     DemoAToDemoBMappingInvalidDataException,
-    DemoAToDemoBMappingPermissionDeniedException
+    DemoAToDemoBMappingPermissionDeniedException,
 )
 
 from app.exception.demo_a_exception import DemoANotFoundException
 
 from app.exception.demo_b_exception import DemoBNotFoundException
 
-from app.exception.baseapp_exception import (
-    InternalServerErrorException
-)
+from app.exception.baseapp_exception import InternalServerErrorException
 
 router = APIRouter(route_class=RedisCachedRoute)
 
@@ -69,7 +67,9 @@ async def create_mapping(
         )
 
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
-            success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_CREATED
+            success=True,
+            data=data,
+            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_CREATED,
         )
 
     except (
@@ -77,7 +77,7 @@ async def create_mapping(
         DemoBNotFoundException,
         DemoAToDemoBMappingCreationException,
         DemoAToDemoBMappingInvalidDataException,
-        InternalServerErrorException
+        InternalServerErrorException,
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
@@ -89,7 +89,7 @@ async def create_mapping(
 
 @router.get(
     "/demo-a-to-demo-b-mapping/read/{demo_a_to_demo_b_mapping_id}/",
-    response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
+    response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema],
 )
 async def get_mapping(
     demo_a_to_demo_b_mapping_id: UUID,
@@ -103,10 +103,12 @@ async def get_mapping(
         data = await DemoAToDemoBMappingService(db).read(
             demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
             user_id=user_id,
-            workspace_id=workspace_id
+            workspace_id=workspace_id,
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
-            success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_RETRIEVED
+            success=True,
+            data=data,
+            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_RETRIEVED,
         )
     except (
         DemoAToDemoBMappingNotFoundException,
@@ -123,7 +125,7 @@ async def get_mapping(
 
 @router.get(
     "/demo-a-to-demo-b-mappings/",
-    response_model=PaginatedResponseSchema[list[DemoAToDemoBMappingReadSchema]]
+    response_model=PaginatedResponseSchema[list[DemoAToDemoBMappingReadSchema]],
 )
 async def list_mappings(
     params: ListParamsSchema = Depends(get_list_params),
@@ -165,7 +167,10 @@ async def list_mappings(
             pagination=pagination,
             message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPINGS_RETRIEVED,
         )
-    except (DemoAToDemoBMappingPermissionDeniedException, InternalServerErrorException) as e:
+    except (
+        DemoAToDemoBMappingPermissionDeniedException,
+        InternalServerErrorException,
+    ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
@@ -176,7 +181,7 @@ async def list_mappings(
 
 @router.patch(
     "/demo-a-to-demo-b-mapping/update/{demo_a_to_demo_b_mapping_id}/",
-    response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
+    response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema],
 )
 async def update_mapping(
     demo_a_to_demo_b_mapping_id: UUID,
@@ -191,11 +196,13 @@ async def update_mapping(
             demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
             payload=payload,
             user_id=user_id,
-            workspace_id=workspace_id
+            workspace_id=workspace_id,
         )
 
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
-            success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_UPDATED
+            success=True,
+            data=data,
+            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_UPDATED,
         )
 
     except (
@@ -214,7 +221,7 @@ async def update_mapping(
 
 @router.delete(
     "/demo-a-to-demo-b-mapping/delete/{demo_a_to_demo_b_mapping_id}/",
-    response_model=ApiResponseSchema[dict]
+    response_model=ApiResponseSchema[dict],
 )
 async def delete_mapping(
     demo_a_to_demo_b_mapping_id: UUID,
@@ -227,10 +234,12 @@ async def delete_mapping(
         await DemoAToDemoBMappingService(db).delete(
             demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
             user_id=user_id,
-            workspace_id=workspace_id
+            workspace_id=workspace_id,
         )
         return ApiResponseSchema[dict](
-            success=True, data={}, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETED
+            success=True,
+            data={},
+            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETED,
         )
     except (
         DemoAToDemoBMappingNotFoundException,
@@ -245,9 +254,10 @@ async def delete_mapping(
             detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETION_FAILED}: {str(e)}",
         ) from e
 
+
 @router.patch(
     "/demo-a-to-demo-b-mapping/update/status/{demo_a_to_demo_b_mapping_id}/",
-    response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema]
+    response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema],
 )
 async def update_mapping_status(
     demo_a_to_demo_b_mapping_id: UUID,
@@ -262,23 +272,26 @@ async def update_mapping_status(
             demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
             payload=payload,
             user_id=user_id,
-            workspace_id=workspace_id
+            workspace_id=workspace_id,
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
-            success=True, data=data, message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED
+            success=True,
+            data=data,
+            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED,
         )
     except (
         DemoAToDemoBMappingNotFoundException,
         DemoAToDemoBMappingUpdateException,
         DemoAToDemoBMappingPermissionDeniedException,
-        DemoAToDemoBMappingInvalidDataException
+        DemoAToDemoBMappingInvalidDataException,
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATE_FAILED}: {str(e)}"
+            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e
+
 
 @router.patch(
     "/demo-a-to-demo-b-mapping/update/is-active/{demo_a_to_demo_b_mapping_id}/",
@@ -297,12 +310,12 @@ async def update_mapping_is_active(
             demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
             payload=payload,
             user_id=user_id,
-            workspace_id=workspace_id
+            workspace_id=workspace_id,
         )
         return ApiResponseSchema[DemoAToDemoBMappingReadSchema](
             success=True,
             data=data,
-            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED
+            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED,
         )
     except (
         DemoAToDemoBMappingNotFoundException,
@@ -323,7 +336,7 @@ async def update_mapping_is_active(
 
 @router.get(
     "/demo-a-to-demo-b-mapping/by-demo-a/{demo_a_id}/",
-    response_model=PaginatedResponseSchema[list[DemoAToDemoBMappingReadSchema]]
+    response_model=PaginatedResponseSchema[list[DemoAToDemoBMappingReadSchema]],
 )
 async def get_mappings_by_demo_a_id(
     demo_a_id: UUID,
@@ -339,7 +352,7 @@ async def get_mappings_by_demo_a_id(
             workspace_id=workspace_id,
             skip=params.offset,
             limit=params.limit,
-            user_id=user_id
+            user_id=user_id,
         )
 
         data = result.get("data", [])
@@ -367,7 +380,7 @@ async def get_mappings_by_demo_a_id(
     except (
         DemoANotFoundException,
         DemoAToDemoBMappingPermissionDeniedException,
-        InternalServerErrorException
+        InternalServerErrorException,
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
@@ -379,7 +392,7 @@ async def get_mappings_by_demo_a_id(
 
 @router.get(
     "/demo-a-to-demo-b-mapping/by-demo-b/{demo_b_id}/",
-    response_model=PaginatedResponseSchema[list[DemoAToDemoBMappingReadSchema]]
+    response_model=PaginatedResponseSchema[list[DemoAToDemoBMappingReadSchema]],
 )
 async def get_mappings_by_demo_b_id(
     demo_b_id: UUID,
@@ -395,7 +408,7 @@ async def get_mappings_by_demo_b_id(
             workspace_id=workspace_id,
             skip=params.offset,
             limit=params.limit,
-            user_id=user_id
+            user_id=user_id,
         )
 
         data = result.get("data", [])
@@ -423,7 +436,7 @@ async def get_mappings_by_demo_b_id(
     except (
         DemoBNotFoundException,
         DemoAToDemoBMappingPermissionDeniedException,
-        InternalServerErrorException
+        InternalServerErrorException,
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
@@ -435,7 +448,7 @@ async def get_mappings_by_demo_b_id(
 
 @router.delete(
     "/demo-a-to-demo-b-mapping/delete-by-demo-a/{demo_a_id}/",
-    response_model=ApiResponseSchema[dict]
+    response_model=ApiResponseSchema[dict],
 )
 async def delete_mappings_by_demo_a_id(
     demo_a_id: UUID,
@@ -446,14 +459,12 @@ async def delete_mappings_by_demo_a_id(
     """Delete all mappings for a specific demo_a_id."""
     try:
         deleted_count = await DemoAToDemoBMappingService(db).delete_by_demo_a_id(
-            demo_a_id=demo_a_id,
-            user_id=user_id,
-            workspace_id=workspace_id
+            demo_a_id=demo_a_id, user_id=user_id, workspace_id=workspace_id
         )
         return ApiResponseSchema[dict](
             success=True,
             data={"deleted_count": deleted_count},
-            message=f"{deleted_count} mapping(s) deleted successfully"
+            message=f"{deleted_count} mapping(s) deleted successfully",
         )
     except (
         DemoANotFoundException,
@@ -472,7 +483,7 @@ async def delete_mappings_by_demo_a_id(
 
 @router.delete(
     "/demo-a-to-demo-b-mapping/delete-by-demo-b/{demo_b_id}/",
-    response_model=ApiResponseSchema[dict]
+    response_model=ApiResponseSchema[dict],
 )
 async def delete_mappings_by_demo_b_id(
     demo_b_id: UUID,
@@ -483,14 +494,12 @@ async def delete_mappings_by_demo_b_id(
     """Delete all mappings for a specific demo_b_id."""
     try:
         deleted_count = await DemoAToDemoBMappingService(db).delete_by_demo_b_id(
-            demo_b_id=demo_b_id,
-            user_id=user_id,
-            workspace_id=workspace_id
+            demo_b_id=demo_b_id, user_id=user_id, workspace_id=workspace_id
         )
         return ApiResponseSchema[dict](
             success=True,
             data={"deleted_count": deleted_count},
-            message=f"{deleted_count} mapping(s) deleted successfully"
+            message=f"{deleted_count} mapping(s) deleted successfully",
         )
     except (
         DemoBNotFoundException,

@@ -35,3 +35,7 @@ pytest_cache/
 # Migrations
 alembic/versions/*
 
+# Linting / Code Quality
+.ruff_cache/
+.mypy_cache/
+.pylint.d/

@@ -15,18 +15,18 @@ from app.helper.fastapi.get_header import get_list_params, get_user_id, get_work
 from app.helper.redis_cached_route_helper import RedisCachedRoute
 
 from app.schema.response_schema import (
-    ApiResponseSchema, 
-    PaginatedResponseSchema, 
+    ApiResponseSchema,
+    PaginatedResponseSchema,
     PaginationMeta,
-    ListParamsSchema
+    ListParamsSchema,
 )
 
 from app.schema.demo_b_schema import (
-    DemoBCreateSchema, 
-    DemoBUpdateSchema, 
+    DemoBCreateSchema,
+    DemoBUpdateSchema,
     DemoBReadSchema,
     DemoBStatusUpdateSchema,
-    DemoBIsActiveUpdateSchema
+    DemoBIsActiveUpdateSchema,
 )
 
 from app.service.demo_b_service import DemoBService
@@ -37,12 +37,10 @@ from app.exception.demo_b_exception import (
     DemoBUpdateException,
     DemoBDeletionException,
     DemoBInvalidDataException,
-    DemoBPermissionDeniedException
+    DemoBPermissionDeniedException,
 )
 
-from app.exception.baseapp_exception import (
-    InternalServerErrorException
-)
+from app.exception.baseapp_exception import InternalServerErrorException
 
 router = APIRouter(route_class=RedisCachedRoute)
 
@@ -75,9 +73,9 @@ async def create_demo_b(
         )
 
     except (
-        DemoBCreationException, 
-        DemoBInvalidDataException, 
-        InternalServerErrorException
+        DemoBCreationException,
+        DemoBInvalidDataException,
+        InternalServerErrorException,
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
@@ -88,7 +86,9 @@ async def create_demo_b(
 
 
 # Retrieve an DemoB by ID
-@router.get("/demo-b/read/{demo_b_id}/", response_model=ApiResponseSchema[DemoBReadSchema])
+@router.get(
+    "/demo-b/read/{demo_b_id}/", response_model=ApiResponseSchema[DemoBReadSchema]
+)
 async def get_demo_b(
     demo_b_id: UUID,
     db: AsyncSession = Depends(get_async_db),
@@ -190,7 +190,10 @@ async def update_demo_b(
     try:
         # Update demo using the schema
         data = await DemoBService(db).update(
-            demo_b_id=demo_b_id, payload=payload, user_id=user_id, workspace_id=workspace_id
+            demo_b_id=demo_b_id,
+            payload=payload,
+            user_id=user_id,
+            workspace_id=workspace_id,
         )
 
         return ApiResponseSchema[DemoBReadSchema](
@@ -240,10 +243,11 @@ async def delete_demo_b(
             detail=f"{ApiErrorMessages.DEMO_B_DELETION_FAILED}: {str(e)}",
         ) from e
 
+
 # Update DemoB status
 @router.patch(
-    "/demo-b/update/status/{demo_b_id}/", 
-    response_model=ApiResponseSchema[DemoBReadSchema]
+    "/demo-b/update/status/{demo_b_id}/",
+    response_model=ApiResponseSchema[DemoBReadSchema],
 )
 async def update_demo_b_status(
     demo_b_id: UUID,
@@ -254,12 +258,15 @@ async def update_demo_b_status(
 ):
     """
     Update demo B status and error messages.
-    
+
     Updates the demo B status, error_message, and error_user_message fields.
     """
     try:
         data = await DemoBService(db).update_status(
-            demo_b_id=demo_b_id, payload=payload, user_id=user_id, workspace_id=workspace_id
+            demo_b_id=demo_b_id,
+            payload=payload,
+            user_id=user_id,
+            workspace_id=workspace_id,
         )
         return ApiResponseSchema[DemoBReadSchema](
             success=True, data=data, message=SuccessMessages.DEMO_B_STATUS_UPDATED
@@ -268,14 +275,15 @@ async def update_demo_b_status(
         DemoBNotFoundException,
         DemoBUpdateException,
         DemoBPermissionDeniedException,
-        DemoBInvalidDataException
+        DemoBInvalidDataException,
     ) as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail) from e
     except Exception as e:
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.DEMO_B_STATUS_UPDATE_FAILED}: {str(e)}"
+            detail=f"{ApiErrorMessages.DEMO_B_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e
+
 
 # Update is_active of an DemoB
 @router.patch(
@@ -296,10 +304,15 @@ async def update_demo_b_is_active(
     """
     try:
         data = await DemoBService(db).update_is_active(
-            demo_b_id=demo_b_id, payload=payload, user_id=user_id, workspace_id=workspace_id
+            demo_b_id=demo_b_id,
+            payload=payload,
+            user_id=user_id,
+            workspace_id=workspace_id,
         )
         return ApiResponseSchema[DemoBReadSchema](
-            success=True, data=data, message=SuccessMessages.DEMO_B_ACTIVE_STATUS_UPDATED
+            success=True,
+            data=data,
+            message=SuccessMessages.DEMO_B_ACTIVE_STATUS_UPDATED,
         )
     except (
         DemoBNotFoundException,

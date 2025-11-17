@@ -19,10 +19,10 @@ from app.model.demo_a_to_demo_b_mapping_model import DemoAToDemoBMappingModel
 # Import all models to ensure they're registered with Base.metadata
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
-config = context.config # pylint: disable=no-member
+config = context.config  # pylint: disable=no-member
 
 # Get app configuration
-app_config = get_base_config() # pylint: disable=no-member
+app_config = get_base_config()  # pylint: disable=no-member
 
 # Use ASYNC_DATABASE_URL directly (already uses asyncpg driver)
 database_url = app_config.ASYNC_DATABASE_URL
@@ -85,9 +85,11 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode using async engine with SSL."""
-    
+
     url = config.get_main_option("sqlalchemy.url")
-    connectable = create_async_engine(url, poolclass=pool.NullPool, connect_args={"ssl": "prefer"})
+    connectable = create_async_engine(
+        url, poolclass=pool.NullPool, connect_args={"ssl": "prefer"}
+    )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
     await connectable.dispose()

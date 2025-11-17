@@ -3,6 +3,7 @@
 Cache key namespace: {service_name}:{endpoint}:{user_id}:{params}
 Example: demo-service:/demo/read/{demo_id}/:user-123:demo_id=456
 """
+
 from __future__ import annotations
 
 import json
@@ -29,21 +30,21 @@ def _extract_user_id_from_headers(request: Request) -> Optional[str]:
 
 def _build_params_string(request: Request) -> str:
     """Build a string representation of path params and query params for cache key.
-    
+
     Example: "demo_id=123&limit=10&offset=0"
     """
     parts = []
-    
+
     # Add path parameters
     if hasattr(request, "path_params") and request.path_params:
         for key, value in sorted(request.path_params.items()):
             parts.append(f"{key}={value}")
-    
+
     # Add query parameters
     if request.query_params:
         for key, value in sorted(request.query_params.items()):
             parts.append(f"{key}={value}")
-    
+
     return "&".join(parts) if parts else "no-params"
 
 
@@ -52,7 +53,7 @@ class RedisCachedRoute(APIRoute):
 
     def get_route_handler(self):  # type: ignore[override]  # pylint: disable=too-many-statements
         """
-        Custom route handler with Redis caching for GET requests 
+        Custom route handler with Redis caching for GET requests
         and cache invalidation for mutations.
         """
         original_route_handler = super().get_route_handler()
@@ -72,7 +73,9 @@ class RedisCachedRoute(APIRoute):
 
             user_id = _extract_user_id_from_headers(request)
             params_str = _build_params_string(request)
-            cache_key = f"{service_name}:{endpoint_path}:{user_id or 'none'}:{params_str}"
+            cache_key = (
+                f"{service_name}:{endpoint_path}:{user_id or 'none'}:{params_str}"
+            )
 
             # GET: attempt to serve from cache
             if method == "GET":
@@ -80,8 +83,7 @@ class RedisCachedRoute(APIRoute):
                 if cached is not None:
                     logger.debug(f"Cache HIT: {cache_key}")
                     return JSONResponse(
-                        content=cached,
-                        headers={"X-Cache-Status": "HIT"}
+                        content=cached, headers={"X-Cache-Status": "HIT"}
                     )
                 logger.debug(f"Cache MISS: {cache_key}")
 
@@ -94,13 +96,20 @@ class RedisCachedRoute(APIRoute):
                 except Exception:  # pylint: disable=broad-exception-caught
                     content_type = ""
 
-                if 200 <= response.status_code < 300 and "application/json" in content_type:
+                if (
+                    200 <= response.status_code < 300
+                    and "application/json" in content_type
+                ):
                     # Handle JSONResponse directly
                     if isinstance(response, JSONResponse):
                         # JSONResponse has the body readily available
                         body_bytes = response.body
                         try:
-                            payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else None
+                            payload = (
+                                json.loads(body_bytes.decode("utf-8"))
+                                if body_bytes
+                                else None
+                            )
                             if payload is not None:
                                 await redis_helper.set(cache_key, payload, ttl=ttl)
                                 logger.debug(f"Cache SET: {cache_key}")
@@ -111,16 +120,20 @@ class RedisCachedRoute(APIRoute):
                             content=payload if payload else {},
                             status_code=response.status_code,
                             headers={"X-Cache-Status": "MISS"},
-                            media_type=response.media_type
+                            media_type=response.media_type,
                         )
-                    
+
                     # Handle StreamingResponse or other response types
                     if hasattr(response, "body_iterator"):
                         body_bytes = b""
                         async for chunk in response.body_iterator:  # type: ignore[attr-defined]
                             body_bytes += chunk
                         try:
-                            payload = json.loads(body_bytes.decode("utf-8")) if body_bytes else None
+                            payload = (
+                                json.loads(body_bytes.decode("utf-8"))
+                                if body_bytes
+                                else None
+                            )
                         except json.JSONDecodeError:
                             payload = None
 

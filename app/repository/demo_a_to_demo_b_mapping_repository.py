@@ -17,19 +17,21 @@ from app.exception.baseapp_exception import InternalServerErrorException
 
 class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel]):
     """Demo repository."""
+
     def __init__(self, db):
         super().__init__(db=db, model=DemoAToDemoBMappingModel)
-        
 
     async def insert(
         self,
         demo_a_to_demo_b_mapping_data: Dict[str, Any],
         user_id: UUID = None,
-        workspace_id: UUID = None
+        workspace_id: UUID = None,
     ) -> DemoAToDemoBMappingModel:
         """Insert a new demo (async). user_id optional."""
         try:
-            demo_a_to_demo_b_mapping = DemoAToDemoBMappingModel(**demo_a_to_demo_b_mapping_data)
+            demo_a_to_demo_b_mapping = DemoAToDemoBMappingModel(
+                **demo_a_to_demo_b_mapping_data
+            )
             if user_id is not None:
                 demo_a_to_demo_b_mapping.created_by = user_id
             if workspace_id is not None:
@@ -38,7 +40,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             self.db.add(demo_a_to_demo_b_mapping)
             await self.db.commit()
             await self.db.refresh(demo_a_to_demo_b_mapping)
-            
+
             return demo_a_to_demo_b_mapping
         except SQLAlchemyError as e:
             raise InternalServerErrorException(
@@ -49,27 +51,32 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             ) from e
 
     async def get_by_id(
-        self,
-        demo_a_to_demo_b_mapping_id: UUID,
-        workspace_id: UUID = None
+        self, demo_a_to_demo_b_mapping_id: UUID, workspace_id: UUID = None
     ) -> DemoAToDemoBMappingModel:
         """Get a demo mapping by ID and workspace (async)."""
         try:
-            query = select(DemoAToDemoBMappingModel).where(
-                DemoAToDemoBMappingModel.demo_a_to_demo_b_mapping_id == demo_a_to_demo_b_mapping_id,
-                DemoAToDemoBMappingModel.workspace_id == workspace_id,
-            ).limit(1)
-            
+            query = (
+                select(DemoAToDemoBMappingModel)
+                .where(
+                    DemoAToDemoBMappingModel.demo_a_to_demo_b_mapping_id
+                    == demo_a_to_demo_b_mapping_id,
+                    DemoAToDemoBMappingModel.workspace_id == workspace_id,
+                )
+                .limit(1)
+            )
+
             result = await self.db.execute(query)
             demo_a_to_demo_b_mapping = result.scalar_one_or_none()
-            
+
             # Return None if demo is deleted
-            if (demo_a_to_demo_b_mapping
-                    and demo_a_to_demo_b_mapping.status == "deleted"):
+            if (
+                demo_a_to_demo_b_mapping
+                and demo_a_to_demo_b_mapping.status == "deleted"
+            ):
                 raise DemoAToDemoBMappingNotFoundException(
                     demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id
                 )
-            
+
             return demo_a_to_demo_b_mapping
         except SQLAlchemyError as e:
             raise InternalServerErrorException(
@@ -79,13 +86,12 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
                 )
             ) from e
 
-
     async def update(
         self,
         demo_a_to_demo_b_mapping_id: UUID,
         demo_a_to_demo_b_mapping_data: Dict[str, Any],
         user_id: UUID = None,
-        workspace_id: UUID = None
+        workspace_id: UUID = None,
     ) -> DemoAToDemoBMappingModel:
         """Update an existing demo (async)."""
         try:
@@ -96,7 +102,6 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
                 raise DemoAToDemoBMappingNotFoundException(
                     demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id
                 )
-            
 
             for key, value in demo_a_to_demo_b_mapping_data.items():
                 setattr(demo_a_to_demo_b_mapping, key, value)
@@ -106,7 +111,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
 
             await self.db.commit()
             await self.db.refresh(demo_a_to_demo_b_mapping)
-            
+
             return demo_a_to_demo_b_mapping
         except SQLAlchemyError as e:
             raise InternalServerErrorException(
@@ -116,7 +121,6 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
                 )
             ) from e
 
-
     async def update_status(
         self,
         demo_a_to_demo_b_mapping_id: UUID,
@@ -124,7 +128,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
         error_message: str = None,
         error_user_message: str = None,
         user_id: UUID = None,
-        workspace_id: UUID = None
+        workspace_id: UUID = None,
     ) -> DemoAToDemoBMappingModel:
         """
         Update only the status of a demo (async).
@@ -138,7 +142,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
                 raise DemoAToDemoBMappingNotFoundException(
                     demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id
                 )
-  
+
             demo_a_to_demo_b_mapping.status = status
             demo_a_to_demo_b_mapping.error_message = error_message
             demo_a_to_demo_b_mapping.error_user_message = error_user_message
@@ -156,13 +160,12 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
                 )
             ) from e
 
-
     async def update_is_active(
         self,
         demo_a_to_demo_b_mapping_id: UUID,
         is_active: bool,
         user_id: UUID = None,
-        workspace_id: UUID = None
+        workspace_id: UUID = None,
     ) -> DemoAToDemoBMappingModel:
         """Update only the is_active flag of a demo (async)."""
         try:
@@ -193,7 +196,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
         self,
         demo_a_to_demo_b_mapping_id: UUID,
         user_id: UUID = None,
-        workspace_id: UUID = None
+        workspace_id: UUID = None,
     ) -> bool:
         """Soft delete a demo (update status & is_active) (async)."""
         try:
@@ -205,7 +208,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
                     demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id
                 )
 
-            # mark as deleted (soft delete) 
+            # mark as deleted (soft delete)
             demo_a_to_demo_b_mapping.deleted_at = datetime.now(timezone.utc)
             demo_a_to_demo_b_mapping.deleted_by = user_id
             demo_a_to_demo_b_mapping.status = "deleted"
@@ -216,7 +219,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             # persist changes
             await self.db.commit()
             await self.db.refresh(demo_a_to_demo_b_mapping)
-            
+
             return True
         except SQLAlchemyError as e:
             raise InternalServerErrorException(
@@ -234,13 +237,13 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
         skip: int = 0,
         limit: int = 20,
         user_id: Optional[UUID] = None,
-        workspace_id: Optional[UUID] = None
+        workspace_id: Optional[UUID] = None,
     ) -> Dict[str, Any]:
         """
         Get all demos with dynamic filters + direct search + ordering + pagination.
         Uses the base repository's get_all method.
         """
-        
+
         return await super().get_all(
             filters=filters,
             search=search,
@@ -248,15 +251,11 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             skip=skip,
             limit=limit,
             user_id=user_id,
-            workspace_id=workspace_id
+            workspace_id=workspace_id,
         )
 
     async def get_by_demo_a_id(
-        self,
-        demo_a_id: UUID,
-        workspace_id: UUID,
-        skip: int = 0,
-        limit: int = 20
+        self, demo_a_id: UUID, workspace_id: UUID, skip: int = 0, limit: int = 20
     ) -> Dict[str, Any]:
         """Get all mappings for a specific demo_a_id (async)."""
         try:
@@ -265,10 +264,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
                 {"field": "demo_a_id", "operator": "eq", "value": str(demo_a_id)}
             ]
             return await self.get_all(
-                filters=filters,
-                skip=skip,
-                limit=limit,
-                workspace_id=workspace_id
+                filters=filters, skip=skip, limit=limit, workspace_id=workspace_id
             )
         except SQLAlchemyError as e:
             raise InternalServerErrorException(
@@ -279,11 +275,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             ) from e
 
     async def get_by_demo_b_id(
-        self,
-        demo_b_id: UUID,
-        workspace_id: UUID,
-        skip: int = 0,
-        limit: int = 20
+        self, demo_b_id: UUID, workspace_id: UUID, skip: int = 0, limit: int = 20
     ) -> Dict[str, Any]:
         """Get all mappings for a specific demo_b_id (async)."""
         try:
@@ -292,10 +284,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
                 {"field": "demo_b_id", "operator": "eq", "value": str(demo_b_id)}
             ]
             return await self.get_all(
-                filters=filters,
-                skip=skip,
-                limit=limit,
-                workspace_id=workspace_id
+                filters=filters, skip=skip, limit=limit, workspace_id=workspace_id
             )
         except SQLAlchemyError as e:
             raise InternalServerErrorException(
@@ -306,10 +295,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             ) from e
 
     async def delete_by_demo_a_id(
-        self,
-        demo_a_id: UUID,
-        user_id: UUID = None,
-        workspace_id: UUID = None
+        self, demo_a_id: UUID, user_id: UUID = None, workspace_id: UUID = None
     ) -> int:
         """
         Soft delete all mappings for a specific demo_a_id (async).
@@ -320,7 +306,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             stmt = select(DemoAToDemoBMappingModel).where(
                 DemoAToDemoBMappingModel.demo_a_id == demo_a_id,
                 DemoAToDemoBMappingModel.workspace_id == workspace_id,
-                DemoAToDemoBMappingModel.status != "deleted"
+                DemoAToDemoBMappingModel.status != "deleted",
             )
             result = await self.db.execute(stmt)
             mappings = result.scalars().all()
@@ -343,7 +329,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
 
             # Persist changes
             await self.db.commit()
-            
+
             return deleted_count
         except SQLAlchemyError as e:
             raise InternalServerErrorException(
@@ -351,10 +337,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             ) from e
 
     async def delete_by_demo_b_id(
-        self,
-        demo_b_id: UUID,
-        user_id: UUID = None,
-        workspace_id: UUID = None
+        self, demo_b_id: UUID, user_id: UUID = None, workspace_id: UUID = None
     ) -> int:
         """
         Soft delete all mappings for a specific demo_b_id (async).
@@ -365,7 +348,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
             stmt = select(DemoAToDemoBMappingModel).where(
                 DemoAToDemoBMappingModel.demo_b_id == demo_b_id,
                 DemoAToDemoBMappingModel.workspace_id == workspace_id,
-                DemoAToDemoBMappingModel.status != "deleted"
+                DemoAToDemoBMappingModel.status != "deleted",
             )
             result = await self.db.execute(stmt)
             mappings = result.scalars().all()
@@ -388,7 +371,7 @@ class DemoAToDemoBMappingRepository(BaseAppRepository[DemoAToDemoBMappingModel])
 
             # Persist changes
             await self.db.commit()
-            
+
             return deleted_count
         except SQLAlchemyError as e:
             raise InternalServerErrorException(

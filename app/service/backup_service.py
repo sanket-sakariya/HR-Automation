@@ -1,4 +1,5 @@
 """Service for handling database backup and restore operations."""
+
 from __future__ import annotations
 import asyncio
 from typing import Optional
@@ -24,9 +25,7 @@ class BackupService:
         self.backup_helper = BackupHelper()
 
     async def create_backup(
-        self,
-        backup_name: Optional[str] = None,
-        description: Optional[str] = None
+        self, backup_name: Optional[str] = None, description: Optional[str] = None
     ) -> BackupCreateResponseSchema:
         """
         Create a database backup and upload to Wasabi.
@@ -53,10 +52,7 @@ class BackupService:
         try:
             # Run backup in executor to avoid blocking
             backup_metadata = await asyncio.get_event_loop().run_in_executor(
-                None,
-                self.backup_helper.create_backup,
-                backup_name,
-                description
+                None, self.backup_helper.create_backup, backup_name, description
             )
 
             return BackupCreateResponseSchema(**backup_metadata)
@@ -84,16 +80,14 @@ class BackupService:
         try:
             # Run list operation in executor
             backups_list = await asyncio.get_event_loop().run_in_executor(
-                None,
-                self.backup_helper.list_backups
+                None, self.backup_helper.list_backups
             )
 
             # Convert to schema objects
             backup_schemas = [BackupInfoSchema(**backup) for backup in backups_list]
 
             return BackupListResponseSchema(
-                backups=backup_schemas,
-                count=len(backup_schemas)
+                backups=backup_schemas, count=len(backup_schemas)
             )
 
         except Exception as e:
@@ -103,10 +97,7 @@ class BackupService:
                 detail=f"Failed to list backups: {str(e)}",
             ) from e
 
-    async def restore_backup(
-        self,
-        backup_filename: str
-    ) -> BackupRestoreResponseSchema:
+    async def restore_backup(self, backup_filename: str) -> BackupRestoreResponseSchema:
         """
         Restore database from a backup file.
 
@@ -131,9 +122,7 @@ class BackupService:
         try:
             # Run restore in executor to avoid blocking
             restore_metadata = await asyncio.get_event_loop().run_in_executor(
-                None,
-                self.backup_helper.restore_backup,
-                backup_filename
+                None, self.backup_helper.restore_backup, backup_filename
             )
 
             return BackupRestoreResponseSchema(**restore_metadata)

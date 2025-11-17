@@ -12,19 +12,18 @@ from app.exception.baseapp_exception import InternalServerErrorException
 configure_logging()
 
 # Generic type for the model
-T = TypeVar('T')
+T = TypeVar("T")
 
 # Frontend to Backend operator mapping
 OPERATOR_MAPPING = {
     # Number operators
     "equal_to": "eq",
-    "not_equal_to": "ne", 
+    "not_equal_to": "ne",
     "greater_than": "gt",
     "less_than": "lt",
     "between": "between",
     "greater_than_or_equal": "gte",
     "less_than_or_equal": "lte",
-    
     # Text operators
     "is": "is",
     "is_not": "is_not",
@@ -34,10 +33,8 @@ OPERATOR_MAPPING = {
     "ends_with": "endswith",
     "is_empty": "is_empty",
     "is_not_empty": "not_empty",
-    
     # Boolean operators (same as text)
     # Enum operators (same as text)
-    
     # Date operators (keep as is)
     "today": "today",
     "yesterday": "yesterday",
@@ -53,7 +50,6 @@ OPERATOR_MAPPING = {
     "previous": "previous",
     "current": "current",
     "next": "next",
-    
     # Time operators
     "this_hour": "this_hour",
     "last_hour": "last_hour",
@@ -61,8 +57,7 @@ OPERATOR_MAPPING = {
     "morning": "morning",
     "afternoon": "afternoon",
     "evening": "evening",
-    "night": "night"
-    
+    "night": "night",
 }
 
 
@@ -78,35 +73,35 @@ def parse_date_value(value: Any) -> Optional[datetime]:
     """
     if value is None:
         return None
-    
+
     if isinstance(value, datetime):
         return value
-    
+
     if isinstance(value, date):
         return datetime.combine(value, datetime.min.time())
-    
+
     dt = None
     if isinstance(value, str):
         try:
             # Try ISO format first
             # Be flexible with separator between date and time
-            value = value.replace(':', 'T', 1) if value.count(':') > 1 else value
-            dt = datetime.fromisoformat(value.replace('Z', '+00:00'))
+            value = value.replace(":", "T", 1) if value.count(":") > 1 else value
+            dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
         except (ValueError, AttributeError):
-            for fmt in ['%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '%Y/%m/%d', '%d-%m-%Y']:
+            for fmt in ["%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y/%m/%d", "%d-%m-%Y"]:
                 try:
                     dt = datetime.strptime(value, fmt)
-                    break # Found a format
+                    break  # Found a format
                 except (ValueError, TypeError):
                     continue
-    
+
     elif isinstance(value, (int, float)):
         try:
             # Assume timestamp
             dt = datetime.fromtimestamp(value)
         except (ValueError, TypeError, OSError):
-            pass # dt remains None
-    
+            pass  # dt remains None
+
     return dt
 
 
@@ -119,9 +114,9 @@ class BaseAppRepository(Generic[T]):
 
     def _get_primary_key_col(self):
         for col_name in dir(self.model):
-            if not col_name.startswith('_'):
+            if not col_name.startswith("_"):
                 col_attr = getattr(self.model, col_name)
-                if hasattr(col_attr, 'primary_key') and col_attr.primary_key:
+                if hasattr(col_attr, "primary_key") and col_attr.primary_key:
                     return col_attr
         return None
 
@@ -149,19 +144,23 @@ class BaseAppRepository(Generic[T]):
             "as_it": lambda: func.lower(column_attr) == cmp_value,
             "contains": lambda: (
                 column_attr.ilike(f"%{value}%")
-                if not case_sensitive else column_attr.like(f"%{value}%")
+                if not case_sensitive
+                else column_attr.like(f"%{value}%")
             ),
             "not_contains": lambda: (
                 ~column_attr.ilike(f"%{value}%")
-                if not case_sensitive else ~column_attr.like(f"%{value}%")
+                if not case_sensitive
+                else ~column_attr.like(f"%{value}%")
             ),
             "startswith": lambda: (
                 column_attr.ilike(f"{value}%")
-                if not case_sensitive else column_attr.like(f"{value}%")
+                if not case_sensitive
+                else column_attr.like(f"{value}%")
             ),
             "endswith": lambda: (
                 column_attr.ilike(f"%{value}")
-                if not case_sensitive else column_attr.like(f"%{value}")
+                if not case_sensitive
+                else column_attr.like(f"%{value}")
             ),
             "is_empty": lambda: column_attr.is_(None),
             "not_empty": lambda: column_attr.is_not(None),
@@ -171,9 +170,9 @@ class BaseAppRepository(Generic[T]):
     def _get_boolean_filter(self, column_attr, operator, value):
         bool_value = None
         if isinstance(value, str):
-            if value.lower() == 'true':
+            if value.lower() == "true":
                 bool_value = True
-            elif value.lower() == 'false':
+            elif value.lower() == "false":
                 bool_value = False
         elif isinstance(value, bool):
             bool_value = value
@@ -207,7 +206,7 @@ class BaseAppRepository(Generic[T]):
             "prev_30_days": lambda: column_attr >= today - timedelta(days=30),
             "previous_1_month": lambda: func.date(column_attr).between(
                 (today.replace(day=1) - timedelta(days=1)).replace(day=1),
-                today.replace(day=1) - timedelta(days=1)
+                today.replace(day=1) - timedelta(days=1),
             ),
             "previous_3_months": lambda: column_attr >= today - timedelta(days=90),
             "previous_12_months": lambda: column_attr >= today - timedelta(days=365),
@@ -218,36 +217,34 @@ class BaseAppRepository(Generic[T]):
         now = datetime.now()
         operator_map = {
             "this_hour": lambda: (
-                func.date_trunc('hour', column_attr)
+                func.date_trunc("hour", column_attr)
                 == now.replace(minute=0, second=0, microsecond=0)
             ),
-            "last_hour": lambda: (
-                column_attr.between(now - timedelta(hours=1), now)
-            ),
+            "last_hour": lambda: (column_attr.between(now - timedelta(hours=1), now)),
             "last_3_hours": lambda: (
                 column_attr.between(now - timedelta(hours=3), now)
             ),
             "morning": lambda: (
                 func.time(column_attr).between(
                     datetime.min.replace(hour=6).time(),
-                    datetime.min.replace(hour=12).time()
+                    datetime.min.replace(hour=12).time(),
                 )
             ),
             "afternoon": lambda: (
                 func.time(column_attr).between(
                     datetime.min.replace(hour=12).time(),
-                    datetime.min.replace(hour=17).time()
+                    datetime.min.replace(hour=17).time(),
                 )
             ),
             "evening": lambda: (
                 func.time(column_attr).between(
                     datetime.min.replace(hour=17).time(),
-                    datetime.min.replace(hour=22).time()
+                    datetime.min.replace(hour=22).time(),
                 )
             ),
             "night": lambda: or_(
                 func.time(column_attr) >= datetime.min.replace(hour=22).time(),
-                func.time(column_attr) <= datetime.min.replace(hour=6).time()
+                func.time(column_attr) <= datetime.min.replace(hour=6).time(),
             ),
         }
         return operator_map.get(operator, lambda: None)()
@@ -380,11 +377,15 @@ class BaseAppRepository(Generic[T]):
             column_attr, operator, value, value2, f, col_type, case_sensitive
         )
 
-    def _get_filter_clause(self, column_attr, operator, value, value2, f, col_type, case_sensitive):
+    def _get_filter_clause(
+        self, column_attr, operator, value, value2, f, col_type, case_sensitive
+    ):
         col_type_str = str(col_type).lower()
 
         if any(t in col_type_str for t in ["date", "time", "timestamp"]):
-            return self._get_date_filter(column_attr, operator, value, value2, f, col_type)
+            return self._get_date_filter(
+                column_attr, operator, value, value2, f, col_type
+            )
 
         if any(t in col_type_str for t in ["char", "text", "string"]):
             return self._get_text_filter(column_attr, operator, value, case_sensitive)
@@ -416,7 +417,7 @@ class BaseAppRepository(Generic[T]):
 
         if not clauses:
             return None
-        
+
         logical = f.get("logical", "and")
         return or_(*clauses) if logical == "or" else and_(*clauses)
 
@@ -442,7 +443,7 @@ class BaseAppRepository(Generic[T]):
                     where_clauses.append(not_(clause))
                 else:
                     where_clauses.append(clause)
-        
+
         if not where_clauses:
             return None
 
@@ -452,29 +453,31 @@ class BaseAppRepository(Generic[T]):
     def _build_search_group(self, search):
         if not search:
             return None
-        
+
         search_clauses = []
         for col_name in dir(self.model):
-            if col_name.startswith('_'):
+            if col_name.startswith("_"):
                 continue
-            
+
             column_attr = getattr(self.model, col_name)
-            if not hasattr(column_attr, 'type'):
+            if not hasattr(column_attr, "type"):
                 continue
 
             col_type = str(column_attr.type).lower()
             if any(t in col_type for t in ["char", "text", "string"]):
                 search_clauses.append(column_attr.ilike(f"%{search}%"))
-        
+
         return or_(*search_clauses) if search_clauses else None
 
-    def _apply_filters_and_search(self, query, count_query, filters, search, user_id, workspace_id):
+    def _apply_filters_and_search(
+        self, query, count_query, filters, search, user_id, workspace_id
+    ):
         """Apply filters and search to the query."""
         clauses = []
-        if workspace_id and hasattr(self.model, 'workspace_id'):
-            clauses.append(getattr(self.model, 'workspace_id') == workspace_id)
-        if user_id and hasattr(self.model, 'created_by'):
-            clauses.append(getattr(self.model, 'created_by') == user_id)
+        if workspace_id and hasattr(self.model, "workspace_id"):
+            clauses.append(getattr(self.model, "workspace_id") == workspace_id)
+        if user_id and hasattr(self.model, "created_by"):
+            clauses.append(getattr(self.model, "created_by") == user_id)
 
         filter_group = self._build_filter_group(filters)
         if filter_group is not None:
@@ -484,14 +487,14 @@ class BaseAppRepository(Generic[T]):
         if search_group is not None:
             clauses.append(search_group)
 
-        if hasattr(self.model, 'status'):
-            clauses.append(getattr(self.model, 'status') != "deleted")
+        if hasattr(self.model, "status"):
+            clauses.append(getattr(self.model, "status") != "deleted")
 
         if clauses:
             final_clause = and_(*clauses)
             query = query.where(final_clause)
             count_query = count_query.where(final_clause)
-        
+
         return query, count_query
 
     def _apply_ordering(self, query, order_by):
@@ -500,16 +503,18 @@ class BaseAppRepository(Generic[T]):
             field_name = order_by[1:] if desc_order else order_by
             if hasattr(self.model, field_name):
                 column_attr = getattr(self.model, field_name)
-                query = query.order_by(desc(column_attr) if desc_order else asc(column_attr))
-        elif hasattr(self.model, 'created_at'):
-            query = query.order_by(desc(getattr(self.model, 'created_at')))
+                query = query.order_by(
+                    desc(column_attr) if desc_order else asc(column_attr)
+                )
+        elif hasattr(self.model, "created_at"):
+            query = query.order_by(desc(getattr(self.model, "created_at")))
         return query
 
     async def _execute_query(self, query, count_query, skip, limit):
         try:
             total_count_result = await self.db.execute(count_query)
             total_count = total_count_result.scalar() or 0
-            
+
             query = query.offset(skip).limit(limit)
             result = await self.db.execute(query)
             data = result.scalars().all()
@@ -535,12 +540,12 @@ class BaseAppRepository(Generic[T]):
         skip: int = 0,
         limit: int = 20,
         user_id: Optional[UUID] = None,
-        workspace_id: Optional[UUID] = None
+        workspace_id: Optional[UUID] = None,
     ) -> Optional[Dict[str, Any]]:
         """This is a helper function to get all the records"""
         query = select(self.model)
         primary_key_col = self._get_primary_key_col()
-        
+
         if primary_key_col is not None:
             count_query = select(func.count())  # pylint: disable=not-callable
         else:
@@ -550,5 +555,5 @@ class BaseAppRepository(Generic[T]):
             query, count_query, filters, search, user_id, workspace_id
         )
         query = self._apply_ordering(query, order_by)
-        
+
         return await self._execute_query(query, count_query, skip, limit)
