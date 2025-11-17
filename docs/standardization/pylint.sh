@@ -4,6 +4,9 @@ echo "======================================="
 echo "         Running Pylint                "
 echo "======================================="
 
+echo "Running ruff lint..."
+ruff format --config ruff.toml .
+
 echo "\nLinting app/api..."
 pylint --rc-file .pylintrc app/api/*
 
