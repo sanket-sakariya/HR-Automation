@@ -12,6 +12,8 @@ from app.config.constants import SuccessMessages, ApiErrorMessages
 
 from app.helper.fastapi.get_header import get_list_params, get_user_id, get_workspace_id
 
+from app.helper.redis_cached_route_helper import RedisCachedRoute
+
 from app.schema.response_schema import (
     ApiResponseSchema, 
     PaginatedResponseSchema, 
@@ -46,7 +48,7 @@ from app.exception.baseapp_exception import (
     InternalServerErrorException
 )
 
-router = APIRouter()
+router = APIRouter(route_class=RedisCachedRoute)
 
 
 @router.post(

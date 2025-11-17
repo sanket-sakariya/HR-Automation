@@ -1,7 +1,11 @@
 import os
 import uvicorn
 
+from dotenv import load_dotenv
+
 from app.main import create_app
+
+load_dotenv(dotenv_path='.env.dev')
 
 app = create_app()
 
