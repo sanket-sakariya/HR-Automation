@@ -11,6 +11,7 @@ from app.schema.rabbitmq_schema import (
     MessagePublishSchema,
     ExchangeSetupSchema,
     ExchangePublishSchema,
+    QueueInfoResponseSchema,
 )
 from app.schema.response_schema import ApiResponseSchema
 
@@ -210,6 +211,67 @@ async def publish_to_exchange(payload: ExchangePublishSchema):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"RabbitMQ connection failed: {str(e)}",
+        ) from e
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {str(e)}",
+        ) from e
+
+
+@router.get(
+    "/rabbitmq/queue/{queue_name}/info/",
+    response_model=ApiResponseSchema[QueueInfoResponseSchema],
+)
+async def get_queue_info(queue_name: str):
+    """
+    Get detailed information about a RabbitMQ queue.
+
+    Retrieves comprehensive queue information from RabbitMQ Management API including:
+    - **consumers**: List of active consumers with their details
+    - **consumer_count**: Number of consumers currently consuming from the queue
+    - **messages_ready**: Number of messages ready to be delivered (pending messages)
+    - **messages_unacknowledged**: Number of messages delivered but not yet acknowledged
+    - **message_stats**: Message statistics including:
+        - **ack**: Total count and rate of acknowledged messages
+        - **deliver**: Total count and rate of delivered messages
+        - **publish**: Total count and rate of published messages
+        - **redeliver**: Total count and rate of redelivered messages
+        - Rate details include average rate per second
+
+    This endpoint uses the RabbitMQ Management API to retrieve real-time queue statistics.
+
+    **Note**: If the queue doesn't exist, a 404 error will be returned.
+    """
+    try:
+        rabbitmq_helper = RabbitMQHelper()
+
+        # Get detailed queue information from Management API
+        queue_info = await rabbitmq_helper.get_queue_details(queue_name)
+
+        if queue_info is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Queue '{queue_name}' not found in RabbitMQ",
+            )
+
+        # Convert to response schema
+        queue_response = QueueInfoResponseSchema(**queue_info)
+
+        return ApiResponseSchema[QueueInfoResponseSchema](
+            success=True,
+            data=queue_response,
+            message=f"Queue information retrieved successfully for '{queue_name}'",
+        )
+
+    except HTTPException:
+        raise
+    except ConnectionError as e:
+        logger.error(f"Connection error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"RabbitMQ Management API connection failed: {str(e)}",
         ) from e
     except Exception as e:
         logger.error(f"Unexpected error: {e}")

@@ -29,8 +29,10 @@ import asyncio
 import json
 import sys
 from typing import Optional, Dict, Any, Union
+from urllib.parse import quote
 
 import aio_pika
+import httpx
 from aio_pika import Connection, Channel, Queue, DeliveryMode, Exchange, ExchangeType
 from aio_pika.exceptions import AMQPException
 
@@ -302,6 +304,109 @@ class RabbitMQHelper:
         except ConnectionError as e:
             logger.error(f"Failed to get queue info for '{queue_name}': {e}")
             raise
+
+    async def get_queue_details(self, queue_name: str) -> Optional[Dict[str, Any]]:  # pylint: disable=too-many-locals
+        """
+        Get detailed queue information from RabbitMQ Management API.
+
+        This provides runtime information including consumers, messages, and rates.
+
+        Args:
+            queue_name: Name of the queue
+
+        Returns:
+            Dictionary with detailed queue information including:
+            - consumers: List of consumer details
+            - consumer_count: Number of active consumers
+            - messages_ready: Number of messages ready to be delivered (pending messages)
+            - messages_unacknowledged: Number of messages delivered but not yet acknowledged
+            - message_stats: Message statistics including ack, deliver, publish rates and counts
+
+        Raises:
+            ConnectionError: If connection to management API fails
+            HTTPException: If queue doesn't exist or other API error
+        """
+        if not self._enabled:
+            raise ConnectionError(
+                "RabbitMQ is disabled for this service. "
+                "Set IS_RABBITMQ_ENABLED=True to use RabbitMQ operations."
+            )
+
+        management_url = self.config.RABBITMQ_MANAGEMENT_URL
+
+        # Extract vhost from RABBITMQ_URL (default is "/")
+        # RABBITMQ_URL format: amqp://user:pass@host:port/vhost
+        vhost = "/"
+        if self.rabbitmq_url and "/" in self.rabbitmq_url.split("@")[-1]:
+            vhost_part = self.rabbitmq_url.split("@")[-1].split("/", 1)
+            if len(vhost_part) > 1 and vhost_part[1]:
+                vhost = vhost_part[1]
+
+        # URL encode the queue name and vhost
+        encoded_queue_name = quote(queue_name, safe="")
+        encoded_vhost = quote(vhost, safe="")
+
+        api_url = f"{management_url}/api/queues/{encoded_vhost}/{encoded_queue_name}"
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(api_url)
+
+                if response.status_code == 404:
+                    logger.warning(f"Queue '{queue_name}' not found in RabbitMQ")
+                    return None
+
+                response.raise_for_status()
+                queue_data = response.json()
+
+                # Extract relevant information
+                # Note: RabbitMQ API returns 'consumers' as integer count
+                # and 'consumer_details' as the actual list of consumers (or 0 if none)
+                consumers_data = queue_data.get("consumer_details", [])
+                consumer_count = queue_data.get("consumers", 0)
+
+                # Ensure consumers is always a list (RabbitMQ may return 0 instead of [])
+                if isinstance(consumers_data, list):
+                    consumers_list = consumers_data
+                else:
+                    consumers_list = []
+
+                result = {
+                    "name": queue_data.get("name"),
+                    "vhost": queue_data.get("vhost"),
+                    "durable": queue_data.get("durable"),
+                    "auto_delete": queue_data.get("auto_delete"),
+                    "consumers": consumers_list,
+                    "consumer_count": consumer_count
+                    if isinstance(consumer_count, int)
+                    else 0,
+                    "messages": queue_data.get("messages", 0),
+                    "messages_ready": queue_data.get("messages_ready", 0),
+                    "messages_unacknowledged": queue_data.get(
+                        "messages_unacknowledged", 0
+                    ),
+                    "message_stats": queue_data.get("message_stats", {}),
+                    "state": queue_data.get("state"),
+                    "node": queue_data.get("node"),
+                }
+
+                logger.debug(f"Retrieved detailed info for queue '{queue_name}'")
+                return result
+
+        except httpx.HTTPStatusError as e:
+            error_msg = f"HTTP error for '{queue_name}': {e.response.status_code}"
+            logger.error(error_msg)
+            raise ConnectionError(error_msg) from e
+        except httpx.RequestError as e:
+            error_msg = f"Failed to connect to RabbitMQ Management API: {e}"
+            logger.error(error_msg)
+            raise ConnectionError(error_msg) from e
+        except Exception as e:
+            error_msg = (
+                f"Unexpected error getting queue details for '{queue_name}': {e}"
+            )
+            logger.error(error_msg)
+            raise ConnectionError(error_msg) from e
 
     def is_connected(self) -> bool:
         """
