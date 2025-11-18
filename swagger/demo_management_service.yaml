@@ -2,78 +2,39 @@ openapi: 3.0.0
 info:
   title: Demo Management Service API
   version: 2.0.1
-  description: API for managing demos, including creation, updates, member assignments, and demo lifecycle operations
+  description: API for managing DemoA, DemoB, and their mappings, including creation, updates, and lifecycle operations
 
 servers:
   - url: https://159.203.10.100:8501
 
 paths:
 
-  # Demo endpoints
-  /demos/:
+  # DemoA endpoints
+  /demo-as/:
     get:
       tags:
-        - Demo
-      summary: Get all demos
-      operationId: listDemos
+        - DemoA
+      summary: Get all demo As
+      operationId: listDemoAs
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/WorkspaceIdHeader'
-        
-        - in: query
-          name: offset
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-          required: false
-          description: Number of records to skip
-          example: 0
-        - in: query
-          name: limit
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 100
-          required: false
-          description: Number of items to return
-          example: 100
-        - in: query
-          name: order_by
-          schema:
-            type: string
-            default: "-created_at"
-          required: false
-          description: Field to order by. Prefix with '-' for descending order
-          example: "-created_at"
-        - in: query
-          name: search
-          schema:
-            type: string
-          required: false
-          description: Search query string to filter results
-          example: "Marketing"
-        - in: query
-          name: filters
-          schema:
-            type: array
-            items:
-              type: string
-          required: false
-          description: List of filter dicts as JSON strings
-          example: '["{\"field\": \"status\", \"operator\": \"eq\", \"value\": \"created\"}", "{\"field\": \"is_active\", \"operator\": \"eq\", \"value\": true}"]'
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OrderByParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/FiltersParam'
         - in: query
           name: status
           schema:
             type: string
-            enum: ['creating', 'created', 'updating', 'updated', 'deleting', 'deleted']
+            enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
           required: false
-          description: Filter demos by status
+          description: Filter demo As by status
           example: "created"
       responses:
         '200':
-          description: List of demos retrieved successfully
+          description: List of demo As retrieved successfully
           content:
             application/json:
               schema:
@@ -81,10 +42,11 @@ paths:
                 properties:
                   success:
                     type: boolean
+                    example: true
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/DemoModel'
+                      $ref: '#/components/schemas/DemoAModel'
                   pagination:
                     $ref: '#/components/schemas/PaginationMeta'
         '400':
@@ -93,25 +55,15 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /demo/create/:
+  /demo-a/create/:
     post:
       tags:
-        - Demo
-      summary: Create a new demo
-      operationId: createDemo
-      description: | 
-        **publishes** a message to the internal **`demo_creation_topic`** queue.
-        Message format:
-        ```json
-        {
-          "demo_id": "uuid"
-        }
-        ```
+        - DemoA
+      summary: Create a new demo A
+      operationId: createDemoA
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/WorkspaceIdHeader'
@@ -120,60 +72,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  maxLength: 200
-                  example: "Marketing Team"
-              required:
-                - name
+              $ref: '#/components/schemas/DemoACreateSchema'
       responses:
         '201':
-          description: Demo created successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "Demo created successfully"
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  /demo/read/{demo_id}/:
-    get:
-      tags:
-        - Demo
-      summary: Get a demo by ID
-      operationId: getDemo
-      parameters:
-        - $ref: '#/components/parameters/UserIdHeader'
-        - $ref: '#/components/parameters/WorkspaceIdHeader'
-        - in: path
-          name: demo_id
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Demo identifier
-          example: "bd08612-1a9d-4a6e-8431-1demoid"
-        
-      responses:
-        '200':
-          description: Demo retrieved successfully
+          description: Demo A created successfully
           content:
             application/json:
               schema:
@@ -183,7 +85,52 @@ paths:
                     type: boolean
                     example: true
                   data:
-                    $ref: '#/components/schemas/DemoModel'
+                    $ref: '#/components/schemas/DemoAModel'
+                  message:
+                    type: string
+                    example: "Demo A created successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a/read/{demo_a_id}/:
+    get:
+      tags:
+        - DemoA
+      summary: Get a demo A by ID
+      operationId: getDemoA
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_a_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Demo A identifier
+          example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+      responses:
+        '200':
+          description: Demo A retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoAModel'
+                  message:
+                    type: string
+                    example: "Demo A retrieved successfully"
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -193,38 +140,32 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /demo/update/{demo_id}/:
+  /demo-a/update/{demo_a_id}/:
     patch:
       tags:
-        - Demo
-      summary: Update a demo
-      operationId: updateDemo
+        - DemoA
+      summary: Update a demo A
+      operationId: updateDemoA
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/WorkspaceIdHeader'
         - in: path
-          name: demo_id
+          name: demo_a_id
           required: true
           schema:
             type: string
             format: uuid
-          description: Demo identifier
-          example: "bd08612-1a9d-4a6e-8431-1demoid"
-        
+          description: Demo A identifier
+          example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  maxLength: 200
-                  example: "Marketing Team Updated"
+              $ref: '#/components/schemas/DemoAUpdateSchema'
       responses:
         '200':
-          description: Demo updated successfully
+          description: Demo A updated successfully
           content:
             application/json:
               schema:
@@ -233,9 +174,11 @@ paths:
                   success:
                     type: boolean
                     example: true
+                  data:
+                    $ref: '#/components/schemas/DemoAModel'
                   message:
                     type: string
-                    example: "Demo updated successfully"
+                    example: "Demo A updated successfully"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -247,35 +190,26 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /demo/delete/{demo_id}/:
+  /demo-a/delete/{demo_a_id}/:
     delete:
       tags:
-        - Demo
-      summary: Delete a demo
-      operationId: deleteDemo
-      description: |
-        **publishes** a message to the internal **`demo_deletion_topic`** queue.
-        Message format:
-        ```json
-        {
-          "demo_id": "uuid"
-        }
-        ```
+        - DemoA
+      summary: Delete a demo A
+      operationId: deleteDemoA
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/WorkspaceIdHeader'
         - in: path
-          name: demo_id
+          name: demo_a_id
           required: true
           schema:
             type: string
             format: uuid
-          description: Demo identifier
-          example: "bd08612-1a9d-4a6e-8431-1demoid"
-        
+          description: Demo A identifier
+          example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
       responses:
         '200':
-          description: Demo deleted successfully
+          description: Demo A deleted successfully
           content:
             application/json:
               schema:
@@ -284,9 +218,11 @@ paths:
                   success:
                     type: boolean
                     example: true
+                  data:
+                    type: object
                   message:
                     type: string
-                    example: "Demo deleted successfully"
+                    example: "Demo A deleted successfully"
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -296,57 +232,35 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /demo/update/status/{demo_id}/:
+  /demo-a/update/status/{demo_a_id}/:
     patch:
       tags:
-        - Demo
-      summary: Update demo status and error messages
+        - DemoA
+      summary: Update demo A status and error messages
       operationId: updateDemoAStatus
       description: |
-        Updates the demo status and error messages.
+        Updates the demo A status and error messages.
         This endpoint allows updating only the status, error_message, and error_user_message fields.
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/WorkspaceIdHeader'
         - in: path
-          name: demo_id
+          name: demo_a_id
           required: true
           schema:
             type: string
             format: uuid
-          description: Demo identifier
-          example: "bd08612-1a9d-4a6e-8431-1demoid"
-        - in: query
-          name: status
-          required: true
-          schema:
-            type: string
-          description: The new status for the demo
-          example: "created"
+          description: Demo A identifier
+          example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                status:
-                  type: string
-                  enum: ['creating', 'created', 'updating', 'updated', 'deleting', 'deleted']
-                  example: "updated"
-                error_message:
-                  type: string
-                  nullable: true
-                  description: Technical error message for debugging
-                  example: "Database connection timeout after 30 seconds"
-                error_user_message:
-                  type: string
-                  nullable: true
-                  description: User-friendly error message for display
-                  example: "Something went wrong. Please try again later."
+              $ref: '#/components/schemas/DemoAStatusUpdateSchema'
       responses:
         '200':
-          description: Demo status updated successfully
+          description: Demo A status updated successfully
           content:
             application/json:
               schema:
@@ -355,9 +269,11 @@ paths:
                   success:
                     type: boolean
                     example: true
+                  data:
+                    $ref: '#/components/schemas/DemoAModel'
                   message:
                     type: string
-                    example: "Demo status updated successfully"
+                    example: "Demo A status updated successfully"
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -369,41 +285,35 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  /demo/update/is-active/{demo_id}/:
+  /demo-a/update/is-active/{demo_a_id}/:
     patch:
       tags:
-        - Demo
-      summary: Update demo active status
-      operationId: updateDemoIsActive
+        - DemoA
+      summary: Update demo A active status
+      operationId: updateDemoAIsActive
       description: |
-        Updates the demo is_active status.
+        Updates the demo A is_active status.
         This endpoint allows updating only the is_active field.
       parameters:
         - $ref: '#/components/parameters/UserIdHeader'
         - $ref: '#/components/parameters/WorkspaceIdHeader'
         - in: path
-          name: demo_id
+          name: demo_a_id
           required: true
           schema:
             type: string
             format: uuid
-          description: Demo identifier
-          example: "bd08612-1a9d-4a6e-8431-1demoid"
-        
+          description: Demo A identifier
+          example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                is_active:
-                  type: boolean
-                  description: Whether the demo is active
-                  example: true
+              $ref: '#/components/schemas/DemoAIsActiveUpdateSchema'
       responses:
         '200':
-          description: Demo active status updated successfully
+          description: Demo A active status updated successfully
           content:
             application/json:
               schema:
@@ -412,11 +322,847 @@ paths:
                   success:
                     type: boolean
                     example: true
+                  data:
+                    $ref: '#/components/schemas/DemoAModel'
                   message:
                     type: string
-                    example: "Demo active status updated successfully"
+                    example: "Demo A active status updated successfully"
         '400':
           $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # DemoB endpoints
+  /demo-bs/:
+    get:
+      tags:
+        - DemoB
+      summary: Get all demo Bs
+      operationId: listDemoBs
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OrderByParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/FiltersParam'
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
+          required: false
+          description: Filter demo Bs by status
+          example: "created"
+      responses:
+        '200':
+          description: List of demo Bs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DemoBModel'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-b/create/:
+    post:
+      tags:
+        - DemoB
+      summary: Create a new demo B
+      operationId: createDemoB
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoBCreateSchema'
+      responses:
+        '201':
+          description: Demo B created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoBModel'
+                  message:
+                    type: string
+                    example: "Demo B created successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-b/read/{demo_b_id}/:
+    get:
+      tags:
+        - DemoB
+      summary: Get a demo B by ID
+      operationId: getDemoB
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_b_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Demo B identifier
+          example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+      responses:
+        '200':
+          description: Demo B retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoBModel'
+                  message:
+                    type: string
+                    example: "Demo B retrieved successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-b/update/{demo_b_id}/:
+    patch:
+      tags:
+        - DemoB
+      summary: Update a demo B
+      operationId: updateDemoB
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_b_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Demo B identifier
+          example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoBUpdateSchema'
+      responses:
+        '200':
+          description: Demo B updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoBModel'
+                  message:
+                    type: string
+                    example: "Demo B updated successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-b/delete/{demo_b_id}/:
+    delete:
+      tags:
+        - DemoB
+      summary: Delete a demo B
+      operationId: deleteDemoB
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_b_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Demo B identifier
+          example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+      responses:
+        '200':
+          description: Demo B deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Demo B deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-b/update/status/{demo_b_id}/:
+    patch:
+      tags:
+        - DemoB
+      summary: Update demo B status and error messages
+      operationId: updateDemoBStatus
+      description: |
+        Updates the demo B status and error messages.
+        This endpoint allows updating only the status, error_message, and error_user_message fields.
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_b_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Demo B identifier
+          example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoBStatusUpdateSchema'
+      responses:
+        '200':
+          description: Demo B status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoBModel'
+                  message:
+                    type: string
+                    example: "Demo B status updated successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-b/update/is-active/{demo_b_id}/:
+    patch:
+      tags:
+        - DemoB
+      summary: Update demo B active status
+      operationId: updateDemoBIsActive
+      description: |
+        Updates the demo B is_active status.
+        This endpoint allows updating only the is_active field.
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_b_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Demo B identifier
+          example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoBIsActiveUpdateSchema'
+      responses:
+        '200':
+          description: Demo B active status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoBModel'
+                  message:
+                    type: string
+                    example: "Demo B active status updated successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # DemoA to DemoB Mapping endpoints
+  /demo-a-to-demo-b-mappings/:
+    get:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Get all mappings
+      operationId: listMappings
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OrderByParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - $ref: '#/components/parameters/FiltersParam'
+      responses:
+        '200':
+          description: List of mappings retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DemoAToDemoBMappingModel'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a-to-demo-b-mapping/create/:
+    post:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Create a new mapping between DemoA and DemoB
+      operationId: createMapping
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoAToDemoBMappingCreateSchema'
+      responses:
+        '201':
+          description: Mapping created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoAToDemoBMappingModel'
+                  message:
+                    type: string
+                    example: "Mapping created successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a-to-demo-b-mapping/read/{demo_a_to_demo_b_mapping_id}/:
+    get:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Get a mapping by ID
+      operationId: getMapping
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_a_to_demo_b_mapping_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Mapping identifier
+          example: "c5f0a8d2-5e3d-6a8b-0c4f-be0a9b8c7d6f"
+      responses:
+        '200':
+          description: Mapping retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoAToDemoBMappingModel'
+                  message:
+                    type: string
+                    example: "Mapping retrieved successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a-to-demo-b-mapping/update/{demo_a_to_demo_b_mapping_id}/:
+    patch:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Update a mapping
+      operationId: updateMapping
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_a_to_demo_b_mapping_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Mapping identifier
+          example: "c5f0a8d2-5e3d-6a8b-0c4f-be0a9b8c7d6f"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoAToDemoBMappingUpdateSchema'
+      responses:
+        '200':
+          description: Mapping updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoAToDemoBMappingModel'
+                  message:
+                    type: string
+                    example: "Mapping updated successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a-to-demo-b-mapping/delete/{demo_a_to_demo_b_mapping_id}/:
+    delete:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Delete a mapping
+      operationId: deleteMapping
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_a_to_demo_b_mapping_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Mapping identifier
+          example: "c5f0a8d2-5e3d-6a8b-0c4f-be0a9b8c7d6f"
+      responses:
+        '200':
+          description: Mapping deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                  message:
+                    type: string
+                    example: "Mapping deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a-to-demo-b-mapping/update/status/{demo_a_to_demo_b_mapping_id}/:
+    patch:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Update mapping status and error messages
+      operationId: updateMappingStatus
+      description: |
+        Updates the mapping status and error messages.
+        This endpoint allows updating only the status, error_message, and error_user_message fields.
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_a_to_demo_b_mapping_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Mapping identifier
+          example: "c5f0a8d2-5e3d-6a8b-0c4f-be0a9b8c7d6f"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoAToDemoBMappingStatusUpdateSchema'
+      responses:
+        '200':
+          description: Mapping status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoAToDemoBMappingModel'
+                  message:
+                    type: string
+                    example: "Mapping status updated successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a-to-demo-b-mapping/update/is-active/{demo_a_to_demo_b_mapping_id}/:
+    patch:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Update mapping active status
+      operationId: updateMappingIsActive
+      description: |
+        Updates the mapping is_active status.
+        This endpoint allows updating only the is_active field.
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_a_to_demo_b_mapping_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Mapping identifier
+          example: "c5f0a8d2-5e3d-6a8b-0c4f-be0a9b8c7d6f"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoAToDemoBMappingIsActiveUpdateSchema'
+      responses:
+        '200':
+          description: Mapping active status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DemoAToDemoBMappingModel'
+                  message:
+                    type: string
+                    example: "Mapping active status updated successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a-to-demo-b-mapping/by-demo-a/{demo_a_id}/:
+    get:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Get all mappings for a specific demo A
+      operationId: getMappingsByDemoAId
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_a_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Demo A identifier
+          example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Mappings for demo A retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DemoAToDemoBMappingModel'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a-to-demo-b-mapping/by-demo-b/{demo_b_id}/:
+    get:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Get all mappings for a specific demo B
+      operationId: getMappingsByDemoBId
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_b_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Demo B identifier
+          example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Mappings for demo B retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DemoAToDemoBMappingModel'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a-to-demo-b-mapping/delete-by-demo-a/{demo_a_id}/:
+    delete:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Delete all mappings for a specific demo A
+      operationId: deleteMappingsByDemoAId
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_a_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Demo A identifier
+          example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+      responses:
+        '200':
+          description: Mappings deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      deleted_count:
+                        type: integer
+                        example: 5
+                  message:
+                    type: string
+                    example: "5 mapping(s) deleted successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /demo-a-to-demo-b-mapping/delete-by-demo-b/{demo_b_id}/:
+    delete:
+      tags:
+        - DemoAToDemoBMapping
+      summary: Delete all mappings for a specific demo B
+      operationId: deleteMappingsByDemoBId
+      parameters:
+        - $ref: '#/components/parameters/UserIdHeader'
+        - $ref: '#/components/parameters/WorkspaceIdHeader'
+        - in: path
+          name: demo_b_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Demo B identifier
+          example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+      responses:
+        '200':
+          description: Mappings deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      deleted_count:
+                        type: integer
+                        example: 3
+                  message:
+                    type: string
+                    example: "3 mapping(s) deleted successfully"
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -437,7 +1183,7 @@ components:
         type: string
         format: uuid
       description: ID of the authenticated user
-      example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
+      example: "c8d88692-4060-4e8a-ba30-c6da3b7e5f1a"
     
     WorkspaceIdHeader:
       name: workspace-id
@@ -446,9 +1192,61 @@ components:
       schema:
         type: string
         format: uuid
-        format: uuid
-      description: ID of the demo
-      example: "bd08612-1a9d-4a6e-8431-1workspaceid"
+      description: ID of the workspace
+      example: "bd086124-1a9d-4a6e-8431-1c7f8e9d2a3b"
+
+    OffsetParam:
+      in: query
+      name: offset
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      required: false
+      description: Number of records to skip
+      example: 0
+
+    LimitParam:
+      in: query
+      name: limit
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 100
+      required: false
+      description: Number of items to return
+      example: 100
+
+    OrderByParam:
+      in: query
+      name: order_by
+      schema:
+        type: string
+        default: "-created_at"
+      required: false
+      description: Field to order by. Prefix with '-' for descending order
+      example: "-created_at"
+
+    SearchParam:
+      in: query
+      name: search
+      schema:
+        type: string
+      required: false
+      description: Search query string to filter results
+      example: "Sample"
+
+    FiltersParam:
+      in: query
+      name: filters
+      schema:
+        type: array
+        items:
+          type: string
+      required: false
+      description: List of filter dicts as JSON strings
+      example: '["{\"field\": \"status\", \"operator\": \"eq\", \"value\": \"created\"}", "{\"field\": \"is_active\", \"operator\": \"eq\", \"value\": true}"]'
   
   schemas:
     
@@ -459,7 +1257,6 @@ components:
           type: string
           format: date-time
           nullable: false
-          readOnly: true
           description: Timestamp when record was created
           example: "2024-01-15T10:30:00Z"
           x-searchable: false
@@ -470,7 +1267,6 @@ components:
           type: string
           format: date-time
           nullable: true
-          readOnly: true
           description: Timestamp when record was last updated
           example: "2024-01-15T10:30:00Z"
           x-searchable: false
@@ -481,7 +1277,6 @@ components:
           type: string
           format: date-time
           nullable: true
-          readOnly: true
           description: Timestamp when record was deleted
           example: "2024-01-15T10:30:00Z"
           x-searchable: false
@@ -492,9 +1287,8 @@ components:
           type: string
           format: uuid
           nullable: false
-          readOnly: true
           description: ID of user who created the record
-          example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
+          example: "c8d88692-4060-4e8a-ba30-c6da3b7e5f1a"
           x-searchable: false
           x-filterable: true
           x-display-name: "Created By"
@@ -503,9 +1297,8 @@ components:
           type: string
           format: uuid
           nullable: true
-          readOnly: true
           description: ID of user who last updated the record
-          example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
+          example: "c8d88692-4060-4e8a-ba30-c6da3b7e5f1a"
           x-searchable: false
           x-filterable: true
           x-display-name: "Updated By"
@@ -514,18 +1307,16 @@ components:
           type: string
           format: uuid
           nullable: true
-          readOnly: true
           description: ID of user who deleted the record
-          example: "c8d8869-4060-4e8a-ba30-c6da3buserid"
+          example: "c8d88692-4060-4e8a-ba30-c6da3b7e5f1a"
           x-searchable: false
           x-filterable: true
           x-display-name: "Deleted By"
           x-column-hidden: true
         status:
           type: string
-          enum: ['creating', 'created', 'updating', 'updated', 'deleting', 'deleted']
+          enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
           nullable: false
-          readOnly: false
           description: Current processing status of the record
           example: "created"
           x-searchable: false
@@ -535,7 +1326,6 @@ components:
         is_active:
           type: boolean
           nullable: false
-          readOnly: false
           description: Whether the record is active (not the same as status)
           example: true
           x-searchable: false
@@ -545,7 +1335,6 @@ components:
         error_message:
           type: string
           nullable: true
-          readOnly: true
           maxLength: 1000
           description: Technical error message for debugging
           example: "Database connection timeout after 30 seconds"
@@ -556,7 +1345,6 @@ components:
         error_user_message:
           type: string
           nullable: true
-          readOnly: true
           maxLength: 500
           description: User-friendly error message for display
           example: "Something went wrong. Please try again later."
@@ -564,40 +1352,845 @@ components:
           x-filterable: false
           x-display-name: "User Message"
           x-column-hidden: true
-      
-    # Demo
-    DemoModel:
+
+    SocialAccountSchema:
+      type: object
+      properties:
+        platform:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: "twitter"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Platform"
+          x-column-hidden: false
+        username:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: "@sampleuser"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Username"
+          x-column-hidden: false
+        url:
+          type: string
+          format: uri
+          example: "https://twitter.com/sampleuser"
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "URL"
+          x-column-hidden: false
+        followers:
+          type: integer
+          minimum: 1
+          example: 1500
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Followers"
+          x-column-hidden: false
+        verified:
+          type: boolean
+          example: true
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Verified"
+          x-column-hidden: false
+      required:
+        - platform
+        - username
+        - url
+        - followers
+        - verified
+
+    PreferencesSchema:
+      type: object
+      properties:
+        newsletter:
+          type: boolean
+          example: true
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Newsletter"
+          x-column-hidden: false
+        notifications_enabled:
+          type: boolean
+          example: false
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Notifications Enabled"
+          x-column-hidden: false
+      required:
+        - newsletter
+        - notifications_enabled
+
+    # DemoA Schemas
+    DemoACreateSchema:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "Sample Demo"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Name"
+          x-column-hidden: false
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+          example: "This is a sample demo description."
+          x-searchable: true
+          x-filterable: false
+          x-display-name: "Description"
+          x-column-hidden: false
+        website:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://example.com"
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Website"
+          x-column-hidden: false
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "user@example.com"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Email"
+          x-column-hidden: false
+        age:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 149
+          example: 30
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Age"
+          x-column-hidden: false
+        progress:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0.0
+          maximum: 100.0
+          example: 50.5
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Progress"
+          x-column-hidden: false
+        is_active:
+          type: boolean
+          nullable: true
+          default: true
+          example: true
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Active"
+          x-column-hidden: false
+        status:
+          type: string
+          enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
+          description: Current status of the entity
+          example: "created"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Status"
+          x-column-hidden: false
+        start_date:
+          type: string
+          format: date
+          nullable: true
+          example: "2023-01-01"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Start Date"
+          x-column-hidden: false
+        social_accounts:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/SocialAccountSchema'
+          example:
+            - platform: "twitter"
+              username: "@sampleuser"
+              url: "https://twitter.com/sampleuser"
+              followers: 1500
+              verified: true
+            - platform: "github"
+              username: "sampleuser"
+              url: "https://github.com/sampleuser"
+              followers: 250
+              verified: false
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Social Accounts"
+          x-column-hidden: false
+        tags:
+          type: array
+          nullable: true
+          items:
+            type: string
+          example: ["postgres", "database", "example"]
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Tags"
+          x-column-hidden: false
+        preferences:
+          $ref: '#/components/schemas/PreferencesSchema'
+          nullable: true
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Preferences"
+          x-column-hidden: false
+      required:
+        - name
+        - status
+
+    DemoAUpdateSchema:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 200
+          example: "Updated Demo Name"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Name"
+          x-column-hidden: false
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+          example: "This is an updated description."
+          x-searchable: true
+          x-filterable: false
+          x-display-name: "Description"
+          x-column-hidden: false
+        website:
+          type: string
+          format: uri
+          nullable: true
+          example: "https://updated-example.com"
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Website"
+          x-column-hidden: false
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "updated-user@example.com"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Email"
+          x-column-hidden: false
+        age:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 149
+          example: 40
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Age"
+          x-column-hidden: false
+        progress:
+          type: number
+          format: float
+          nullable: true
+          minimum: 0.0
+          maximum: 100.0
+          example: 75.5
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Progress"
+          x-column-hidden: false
+        is_active:
+          type: boolean
+          nullable: true
+          example: false
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Active"
+          x-column-hidden: false
+        status:
+          type: string
+          nullable: true
+          enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
+          description: Current status of the entity
+          example: "updating"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Status"
+          x-column-hidden: false
+        start_date:
+          type: string
+          format: date
+          nullable: true
+          example: "2023-01-01"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Start Date"
+          x-column-hidden: false
+        social_accounts:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/SocialAccountSchema'
+          example:
+            - platform: "twitter"
+              username: "@updateduser"
+              url: "https://twitter.com/updateduser"
+              followers: 2000
+              verified: true
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Social Accounts"
+          x-column-hidden: false
+        tags:
+          type: array
+          nullable: true
+          items:
+            type: string
+          example: ["fastapi", "python"]
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Tags"
+          x-column-hidden: false
+        preferences:
+          $ref: '#/components/schemas/PreferencesSchema'
+          nullable: true
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Preferences"
+          x-column-hidden: false
+
+    DemoAStatusUpdateSchema:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
+          description: Current status of the entity
+          example: "created"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Status"
+          x-column-hidden: false
+        error_message:
+          type: string
+          nullable: true
+          description: Technical error message for debugging
+          example: "An unexpected error occurred."
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Error Message"
+          x-column-hidden: true
+        error_user_message:
+          type: string
+          nullable: true
+          description: User-friendly error message for display
+          example: "Something went wrong. Please try again."
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "User Message"
+          x-column-hidden: true
+      required:
+        - status
+
+    DemoAIsActiveUpdateSchema:
+      type: object
+      properties:
+        is_active:
+          type: boolean
+          description: Whether the demo is active
+          example: false
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Active"
+          x-column-hidden: false
+      required:
+        - is_active
+
+    DemoAModel:
       allOf:
         - $ref: '#/components/schemas/BaseAppModel'
         - type: object
           properties:
-            demo_id:
+            demo_a_id:
               type: string
               format: uuid
               nullable: false
-              readOnly: true
-              description: Demo identifier
-              example: "bd08612-1a9d-4a6e-8431-1demoid"
+              description: Demo A identifier
+              example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
               x-searchable: true
               x-filterable: true
-              x-display-name: "Demo ID"
+              x-display-name: "Demo A ID"
               x-column-hidden: false
             name:
               type: string
               minLength: 1
               maxLength: 200
               nullable: false
-              readOnly: false
               description: Demo name
-              example: "Marketing Team"
+              example: "Sample Demo"
               x-searchable: true
               x-filterable: true
-              x-display-name: "Demo Name"
+              x-display-name: "Name"
+              x-column-hidden: false
+            description:
+              type: string
+              nullable: true
+              maxLength: 500
+              example: "This is a sample demo description."
+              x-searchable: true
+              x-filterable: false
+              x-display-name: "Description"
+              x-column-hidden: false
+            website:
+              type: string
+              format: uri
+              nullable: true
+              example: "https://example.com"
+              x-searchable: false
+              x-filterable: false
+              x-display-name: "Website"
+              x-column-hidden: false
+            email:
+              type: string
+              format: email
+              nullable: true
+              example: "user@example.com"
+              x-searchable: true
+              x-filterable: true
+              x-display-name: "Email"
+              x-column-hidden: false
+            age:
+              type: integer
+              nullable: true
+              minimum: 1
+              maximum: 149
+              example: 30
+              x-searchable: false
+              x-filterable: true
+              x-display-name: "Age"
+              x-column-hidden: false
+            progress:
+              type: number
+              format: float
+              nullable: true
+              minimum: 0.0
+              maximum: 100.0
+              example: 50.5
+              x-searchable: false
+              x-filterable: true
+              x-display-name: "Progress"
+              x-column-hidden: false
+            start_date:
+              type: string
+              format: date
+              nullable: true
+              example: "2023-01-01"
+              x-searchable: false
+              x-filterable: true
+              x-display-name: "Start Date"
+              x-column-hidden: false
+            social_accounts:
+              type: array
+              nullable: true
+              items:
+                $ref: '#/components/schemas/SocialAccountSchema'
+              example:
+                - platform: "twitter"
+                  username: "@sampleuser"
+                  url: "https://twitter.com/sampleuser"
+                  followers: 1500
+                  verified: true
+                - platform: "github"
+                  username: "sampleuser"
+                  url: "https://github.com/sampleuser"
+                  followers: 250
+                  verified: false
+              x-searchable: false
+              x-filterable: false
+              x-display-name: "Social Accounts"
+              x-column-hidden: false
+            tags:
+              type: array
+              nullable: true
+              items:
+                type: string
+              example: ["postgres", "database", "example"]
+              x-searchable: true
+              x-filterable: true
+              x-display-name: "Tags"
+              x-column-hidden: false
+            preferences:
+              $ref: '#/components/schemas/PreferencesSchema'
+              nullable: true
+              x-searchable: false
+              x-filterable: false
+              x-display-name: "Preferences"
               x-column-hidden: false
           required:
-            - demo_id
+            - demo_a_id
+            - name
 
-    
+    # DemoB Schemas
+    DemoBCreateSchema:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "Sample Demo B"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Name"
+          x-column-hidden: false
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+          example: "This is a sample demo B description."
+          x-searchable: true
+          x-filterable: false
+          x-display-name: "Description"
+          x-column-hidden: false
+        is_active:
+          type: boolean
+          nullable: true
+          default: true
+          example: true
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Active"
+          x-column-hidden: false
+        status:
+          type: string
+          enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
+          description: Current status of the entity
+          example: "created"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Status"
+          x-column-hidden: false
+      required:
+        - name
+        - status
+
+    DemoBUpdateSchema:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 200
+          example: "Updated Demo B Name"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Name"
+          x-column-hidden: false
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+          example: "This is an updated description."
+          x-searchable: true
+          x-filterable: false
+          x-display-name: "Description"
+          x-column-hidden: false
+        is_active:
+          type: boolean
+          nullable: true
+          example: false
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Active"
+          x-column-hidden: false
+        status:
+          type: string
+          nullable: true
+          enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
+          description: Current status of the entity
+          example: "updating"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Status"
+          x-column-hidden: false
+
+    DemoBStatusUpdateSchema:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
+          description: Current status of the entity
+          example: "created"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Status"
+          x-column-hidden: false
+        error_message:
+          type: string
+          nullable: true
+          description: Technical error message for debugging
+          example: "An unexpected error occurred."
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Error Message"
+          x-column-hidden: true
+        error_user_message:
+          type: string
+          nullable: true
+          description: User-friendly error message for display
+          example: "Something went wrong. Please try again."
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "User Message"
+          x-column-hidden: true
+      required:
+        - status
+
+    DemoBIsActiveUpdateSchema:
+      type: object
+      properties:
+        is_active:
+          type: boolean
+          description: Whether the demo B is active
+          example: false
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Active"
+          x-column-hidden: false
+      required:
+        - is_active
+
+    DemoBModel:
+      allOf:
+        - $ref: '#/components/schemas/BaseAppModel'
+        - type: object
+          properties:
+            demo_b_id:
+              type: string
+              format: uuid
+              nullable: false
+              description: Demo B identifier
+              example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+              x-searchable: true
+              x-filterable: true
+              x-display-name: "Demo B ID"
+              x-column-hidden: false
+            name:
+              type: string
+              minLength: 1
+              maxLength: 200
+              nullable: false
+              description: Demo B name
+              example: "Sample Demo B"
+              x-searchable: true
+              x-filterable: true
+              x-display-name: "Name"
+              x-column-hidden: false
+            description:
+              type: string
+              nullable: true
+              maxLength: 500
+              example: "This is a sample demo B description."
+              x-searchable: true
+              x-filterable: false
+              x-display-name: "Description"
+              x-column-hidden: false
+          required:
+            - demo_b_id
+            - name
+
+    # DemoA to DemoB Mapping Schemas
+    DemoAToDemoBMappingCreateSchema:
+      type: object
+      properties:
+        demo_a_id:
+          type: string
+          format: uuid
+          description: Demo A ID
+          example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Demo A ID"
+          x-column-hidden: false
+        demo_b_id:
+          type: string
+          format: uuid
+          description: Demo B ID
+          example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Demo B ID"
+          x-column-hidden: false
+        is_active:
+          type: boolean
+          nullable: true
+          default: true
+          example: true
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Active"
+          x-column-hidden: false
+        status:
+          type: string
+          enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
+          description: Current status of the mapping
+          example: "created"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Status"
+          x-column-hidden: false
+      required:
+        - demo_a_id
+        - demo_b_id
+        - status
+
+    DemoAToDemoBMappingUpdateSchema:
+      type: object
+      properties:
+        demo_a_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Demo A ID
+          example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Demo A ID"
+          x-column-hidden: false
+        demo_b_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Demo B ID
+          example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+          x-searchable: true
+          x-filterable: true
+          x-display-name: "Demo B ID"
+          x-column-hidden: false
+        is_active:
+          type: boolean
+          nullable: true
+          example: false
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Active"
+          x-column-hidden: false
+        status:
+          type: string
+          nullable: true
+          enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
+          description: Current status of the mapping
+          example: "updating"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Status"
+          x-column-hidden: false
+
+    DemoAToDemoBMappingStatusUpdateSchema:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ['created', 'updating', 'updated', 'deleting', 'deleted']
+          description: Current status of the mapping
+          example: "created"
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Status"
+          x-column-hidden: false
+        error_message:
+          type: string
+          nullable: true
+          description: Technical error message for debugging
+          example: "An unexpected error occurred."
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Error Message"
+          x-column-hidden: true
+        error_user_message:
+          type: string
+          nullable: true
+          description: User-friendly error message for display
+          example: "Something went wrong. Please try again."
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "User Message"
+          x-column-hidden: true
+      required:
+        - status
+
+    DemoAToDemoBMappingIsActiveUpdateSchema:
+      type: object
+      properties:
+        is_active:
+          type: boolean
+          description: Whether the mapping is active
+          example: false
+          x-searchable: false
+          x-filterable: true
+          x-display-name: "Active"
+          x-column-hidden: false
+      required:
+        - is_active
+
+    DemoAToDemoBMappingModel:
+      allOf:
+        - $ref: '#/components/schemas/BaseAppModel'
+        - type: object
+          properties:
+            demo_a_to_demo_b_mapping_id:
+              type: string
+              format: uuid
+              nullable: false
+              description: Mapping identifier
+              example: "c5f0a8d2-5e3d-6a8b-0c4f-be0a9b8c7d6f"
+              x-searchable: true
+              x-filterable: true
+              x-display-name: "Mapping ID"
+              x-column-hidden: false
+            demo_a_id:
+              type: string
+              format: uuid
+              nullable: false
+              description: Demo A identifier
+              example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+              x-searchable: true
+              x-filterable: true
+              x-display-name: "Demo A ID"
+              x-column-hidden: false
+            demo_b_id:
+              type: string
+              format: uuid
+              nullable: false
+              description: Demo B identifier
+              example: "b4e9c7c1-4d2c-5f7a-9b3e-ad9f8a7b6c5e"
+              x-searchable: true
+              x-filterable: true
+              x-display-name: "Demo B ID"
+              x-column-hidden: false
+          required:
+            - demo_a_to_demo_b_mapping_id
+            - demo_a_id
+            - demo_b_id
+
     # Pagination Meta
     PaginationMeta:
       type: object
@@ -606,20 +2199,34 @@ components:
           type: integer
           example: 50
           description: Total number of records
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Total Count"
+          x-column-hidden: false
         offset:
           type: integer
           example: 0
           description: Current offset
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Offset"
+          x-column-hidden: false
         limit:
           type: integer
           example: 100
           description: Number of items per request
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Limit"
+          x-column-hidden: false
         total_pages:
           type: integer
           example: 5
           description: Total number of pages
-        
-    
+          x-searchable: false
+          x-filterable: false
+          x-display-name: "Total Pages"
+          x-column-hidden: false
 
   # Responses
   responses:
