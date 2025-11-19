@@ -137,50 +137,8 @@ def generate_csv_from_schema(schema: dict, output_filename: str, base_url: str):
                     {"path": path, "method": method, "operation": operation}
                 )
 
-        # Define a sorting key for the operations
-        def get_operation_order(op):
-            path_lower = op["path"].lower()
-            method_upper = op["method"].upper()
-            tags = op["operation"].get("tags", [])
-            tags_lower = [tag.lower() for tag in tags]
-
-            # Migration endpoints first
-            if "migrations" in tags_lower:
-                return 0
-            # Create
-            if method_upper == "POST" and "create" in path_lower:
-                return 1
-            # List
-            if (
-                method_upper == "GET"
-                and "{" not in path_lower
-                and "health" not in path_lower
-            ):
-                return 2
-            # Read
-            if method_upper == "GET" and "{" in path_lower:
-                return 3
-            # Update
-            if method_upper in ["PATCH", "PUT"]:
-                return 4
-            # Delete
-            if method_upper == "DELETE":
-                return 5
-            # Other POSTs
-            if method_upper == "POST":
-                return 6
-            # Health check
-            if method_upper == "GET" and "health" in path_lower:
-                return 7
-            # Backup operations last
-            if "backup" in tags_lower:
-                return 9
-            return 8
-
-        # Sort operations based on the desired logical flow
-        sorted_operations = sorted(all_operations, key=get_operation_order)
-
-        for op in sorted_operations:
+        # Keep operations in the order they appear in the OpenAPI JSON file
+        for op in all_operations:
             path = op["path"]
             method = op["method"]
             operation = op["operation"]

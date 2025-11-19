@@ -219,42 +219,6 @@ async def update_mapping(
         ) from e
 
 
-@router.delete(
-    "/demo-a-to-demo-b-mapping/delete/{demo_a_to_demo_b_mapping_id}/",
-    response_model=ApiResponseSchema[dict],
-)
-async def delete_mapping(
-    demo_a_to_demo_b_mapping_id: UUID,
-    db: AsyncSession = Depends(get_async_db),
-    user_id: UUID = Depends(get_user_id),
-    workspace_id: UUID = Depends(get_workspace_id),
-):
-    """Delete a mapping by ID."""
-    try:
-        await DemoAToDemoBMappingService(db).delete(
-            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
-            user_id=user_id,
-            workspace_id=workspace_id,
-        )
-        return ApiResponseSchema[dict](
-            success=True,
-            data={},
-            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETED,
-        )
-    except (
-        DemoAToDemoBMappingNotFoundException,
-        DemoAToDemoBMappingDeletionException,
-        DemoAToDemoBMappingPermissionDeniedException,
-        DemoAToDemoBMappingInvalidDataException,
-    ) as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail) from e
-    except Exception as e:
-        raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETION_FAILED}: {str(e)}",
-        ) from e
-
-
 @router.patch(
     "/demo-a-to-demo-b-mapping/update/status/{demo_a_to_demo_b_mapping_id}/",
     response_model=ApiResponseSchema[DemoAToDemoBMappingReadSchema],
@@ -503,6 +467,42 @@ async def delete_mappings_by_demo_b_id(
         )
     except (
         DemoBNotFoundException,
+        DemoAToDemoBMappingNotFoundException,
+        DemoAToDemoBMappingDeletionException,
+        DemoAToDemoBMappingPermissionDeniedException,
+        DemoAToDemoBMappingInvalidDataException,
+    ) as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETION_FAILED}: {str(e)}",
+        ) from e
+
+
+@router.delete(
+    "/demo-a-to-demo-b-mapping/delete/{demo_a_to_demo_b_mapping_id}/",
+    response_model=ApiResponseSchema[dict],
+)
+async def delete_mapping(
+    demo_a_to_demo_b_mapping_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+    user_id: UUID = Depends(get_user_id),
+    workspace_id: UUID = Depends(get_workspace_id),
+):
+    """Delete a mapping by ID."""
+    try:
+        await DemoAToDemoBMappingService(db).delete(
+            demo_a_to_demo_b_mapping_id=demo_a_to_demo_b_mapping_id,
+            user_id=user_id,
+            workspace_id=workspace_id,
+        )
+        return ApiResponseSchema[dict](
+            success=True,
+            data={},
+            message=SuccessMessages.DEMO_A_TO_DEMO_B_MAPPING_DELETED,
+        )
+    except (
         DemoAToDemoBMappingNotFoundException,
         DemoAToDemoBMappingDeletionException,
         DemoAToDemoBMappingPermissionDeniedException,

@@ -214,25 +214,38 @@ async def update_demo_a(
         ) from e
 
 
-# Delete an DemoA
-@router.delete("/demo-a/delete/{demo_a_id}/", response_model=ApiResponseSchema[dict])
-async def delete_demo_a(
+# Update is_active of an DemoA
+@router.patch(
+    "/demo-a/update/is-active/{demo_a_id}/",
+    response_model=ApiResponseSchema[DemoAReadSchema],
+)
+async def update_demo_a_is_active(
     demo_a_id: UUID,
+    payload: DemoAIsActiveUpdateSchema,
     db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
     workspace_id: UUID = Depends(get_workspace_id),
 ):
-    """Delete a demo A by ID."""
+    """
+    Update demo A is_active status.
+
+    Updates only the is_active field of the demo A.
+    """
     try:
-        await DemoAService(db).delete(
-            demo_a_id=demo_a_id, user_id=user_id, workspace_id=workspace_id
+        data = await DemoAService(db).update_is_active(
+            demo_a_id=demo_a_id,
+            payload=payload,
+            user_id=user_id,
+            workspace_id=workspace_id,
         )
-        return ApiResponseSchema[dict](
-            success=True, data={}, message=SuccessMessages.DEMO_A_DELETED
+        return ApiResponseSchema[DemoAReadSchema](
+            success=True,
+            data=data,
+            message=SuccessMessages.DEMO_A_ACTIVE_STATUS_UPDATED,
         )
     except (
         DemoANotFoundException,
-        DemoADeletionException,
+        DemoAUpdateException,
         DemoAPermissionDeniedException,
         DemoAInvalidDataException,
     ) as e:
@@ -240,9 +253,8 @@ async def delete_demo_a(
     except Exception as e:
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.DEMO_A_DELETION_FAILED}: {str(e)}",
+            detail=f"{ApiErrorMessages.DEMO_A_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e
-
 
 # Update DemoA status
 @router.patch(
@@ -284,39 +296,25 @@ async def update_demo_a_status(
             detail=f"{ApiErrorMessages.DEMO_A_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e
 
-
-# Update is_active of an DemoA
-@router.patch(
-    "/demo-a/update/is-active/{demo_a_id}/",
-    response_model=ApiResponseSchema[DemoAReadSchema],
-)
-async def update_demo_a_is_active(
+# Delete an DemoA
+@router.delete("/demo-a/delete/{demo_a_id}/", response_model=ApiResponseSchema[dict])
+async def delete_demo_a(
     demo_a_id: UUID,
-    payload: DemoAIsActiveUpdateSchema,
     db: AsyncSession = Depends(get_async_db),
     user_id: UUID = Depends(get_user_id),
     workspace_id: UUID = Depends(get_workspace_id),
 ):
-    """
-    Update demo A is_active status.
-
-    Updates only the is_active field of the demo A.
-    """
+    """Delete a demo A by ID."""
     try:
-        data = await DemoAService(db).update_is_active(
-            demo_a_id=demo_a_id,
-            payload=payload,
-            user_id=user_id,
-            workspace_id=workspace_id,
+        await DemoAService(db).delete(
+            demo_a_id=demo_a_id, user_id=user_id, workspace_id=workspace_id
         )
-        return ApiResponseSchema[DemoAReadSchema](
-            success=True,
-            data=data,
-            message=SuccessMessages.DEMO_A_ACTIVE_STATUS_UPDATED,
+        return ApiResponseSchema[dict](
+            success=True, data={}, message=SuccessMessages.DEMO_A_DELETED
         )
     except (
         DemoANotFoundException,
-        DemoAUpdateException,
+        DemoADeletionException,
         DemoAPermissionDeniedException,
         DemoAInvalidDataException,
     ) as e:
@@ -324,5 +322,5 @@ async def update_demo_a_is_active(
     except Exception as e:
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.DEMO_A_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}",
+            detail=f"{ApiErrorMessages.DEMO_A_DELETION_FAILED}: {str(e)}",
         ) from e

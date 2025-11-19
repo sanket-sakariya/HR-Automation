@@ -214,36 +214,6 @@ async def update_demo_b(
         ) from e
 
 
-# Delete an DemoB
-@router.delete("/demo-b/delete/{demo_b_id}/", response_model=ApiResponseSchema[dict])
-async def delete_demo_b(
-    demo_b_id: UUID,
-    db: AsyncSession = Depends(get_async_db),
-    user_id: UUID = Depends(get_user_id),
-    workspace_id: UUID = Depends(get_workspace_id),
-):
-    """Delete a demo B by ID."""
-    try:
-        await DemoBService(db).delete(
-            demo_b_id=demo_b_id, user_id=user_id, workspace_id=workspace_id
-        )
-        return ApiResponseSchema[dict](
-            success=True, data={}, message=SuccessMessages.DEMO_B_DELETED
-        )
-    except (
-        DemoBNotFoundException,
-        DemoBDeletionException,
-        DemoBPermissionDeniedException,
-        DemoBInvalidDataException,
-    ) as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail) from e
-    except Exception as e:
-        raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"{ApiErrorMessages.DEMO_B_DELETION_FAILED}: {str(e)}",
-        ) from e
-
-
 # Update DemoB status
 @router.patch(
     "/demo-b/update/status/{demo_b_id}/",
@@ -325,4 +295,34 @@ async def update_demo_b_is_active(
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_B_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}",
+        ) from e
+
+
+# Delete an DemoB
+@router.delete("/demo-b/delete/{demo_b_id}/", response_model=ApiResponseSchema[dict])
+async def delete_demo_b(
+    demo_b_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+    user_id: UUID = Depends(get_user_id),
+    workspace_id: UUID = Depends(get_workspace_id),
+):
+    """Delete a demo B by ID."""
+    try:
+        await DemoBService(db).delete(
+            demo_b_id=demo_b_id, user_id=user_id, workspace_id=workspace_id
+        )
+        return ApiResponseSchema[dict](
+            success=True, data={}, message=SuccessMessages.DEMO_B_DELETED
+        )
+    except (
+        DemoBNotFoundException,
+        DemoBDeletionException,
+        DemoBPermissionDeniedException,
+        DemoBInvalidDataException,
+    ) as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail) from e
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"{ApiErrorMessages.DEMO_B_DELETION_FAILED}: {str(e)}",
         ) from e
