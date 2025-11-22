@@ -51,6 +51,30 @@ class DatabaseErrorMessages:
         "Database error during demo A to demo B mapping deletion"
     )
 
+    # DemoAResponse-related database errors
+    DEMO_A_RESPONSE_CREATION_ERROR: Final[str] = "Database error during demo A response creation"
+    DEMO_A_RESPONSE_RETRIEVAL_ERROR: Final[str] = "Database error while retrieving demo A response"
+    DEMO_A_RESPONSE_UPDATE_ERROR: Final[str] = "Database error during demo A response update"
+    DEMO_A_RESPONSE_STATUS_UPDATE_ERROR: Final[str] = (
+        "Database error during demo A response status update"
+    )
+    DEMO_A_RESPONSE_ACTIVE_UPDATE_ERROR: Final[str] = (
+        "Database error during demo A response is_active update"
+    )
+    DEMO_A_RESPONSE_DELETION_ERROR: Final[str] = "Database error during demo A response deletion"
+
+    # DemoBResponse-related database errors
+    DEMO_B_RESPONSE_CREATION_ERROR: Final[str] = "Database error during demo B response creation"
+    DEMO_B_RESPONSE_RETRIEVAL_ERROR: Final[str] = "Database error while retrieving demo B response"
+    DEMO_B_RESPONSE_UPDATE_ERROR: Final[str] = "Database error during demo B response update"
+    DEMO_B_RESPONSE_STATUS_UPDATE_ERROR: Final[str] = (
+        "Database error during demo B response status update"
+    )
+    DEMO_B_RESPONSE_ACTIVE_UPDATE_ERROR: Final[str] = (
+        "Database error during demo B response is_active update"
+    )
+    DEMO_B_RESPONSE_DELETION_ERROR: Final[str] = "Database error during demo B response deletion"
+
     # User-to-Demo mapping errors
     USER_DEMO_MAPPING_CREATION_ERROR: Final[str] = (
         "Database error during user-demo mapping creation"
@@ -130,6 +154,28 @@ class ApiErrorMessages:
         "Failed to update demo A to demo B mapping active status"
     )
 
+    # DemoAResponse operations
+    DEMO_A_RESPONSE_CREATION_FAILED: Final[str] = "Demo A response creation failed"
+    DEMO_A_RESPONSE_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve demo A response"
+    DEMO_A_RESPONSES_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve demo A responses"
+    DEMO_A_RESPONSE_UPDATE_FAILED: Final[str] = "Demo A response update failed"
+    DEMO_A_RESPONSE_DELETION_FAILED: Final[str] = "Failed to delete demo A response"
+    DEMO_A_RESPONSE_STATUS_UPDATE_FAILED: Final[str] = "Failed to update demo A response status"
+    DEMO_A_RESPONSE_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = (
+        "Failed to update demo A response active status"
+    )
+
+    # DemoBResponse operations
+    DEMO_B_RESPONSE_CREATION_FAILED: Final[str] = "Demo B response creation failed"
+    DEMO_B_RESPONSE_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve demo B response"
+    DEMO_B_RESPONSES_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve demo B responses"
+    DEMO_B_RESPONSE_UPDATE_FAILED: Final[str] = "Demo B response update failed"
+    DEMO_B_RESPONSE_DELETION_FAILED: Final[str] = "Failed to delete demo B response"
+    DEMO_B_RESPONSE_STATUS_UPDATE_FAILED: Final[str] = "Failed to update demo B response status"
+    DEMO_B_RESPONSE_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = (
+        "Failed to update demo B response active status"
+    )
+
 
 class ServiceMessages:
     """Constants for service layer messages."""
@@ -161,6 +207,16 @@ class LogMessages:
     DEMO_A_TO_DEMO_B_MAPPING_UPDATED: Final[str] = "Updated demo A to demo B mapping"
     DEMO_A_TO_DEMO_B_MAPPING_DELETED: Final[str] = "Deleted demo A to demo B mapping"
 
+    # User activities - DemoAResponse
+    DEMO_A_RESPONSE_CREATED: Final[str] = "Created demo A response"
+    DEMO_A_RESPONSE_UPDATED: Final[str] = "Updated demo A response"
+    DEMO_A_RESPONSE_DELETED: Final[str] = "Deleted demo A response"
+
+    # User activities - DemoBResponse
+    DEMO_B_RESPONSE_CREATED: Final[str] = "Created demo B response"
+    DEMO_B_RESPONSE_UPDATED: Final[str] = "Updated demo B response"
+    DEMO_B_RESPONSE_DELETED: Final[str] = "Deleted demo B response"
+
     # Legacy activities (kept for backward compatibility)
     DEMO_CREATED: Final[str] = "Created new demo"
     DEMO_UPDATED: Final[str] = "Updated demo"
@@ -173,6 +229,8 @@ class LogMessages:
     DEMO_A_TO_DEMO_B_MAPPING_STATUS_UPDATED: Final[str] = (
         "Updating demo A to demo B mapping status"
     )
+    DEMO_A_RESPONSE_STATUS_UPDATED: Final[str] = "Updating demo A response status"
+    DEMO_B_RESPONSE_STATUS_UPDATED: Final[str] = "Updating demo B response status"
 
     # Repository logs
     CANNOT_UPDATE_DELETED_DEMO: Final[str] = "Cannot update deleted demo"
@@ -233,4 +291,26 @@ class SuccessMessages:
     )
     DEMO_A_TO_DEMO_B_MAPPING_ACTIVE_STATUS_UPDATED: Final[str] = (
         "Demo A to demo B mapping active status updated successfully"
+    )
+
+    # DemoAResponse operations
+    DEMO_A_RESPONSE_CREATED: Final[str] = "Demo A response created successfully"
+    DEMO_A_RESPONSE_UPDATED: Final[str] = "Demo A response updated successfully"
+    DEMO_A_RESPONSE_DELETED: Final[str] = "Demo A response deleted successfully"
+    DEMO_A_RESPONSE_RETRIEVED: Final[str] = "Demo A response retrieved successfully"
+    DEMO_A_RESPONSES_RETRIEVED: Final[str] = "Demo A responses retrieved successfully"
+    DEMO_A_RESPONSE_STATUS_UPDATED: Final[str] = "Demo A response status updated successfully"
+    DEMO_A_RESPONSE_ACTIVE_STATUS_UPDATED: Final[str] = (
+        "Demo A response active status updated successfully"
+    )
+
+    # DemoBResponse operations
+    DEMO_B_RESPONSE_CREATED: Final[str] = "Demo B response created successfully"
+    DEMO_B_RESPONSE_UPDATED: Final[str] = "Demo B response updated successfully"
+    DEMO_B_RESPONSE_DELETED: Final[str] = "Demo B response deleted successfully"
+    DEMO_B_RESPONSE_RETRIEVED: Final[str] = "Demo B response retrieved successfully"
+    DEMO_B_RESPONSES_RETRIEVED: Final[str] = "Demo B responses retrieved successfully"
+    DEMO_B_RESPONSE_STATUS_UPDATED: Final[str] = "Demo B response status updated successfully"
+    DEMO_B_RESPONSE_ACTIVE_STATUS_UPDATED: Final[str] = (
+        "Demo B response active status updated successfully"
     )

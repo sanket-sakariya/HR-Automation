@@ -23,12 +23,20 @@ if base_config.IS_DEMO_ENDPOINTS_ENABLED:
     from app.api.v1.endpoints.demo_a_to_demo_b_mapping_endpoint import (
         router as demo_a_to_demo_b_mapping_router,
     )
+    from app.api.v1.endpoints.demo_a_response_endpoint import (
+        router as demo_a_response_router,
+    )
+    from app.api.v1.endpoints.demo_b_response_endpoint import (
+        router as demo_b_response_router,
+    )
 
     api_router.include_router(router=demo_a_router, tags=["demo-a"])
     api_router.include_router(router=demo_b_router, tags=["demo-b"])
     api_router.include_router(
         router=demo_a_to_demo_b_mapping_router, tags=["demo-a-to-demo-b-mapping"]
     )
+    api_router.include_router(router=demo_a_response_router, tags=["demo-a-response"])
+    api_router.include_router(router=demo_b_response_router, tags=["demo-b-response"])
 
 # Conditionally include backup endpoint only if enabled
 if base_config.IS_BACKUP_ENABLED:

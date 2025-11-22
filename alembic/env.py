@@ -12,7 +12,8 @@ from app.model.baseapp_model import Base
 from app.model.demo_a_model import DemoAModel
 from app.model.demo_b_model import DemoBModel
 from app.model.demo_a_to_demo_b_mapping_model import DemoAToDemoBMappingModel
-
+from app.model.demo_a_response_model import DemoAResponseModel
+from app.model.demo_b_response_model import DemoBResponseModel
 
 # Import your app config
 
