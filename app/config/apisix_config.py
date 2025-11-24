@@ -11,14 +11,14 @@ from pydantic import Field
 # This file is at: app/config/apisix_config.py
 # Project root is 2 levels up
 _project_root = Path(__file__).parent.parent.parent
-_env_file = _project_root / ".env"
+_env_file = _project_root / ".env.dev"
 
 
 class APISIXConfig(BaseSettings):
     """Configuration for APISIX Gateway integration."""
 
     model_config = SettingsConfigDict(
-        env_file=str(_env_file) if _env_file.exists() else ".env",
+        env_file=str(_env_file) if _env_file.exists() else ".env.dev",
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
