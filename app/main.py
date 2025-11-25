@@ -146,7 +146,7 @@ def create_app() -> FastAPI:
         template_path = Path(__file__).parent / "templates" / "swagger-ui-theme.html"
         html_content = template_path.read_text(encoding="utf-8")
         # Inject the openapi_url dynamically
-        html_content = html_content.replace("{{openapi_url}}", fastapi_app.openapi_url)
+        html_content = html_content.replace("{{openapi_url}}", f"/{config.SERVICE_NAME}/openapi.json")
         return HTMLResponse(content=html_content)
 
     return fastapi_app
