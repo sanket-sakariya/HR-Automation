@@ -31,6 +31,7 @@ Available methods:
 """
 
 
+import asyncio
 import httpx
 from typing import Dict, List, Any, Optional
 from fastapi import FastAPI
@@ -260,6 +261,8 @@ class APISIXHelper:
 
 
 
+        # Prepare all route configs first
+        route_tasks = []
         for route_info in routes:
             route_path = route_info["path"]
             route_name = route_info["name"]
@@ -286,13 +289,18 @@ class APISIXHelper:
 
                 plugins.update(custom_plugins[route_path])
             
-            # Add proxy-rewrite to strip service name prefix
+            # Add proxy-rewrite to strip service name prefix for API routes
+            # But NOT for documentation routes (docs, openapi.json, redoc) which FastAPI serves with prefix
             # APISIX sends: /demo-management-service/api/v1/health
-            # FastAPI expects: /demo-management-service/api/v1/health (already has prefix)
-            # So we need to rewrite the URI to remove the service prefix
-            plugins["proxy-rewrite"] = {
-                "regex_uri": [f"^/{self.base_config.SERVICE_NAME}/(.*)", "/$1"]
-            }
+            # FastAPI expects: /api/v1/health (without prefix for API routes)
+            # But for docs: FastAPI expects /demo-management-service/docs (with prefix)
+            
+            is_docs_route = any(doc_path in route_path for doc_path in ['/docs', '/openapi.json', '/redoc'])
+            
+            if not is_docs_route:
+                plugins["proxy-rewrite"] = {
+                    "regex_uri": [f"^/{self.base_config.SERVICE_NAME}/(.*)", "/$1"]
+                }
             
             # Build route configuration
             route_config = {
@@ -310,10 +318,23 @@ class APISIXHelper:
                 "status": 1,
             }
 
-            
-            # Register the route
-            success = await self._register_single_route(route_id, route_config, route_info)
-            results[route_path] = success
+            # Add task for concurrent execution
+            route_tasks.append((route_id, route_config, route_info, route_path))
+
+        # Register all routes concurrently
+        registration_results = await asyncio.gather(
+            *[self._register_single_route(task[0], task[1], task[2]) for task in route_tasks],
+            return_exceptions=True
+        )
+        
+        # Build results dict
+        for i, (route_id, route_config, route_info, route_path) in enumerate(route_tasks):
+            result = registration_results[i]
+            if isinstance(result, Exception):
+                logger.error(f"❌ Failed to register {route_path}: {result}")
+                results[route_path] = False
+            else:
+                results[route_path] = result
 
         # Summary
         successful = sum(1 for v in results.values() if v)
