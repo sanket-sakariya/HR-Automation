@@ -289,18 +289,10 @@ class APISIXHelper:
 
                 plugins.update(custom_plugins[route_path])
             
-            # Add proxy-rewrite to strip service name prefix for API routes
             # But NOT for documentation routes (docs, openapi.json, redoc) which FastAPI serves with prefix
             # APISIX sends: /demo-management-service/api/v1/health
             # FastAPI expects: /api/v1/health (without prefix for API routes)
             # But for docs: FastAPI expects /demo-management-service/docs (with prefix)
-            
-            is_docs_route = any(doc_path in route_path for doc_path in ['/docs', '/openapi.json', '/redoc'])
-            
-            if not is_docs_route:
-                plugins["proxy-rewrite"] = {
-                    "regex_uri": [f"^/{self.base_config.SERVICE_NAME}/(.*)", "/$1"]
-                }
             
             # Build route configuration
             route_config = {
