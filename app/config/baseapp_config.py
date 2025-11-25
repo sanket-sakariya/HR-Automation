@@ -114,6 +114,26 @@ class BaseAppConfig(BaseSettings):
         description="Enable/disable backup endpoints",
     )
 
+    # APISIX Gateway settings
+    USE_INDIVIDUAL_APISIX_ROUTES: bool = Field(
+        default=False,
+        env="USE_INDIVIDUAL_APISIX_ROUTES",
+        description=(
+            "Enable individual route registration in APISIX (recommended for granular control). "
+            "When False, uses wildcard /* pattern (simpler but less control)"
+        ),
+    )
+
+    # APISIX public paths (no authentication required)
+    APISIX_PUBLIC_PATHS: str = Field(
+        default="/api/v1/health",
+        env="APISIX_PUBLIC_PATHS",
+        description=(
+            "Comma-separated list of paths that should be publicly accessible without authentication. "
+            "Example: /api/v1/health,/api/v1/docs,/api/v1/status"
+        ),
+    )
+
     # Wasabi/S3 settings for migration storage
     WASABI_ENDPOINT_URL: str = Field(
         default="https://s3.wasabisys.com", env="WASABI_ENDPOINT_URL"

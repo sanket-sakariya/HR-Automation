@@ -24,7 +24,7 @@ from app.middleware.correlation import CorrelationIdMiddleware
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI):
+async def lifespan(app: FastAPI):
     """
     Handles application startup and shutdown events.
     """
@@ -93,7 +93,18 @@ async def lifespan(_app: FastAPI):
 
     # Register service with APISIX Gateway
     apisix_helper = get_apisix_helper()
-    await apisix_helper.register_route()
+    
+    # Check if individual route registration is enabled
+    use_individual_routes = getattr(base_config, 'USE_INDIVIDUAL_APISIX_ROUTES', False)
+    
+    if use_individual_routes:
+        # Register each route individually for granular control
+        logger.info("🔧 Using individual APISIX route registration mode")
+        await apisix_helper.register_individual_routes(app)
+    else:
+        # Traditional wildcard registration (/{service_name}/*)
+        logger.info("🔧 Using wildcard APISIX route registration mode")
+        await apisix_helper.register_route()
 
     yield
     # Shutdown
@@ -102,14 +113,15 @@ async def lifespan(_app: FastAPI):
     await shutdown_logging()
 
 
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     fastapi_app = FastAPI(
         title=config.APP_NAME,
         version=config.APP_VERSION,
         docs_url=None,
-        redoc_url="/redoc",
-        openapi_url="/openapi.json",
+        redoc_url=f"/{config.SERVICE_NAME}/redoc",
+        openapi_url=f"/{config.SERVICE_NAME}/openapi.json",
         default_response_class=JSONResponse,
         lifespan=lifespan,
     )
@@ -133,6 +145,8 @@ def create_app() -> FastAPI:
     async def custom_swagger_ui_html():
         template_path = Path(__file__).parent / "templates" / "swagger-ui-theme.html"
         html_content = template_path.read_text(encoding="utf-8")
+        # Inject the openapi_url dynamically
+        html_content = html_content.replace("{{openapi_url}}", fastapi_app.openapi_url)
         return HTMLResponse(content=html_content)
 
     return fastapi_app
