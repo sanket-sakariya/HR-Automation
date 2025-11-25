@@ -120,8 +120,8 @@ def create_app() -> FastAPI:
         title=config.APP_NAME,
         version=config.APP_VERSION,
         docs_url=None,
-        redoc_url="/redoc",
-        openapi_url="/openapi.json",
+        redoc_url=f"/{config.SERVICE_NAME}/redoc",
+        openapi_url=f"/{config.SERVICE_NAME}/openapi.json",
         default_response_class=JSONResponse,
         lifespan=lifespan,
     )
@@ -141,7 +141,7 @@ def create_app() -> FastAPI:
     fastapi_app.mount("/media", StaticFiles(directory="app/media"), name="media")
 
     # Custom Swagger UI with sidebar
-    @fastapi_app.get("/docs", include_in_schema=False)
+    @fastapi_app.get(f"/{config.SERVICE_NAME}/docs", include_in_schema=False)
     async def custom_swagger_ui_html():
         template_path = Path(__file__).parent / "templates" / "swagger-ui-theme.html"
         html_content = template_path.read_text(encoding="utf-8")
