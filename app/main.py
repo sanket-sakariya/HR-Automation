@@ -120,8 +120,8 @@ def create_app() -> FastAPI:
         title=config.APP_NAME,
         version=config.APP_VERSION,
         docs_url=None,
-        redoc_url=f"/{config.SERVICE_NAME}/redoc",
-        openapi_url=f"/{config.SERVICE_NAME}/openapi.json",
+        redoc_url="/redoc",
+        openapi_url="/openapi.json",
         default_response_class=JSONResponse,
         lifespan=lifespan,
     )
