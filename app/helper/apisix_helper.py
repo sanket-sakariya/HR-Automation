@@ -136,7 +136,7 @@ class APISIXHelper:
         Check if a route path is in the public paths list.
         
         Args:
-            route_path: The route path to check
+            route_path: The route path to check (e.g., /demo-management-service/api/v1/health/)
             
         Returns:
             True if the path is public (no auth required), False otherwise
@@ -149,14 +149,8 @@ class APISIXHelper:
         # Split comma-separated list and strip whitespace
         public_paths = [p.strip() for p in public_paths_str.split(",")]
         
-        # Check if route path matches any public path
-        for public_path in public_paths:
-            # Remove service name prefix from route_path for comparison
-            route_without_service = route_path.replace(f"/{self.base_config.SERVICE_NAME}", "")
-            if route_without_service == public_path or route_path == public_path:
-                return True
-        
-        return False
+        # Direct comparison since both route_path and public_paths include service prefix
+        return route_path in public_paths
 
     def _get_default_plugins(self, is_public: bool = False) -> Dict[str, Any]:
         """
@@ -168,7 +162,6 @@ class APISIXHelper:
         plugins = {
             "cors": {
                 "allow_origins": (
-
                     "http://localhost,http://localhost:80,http://localhost:3000,"
                     "http://localhost:8080,http://127.0.0.1,http://127.0.0.1:80,"
                     "http://127.0.0.1:3000,http://127.0.0.1:8080,"
