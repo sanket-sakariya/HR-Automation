@@ -281,7 +281,7 @@ class APISIXHelper:
 
             
             # Check if this is a public route (no authentication required)
-            is_public = self._is_public_path(route_path)
+            is_public = self._is_public_path(full_uri)
             
             # Get plugins for this route (public routes won't have RBAC)
             plugins = self._get_default_plugins(is_public=is_public)
