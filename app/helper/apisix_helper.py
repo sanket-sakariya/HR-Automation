@@ -8,19 +8,19 @@ Two registration modes are supported:
    - Registers a single route: /{service_name}/*
    - All endpoints share the same plugins and configuration
    - Simpler setup, less granular control
-   
+
 2. **Individual Route Mode** (recommended for production):
    - Registers each FastAPI route separately
    - Each endpoint can have custom plugins, rate limits, authentication
    - More control, better monitoring, enhanced security
-   
+
 Usage:
     # Enable individual route mode in .env.dev:
     # USE_INDIVIDUAL_APISIX_ROUTES=true
-    
+
     # The system automatically extracts routes from FastAPI app and registers them
     # See app/main.py for implementation
-    
+
 Available methods:
     - extract_routes_from_fastapi(app): Extract all routes from FastAPI app
     - register_individual_routes(app, custom_plugins): Register each route individually
@@ -30,12 +30,11 @@ Available methods:
     - get_route_details(route_id): Get detailed info about a specific route
 """
 
-
 import asyncio
-import httpx
 from typing import Dict, List, Any, Optional
+import httpx
 from fastapi import FastAPI
-from fastapi.routing import APIRoute
+from fastapi.routing import APIRoute  # pylint: disable=import-error
 from app.config.apisix_config import get_apisix_config
 from app.config.baseapp_config import get_base_config
 from app.config.logger_config import logger
@@ -60,15 +59,20 @@ class APISIXHelper:
     def _sanitize_route_id(self, route_name: str) -> str:
         """
         Sanitize route name to create a valid APISIX route ID.
-        
+
         Args:
             route_name: Original route name from FastAPI
-            
+
         Returns:
             Sanitized route ID safe for APISIX
         """
         # Replace special characters with underscores
-        sanitized = route_name.replace("-", "_").replace(":", "_").replace("{", "").replace("}", "")
+        sanitized = (
+            route_name.replace("-", "_")
+            .replace(":", "_")
+            .replace("{", "")
+            .replace("}", "")
+        )
         # Remove any other non-alphanumeric characters except underscores
         sanitized = "".join(c if c.isalnum() or c == "_" else "_" for c in sanitized)
         # Remove consecutive underscores
@@ -87,17 +91,20 @@ class APISIXHelper:
             List of dictionaries containing route information
         """
         routes = []
-        
+
         for route in app.routes:
             if isinstance(route, APIRoute):
-                
-                # Extract methods from the route, exclude HEAD and OPTIONS
-                methods = [m for m in (route.methods or ["GET"]) if m not in {"HEAD", "OPTIONS"}]
-                
+                # Extract methods from the route, include all methods (GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD)
+                methods = list(route.methods or ["GET"])
+                methods.append("OPTIONS")
+                methods.append("HEAD")
+
                 if not methods:
-                    logger.debug(f"⏭️  Skipping route with no valid methods: {route.path}")
+                    logger.debug(
+                        f"⏭️  Skipping route with no valid methods: {route.path}"
+                    )
                     continue
-                
+
                 route_info = {
                     "path": route.path,
                     "methods": methods,
@@ -108,37 +115,34 @@ class APISIXHelper:
             else:
                 # Handle non-APIRoute routes (like openapi.json, redoc)
                 # These are typically Route or Mount objects
-                if hasattr(route, 'path'):
+                if hasattr(route, "path"):
                     # Include openapi.json and redoc if they exist
                     # Check both with and without service name prefix
                     openapi_paths = [
-                        '/openapi.json', 
-                        f'/{self.base_config.SERVICE_NAME}/openapi.json'
+                        "/openapi.json",
+                        f"/{self.base_config.SERVICE_NAME}/openapi.json",
                     ]
-                    redoc_paths = [
-                        '/redoc',
-                        f'/{self.base_config.SERVICE_NAME}/redoc'
-                    ]
-                    
+                    redoc_paths = ["/redoc", f"/{self.base_config.SERVICE_NAME}/redoc"]
+
                     if route.path in openapi_paths + redoc_paths:
                         route_info = {
                             "path": route.path,
                             "methods": ["GET"],
-                            "name": route.path.replace('/', '_').strip('_'),
+                            "name": route.path.replace("/", "_").strip("_"),
                             "tags": [],
                         }
                         routes.append(route_info)
-        
+
         logger.info(f"📋 Extracted {len(routes)} routes from FastAPI application")
         return routes
 
     def _is_public_path(self, route_path: str) -> bool:
         """
         Check if a route path is in the public paths list.
-        
+
         Args:
             route_path: The route path to check (e.g., /demo-management-service/api/v1/health/)
-            
+
         Returns:
             True if the path is public (no auth required), False otherwise
         """
@@ -146,17 +150,17 @@ class APISIXHelper:
         public_paths_str = self.base_config.APISIX_PUBLIC_PATHS
         if not public_paths_str:
             return False
-        
+
         # Split comma-separated list and strip whitespace
-        public_paths = [p.strip() for p in public_paths_str.split(",")]
-        
+        public_paths = [p.strip() for p in public_paths_str.split(",")]  # pylint: disable=no-member
+
         # Direct comparison since both route_path and public_paths include service prefix
         return route_path in public_paths
 
     def _get_default_plugins(self, is_public: bool = False) -> Dict[str, Any]:
         """
         Get default APISIX plugins configuration.
-        
+
         Args:
             is_public: If True, disables authentication plugins
         """
@@ -186,18 +190,17 @@ class APISIXHelper:
                 "max_age": 86400,
             },
         }
-        
+
         # Only add RBAC plugin for protected routes
         if not is_public:
-            plugins["rbac_abac_workspace"] = {"jwt_secret": self.config.APISIX_JWT_SECRET}
-        
+            plugins["rbac_abac_workspace"] = {
+                "jwt_secret": self.config.APISIX_JWT_SECRET
+            }
+
         return plugins
 
-
-    async def register_individual_routes(
-        self, 
-        app: FastAPI, 
-        custom_plugins: Optional[Dict[str, Dict[str, Any]]] = None
+    async def register_individual_routes(  # pylint: disable=too-many-locals
+        self, app: FastAPI, custom_plugins: Optional[Dict[str, Dict[str, Any]]] = None
     ) -> Dict[str, bool]:
         """
         Register each FastAPI route individually in APISIX.
@@ -228,38 +231,47 @@ class APISIXHelper:
             return {}
 
         routes = self.extract_routes_from_fastapi(app)
-        
+
         # Manually add openapi.json and redoc routes if they're configured and not already extracted
         # Check if they already exist in the routes list
         existing_paths = {route["path"] for route in routes}
-        
+
         if app.openapi_url and app.openapi_url not in existing_paths:
-            routes.append({
-                "path": app.openapi_url,
-                "methods": ["GET"],
-                "name": "openapi_json",
-                "tags": [],
-            })
+            routes.append(
+                {
+                    "path": app.openapi_url,
+                    "methods": ["GET"],
+                    "name": "openapi_json",
+                    "tags": [],
+                }
+            )
         if app.redoc_url and app.redoc_url not in existing_paths:
-            routes.append({
-                "path": app.redoc_url,
-                "methods": ["GET"],
-                "name": "redoc",
-                "tags": [],
-            })
-        
+            routes.append(
+                {
+                    "path": app.redoc_url,
+                    "methods": ["GET"],
+                    "name": "redoc",
+                    "tags": [],
+                }
+            )
+
         results = {}
 
         # Log public paths configuration
         if self.base_config.APISIX_PUBLIC_PATHS:
-            public_paths = [p.strip() for p in self.base_config.APISIX_PUBLIC_PATHS.split(",")]
+            public_paths = [
+                p.strip()
+                for p in self.base_config.APISIX_PUBLIC_PATHS.split(",")  # pylint: disable=no-member
+            ]
             logger.info(f"🔓 Public paths (no auth): {', '.join(public_paths)}")
         else:
-            logger.info("🔐 No public paths configured - all routes require authentication")
+            logger.info(
+                "🔐 No public paths configured - all routes require authentication"
+            )
 
-        logger.info(f"🚀 Starting individual route registration for {len(routes)} routes...")
-
-
+        logger.info(
+            f"🚀 Starting individual route registration for {len(routes)} routes..."
+        )
 
         # Prepare all route configs first
         route_tasks = []
@@ -267,11 +279,11 @@ class APISIXHelper:
             route_path = route_info["path"]
             route_name = route_info["name"]
             methods = route_info["methods"]
-            
+
             # Create unique route ID for APISIX (sanitized for special characters)
             sanitized_name = self._sanitize_route_id(route_name)
             route_id = f"{self.config.APISIX_ROUTE_NAME}_{sanitized_name}"
-            
+
             # Build full URI - check if service name is already in the path
             # FastAPI routes might already include the service name prefix
             if route_path.startswith(f"/{self.base_config.SERVICE_NAME}/"):
@@ -279,21 +291,19 @@ class APISIXHelper:
             else:
                 full_uri = f"/{self.base_config.SERVICE_NAME}{route_path}"
 
-            
             # Check if this is a public route (no authentication required)
             is_public = self._is_public_path(full_uri)
-            
+
             # Get plugins for this route (public routes won't have RBAC)
             plugins = self._get_default_plugins(is_public=is_public)
             if custom_plugins and route_path in custom_plugins:
-
                 plugins.update(custom_plugins[route_path])
-            
+
             # But NOT for documentation routes (docs, openapi.json, redoc) which FastAPI serves with prefix
             # APISIX sends: /demo-management-service/api/v1/health
             # FastAPI expects: /api/v1/health (without prefix for API routes)
             # But for docs: FastAPI expects /demo-management-service/docs (with prefix)
-            
+
             # Build route configuration
             route_config = {
                 "name": route_id,
@@ -315,12 +325,17 @@ class APISIXHelper:
 
         # Register all routes concurrently
         registration_results = await asyncio.gather(
-            *[self._register_single_route(task[0], task[1], task[2]) for task in route_tasks],
-            return_exceptions=True
+            *[
+                self._register_single_route(task[0], task[1], task[2])
+                for task in route_tasks
+            ],
+            return_exceptions=True,
         )
-        
+
         # Build results dict
-        for i, (route_id, route_config, route_info, route_path) in enumerate(route_tasks):
+        for i, (route_id, route_config, route_info, route_path) in enumerate(
+            route_tasks
+        ):
             result = registration_results[i]
             if isinstance(result, Exception):
                 logger.error(f"❌ Failed to register {route_path}: {result}")
@@ -333,14 +348,11 @@ class APISIXHelper:
         logger.info(
             f"📊 Route registration complete: {successful}/{len(routes)} successful"
         )
-        
+
         return results
 
     async def _register_single_route(
-        self, 
-        route_id: str, 
-        route_config: Dict[str, Any],
-        route_info: Dict[str, Any]
+        self, route_id: str, route_config: Dict[str, Any], route_info: Dict[str, Any]
     ) -> bool:
         """
         Register a single route in APISIX.
@@ -354,7 +366,7 @@ class APISIXHelper:
             bool: True if registration successful, False otherwise
         """
         admin_url = f"{self.config.APISIX_ADMIN_URL}/apisix/admin/routes/{route_id}"
-        
+
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.put(
@@ -363,13 +375,14 @@ class APISIXHelper:
 
                 if response.status_code in [200, 201]:
                     # Check if route has RBAC plugin to determine if it's public
-                    is_public = "rbac_abac_workspace" not in route_config.get("plugins", {})
+                    is_public = "rbac_abac_workspace" not in route_config.get(
+                        "plugins", {}
+                    )
                     auth_status = "🔓 PUBLIC" if is_public else "🔐 PROTECTED"
-                    
+
                     logger.info(
                         f"✅ {auth_status}: {route_config['uri']} "
                         f"[{', '.join(route_info['methods'])}]"
-
                     )
                     return True
 
@@ -401,38 +414,47 @@ class APISIXHelper:
             list_url = f"{self.config.APISIX_ADMIN_URL}/apisix/admin/routes"
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(list_url, headers=self.headers)
-                
+
                 if response.status_code != 200:
                     logger.error(f"❌ Failed to list routes: {response.status_code}")
                     return False
-                
+
                 data = response.json()
-                routes = data.get("list", []) if "list" in data else data.get("node", {}).get("nodes", [])
-                
+                routes = (
+                    data.get("list", [])
+                    if "list" in data
+                    else data.get("node", {}).get("nodes", [])
+                )
+
                 # Filter routes that belong to this service
                 service_routes = [
-                    route for route in routes
-                    if route.get("value", {}).get("name", "").startswith(self.config.APISIX_ROUTE_NAME)
+                    route
+                    for route in routes
+                    if route.get("value", {})
+                    .get("name", "")
+                    .startswith(self.config.APISIX_ROUTE_NAME)
                 ]
-                
+
                 if not service_routes:
                     logger.info("ℹ️  No routes found for this service")
                     return True
-                
+
                 # Delete each route
                 all_deleted = True
                 for route in service_routes:
                     route_key = route.get("key", "").split("/")[-1]
                     delete_url = f"{self.config.APISIX_ADMIN_URL}/apisix/admin/routes/{route_key}"
-                    
-                    delete_response = await client.delete(delete_url, headers=self.headers)
-                    
+
+                    delete_response = await client.delete(
+                        delete_url, headers=self.headers
+                    )
+
                     if delete_response.status_code in [200, 204]:
                         logger.info(f"✅ Deleted route: {route_key}")
                     else:
                         logger.error(f"❌ Failed to delete route: {route_key}")
                         all_deleted = False
-                
+
                 return all_deleted
 
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -450,20 +472,24 @@ class APISIXHelper:
             list_url = f"{self.config.APISIX_ADMIN_URL}/apisix/admin/routes"
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(list_url, headers=self.headers)
-                
+
                 if response.status_code != 200:
                     logger.error(f"❌ Failed to list routes: {response.status_code}")
                     return []
-                
+
                 data = response.json()
-                all_routes = data.get("list", []) if "list" in data else data.get("node", {}).get("nodes", [])
-                
+                all_routes = (
+                    data.get("list", [])
+                    if "list" in data
+                    else data.get("node", {}).get("nodes", [])
+                )
+
                 # Filter routes that belong to this service
                 service_routes = []
                 for route in all_routes:
                     route_value = route.get("value", {})
                     route_name = route_value.get("name", "")
-                    
+
                     if route_name.startswith(self.config.APISIX_ROUTE_NAME):
                         route_info = {
                             "id": route.get("key", "").split("/")[-1],
@@ -473,8 +499,10 @@ class APISIXHelper:
                             "status": route_value.get("status", 0),
                         }
                         service_routes.append(route_info)
-                
-                logger.info(f"📋 Found {len(service_routes)} routes for this service in APISIX")
+
+                logger.info(
+                    f"📋 Found {len(service_routes)} routes for this service in APISIX"
+                )
                 return service_routes
 
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -495,21 +523,19 @@ class APISIXHelper:
             route_url = f"{self.config.APISIX_ADMIN_URL}/apisix/admin/routes/{route_id}"
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(route_url, headers=self.headers)
-                
+
                 if response.status_code == 200:
                     data = response.json()
                     return data.get("value", data.get("node", {}).get("value", {}))
-                elif response.status_code == 404:
+                if response.status_code == 404:
                     logger.warning(f"⚠️  Route not found: {route_id}")
                     return None
-                else:
-                    logger.error(f"❌ Failed to get route details: {response.status_code}")
-                    return None
+                logger.error(f"❌ Failed to get route details: {response.status_code}")
+                return None
 
         except Exception as e:  # pylint: disable=broad-exception-caught
             logger.error(f"❌ Error getting route details: {e}")
             return None
-
 
     async def register_route(self) -> bool:
         """
@@ -526,7 +552,7 @@ class APISIXHelper:
         route_config = {
             "name": self.config.APISIX_ROUTE_NAME,
             "uri": f"/{self.base_config.SERVICE_NAME}/*",
-            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
             "upstream": {
                 "type": "roundrobin",
                 "scheme": "http",

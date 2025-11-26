@@ -51,7 +51,9 @@ class DemoAResponseDeletionException(InternalServerErrorException):
     """Exception for demo_a_response deletion failure."""
 
     def __init__(self, demo_a_response_id: UUID):
-        super().__init__(f"Failed to delete demo_a_response with ID {demo_a_response_id}.")
+        super().__init__(
+            f"Failed to delete demo_a_response with ID {demo_a_response_id}."
+        )
 
 
 class DemoAResponseInvalidDataException(InvalidDataException):
@@ -75,7 +77,8 @@ class DemoAResponsePermissionDeniedException(PermissionDeniedException):
     """Exception for demo_a_response permission denied."""
 
     def __init__(
-        self, message: str = "You do not have permission to access this demo_a_response."
+        self,
+        message: str = "You do not have permission to access this demo_a_response.",
     ):
         super().__init__(message=message)
 
@@ -108,7 +111,8 @@ class DemoAResponseDependencyException(ConflictException):
     """Exception for demo_a_response dependency."""
 
     def __init__(
-        self, message: str = "Cannot delete demo_a_response because dependent resources exist."
+        self,
+        message: str = "Cannot delete demo_a_response because dependent resources exist.",
     ):
         super().__init__(message=message)
 
@@ -164,4 +168,3 @@ class DemoAResponseFileNotFoundException(BaseAppException):
     def __init__(self, file_path: str):
         message = f"DemoAResponse file not found: {file_path}"
         super().__init__(message=message, status_code=status.HTTP_404_NOT_FOUND)
-

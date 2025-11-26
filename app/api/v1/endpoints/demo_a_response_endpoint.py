@@ -87,7 +87,8 @@ async def create_demo_a_response(
 
 # Retrieve a DemoAResponse by ID
 @router.get(
-    "/demo-a-response/read/{demo_a_response_id}/", response_model=ApiResponseSchema[DemoAResponseReadSchema]
+    "/demo-a-response/read/{demo_a_response_id}/",
+    response_model=ApiResponseSchema[DemoAResponseReadSchema],
 )
 async def get_demo_a_response(
     demo_a_response_id: UUID,
@@ -99,7 +100,9 @@ async def get_demo_a_response(
 
     try:
         data = await DemoAResponseService(db).read(
-            demo_a_response_id=demo_a_response_id, user_id=user_id, workspace_id=workspace_id
+            demo_a_response_id=demo_a_response_id,
+            user_id=user_id,
+            workspace_id=workspace_id,
         )
         return ApiResponseSchema[DemoAResponseReadSchema](
             success=True, data=data, message=SuccessMessages.DEMO_A_RESPONSE_RETRIEVED
@@ -119,7 +122,8 @@ async def get_demo_a_response(
 
 # Get all DemoAResponses by demo_a_id
 @router.get(
-    "/demo-a-response/by-demo-a/{demo_a_id}/", response_model=ApiResponseSchema[list[DemoAResponseReadSchema]]
+    "/demo-a-response/by-demo-a/{demo_a_id}/",
+    response_model=ApiResponseSchema[list[DemoAResponseReadSchema]],
 )
 async def get_demo_a_responses_by_demo_a_id(
     demo_a_id: UUID,
@@ -149,7 +153,10 @@ async def get_demo_a_responses_by_demo_a_id(
 
 
 # List all DemoAResponses
-@router.get("/demo-a-responses/", response_model=PaginatedResponseSchema[list[DemoAResponseReadSchema]])
+@router.get(
+    "/demo-a-responses/",
+    response_model=PaginatedResponseSchema[list[DemoAResponseReadSchema]],
+)
 async def list_demo_a_responses(
     params: ListParamsSchema = Depends(get_list_params),
     db: AsyncSession = Depends(get_async_db),
@@ -204,7 +211,8 @@ async def list_demo_a_responses(
 
 # Update a DemoAResponse
 @router.patch(
-    "/demo-a-response/update/{demo_a_response_id}/", response_model=ApiResponseSchema[DemoAResponseReadSchema]
+    "/demo-a-response/update/{demo_a_response_id}/",
+    response_model=ApiResponseSchema[DemoAResponseReadSchema],
 )
 async def update_demo_a_response(
     demo_a_response_id: UUID,
@@ -287,6 +295,7 @@ async def update_demo_a_response_is_active(
             detail=f"{ApiErrorMessages.DEMO_A_RESPONSE_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e
 
+
 # Update DemoAResponse status
 @router.patch(
     "/demo-a-response/update/status/{demo_a_response_id}/",
@@ -312,7 +321,9 @@ async def update_demo_a_response_status(
             workspace_id=workspace_id,
         )
         return ApiResponseSchema[DemoAResponseReadSchema](
-            success=True, data=data, message=SuccessMessages.DEMO_A_RESPONSE_STATUS_UPDATED
+            success=True,
+            data=data,
+            message=SuccessMessages.DEMO_A_RESPONSE_STATUS_UPDATED,
         )
     except (
         DemoAResponseNotFoundException,
@@ -327,8 +338,12 @@ async def update_demo_a_response_status(
             detail=f"{ApiErrorMessages.DEMO_A_RESPONSE_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e
 
+
 # Delete a DemoAResponse
-@router.delete("/demo-a-response/delete/{demo_a_response_id}/", response_model=ApiResponseSchema[dict])
+@router.delete(
+    "/demo-a-response/delete/{demo_a_response_id}/",
+    response_model=ApiResponseSchema[dict],
+)
 async def delete_demo_a_response(
     demo_a_response_id: UUID,
     db: AsyncSession = Depends(get_async_db),
@@ -338,7 +353,9 @@ async def delete_demo_a_response(
     """Delete a demo A response by ID."""
     try:
         await DemoAResponseService(db).delete(
-            demo_a_response_id=demo_a_response_id, user_id=user_id, workspace_id=workspace_id
+            demo_a_response_id=demo_a_response_id,
+            user_id=user_id,
+            workspace_id=workspace_id,
         )
         return ApiResponseSchema[dict](
             success=True, data={}, message=SuccessMessages.DEMO_A_RESPONSE_DELETED

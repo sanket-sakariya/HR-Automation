@@ -35,7 +35,9 @@ class DemoBResponseService(BaseAppService):
         demo_b_response_data = payload.model_dump()
 
         demo_b_response = await self.demo_b_response_repo.insert(
-            demo_b_response_data=demo_b_response_data, user_id=user_id, workspace_id=workspace_id
+            demo_b_response_data=demo_b_response_data,
+            user_id=user_id,
+            workspace_id=workspace_id,
         )
         log_user_activity(
             f"{LogMessages.DEMO_B_RESPONSE_CREATED}: {demo_b_response.name}",
@@ -66,7 +68,9 @@ class DemoBResponseService(BaseAppService):
         demo_b_responses = await self.demo_b_response_repo.get_by_demo_b_id(
             demo_b_id=demo_b_id, workspace_id=workspace_id
         )
-        return [DemoBResponseReadSchema.model_validate(resp) for resp in demo_b_responses]
+        return [
+            DemoBResponseReadSchema.model_validate(resp) for resp in demo_b_responses
+        ]
 
     async def list_all(
         self,
@@ -95,13 +99,15 @@ class DemoBResponseService(BaseAppService):
             data = result.get("data", [])
             pagination = result.get("pagination", {})
             schema_data = [
-                DemoBResponseReadSchema.model_validate(demo_b_response_item) for demo_b_response_item in data
+                DemoBResponseReadSchema.model_validate(demo_b_response_item)
+                for demo_b_response_item in data
             ]
             return {"data": schema_data, "pagination": pagination}
 
         # Fallback for non-dict results
         schema_data = [
-            DemoBResponseReadSchema.model_validate(demo_b_response_item) for demo_b_response_item in result
+            DemoBResponseReadSchema.model_validate(demo_b_response_item)
+            for demo_b_response_item in result
         ]
         return {"data": schema_data, "pagination": {}}
 
@@ -130,21 +136,27 @@ class DemoBResponseService(BaseAppService):
         )
 
         log_user_activity(
-            f"{LogMessages.DEMO_B_RESPONSE_UPDATED}: {demo_b_response.name}", action_type="demo_b_response_update"
+            f"{LogMessages.DEMO_B_RESPONSE_UPDATED}: {demo_b_response.name}",
+            action_type="demo_b_response_update",
         )
         return DemoBResponseReadSchema.model_validate(demo_b_response)
 
-    async def delete(self, demo_b_response_id: UUID, user_id: UUID, workspace_id: UUID) -> None:
+    async def delete(
+        self, demo_b_response_id: UUID, user_id: UUID, workspace_id: UUID
+    ) -> None:
         """Delete a demo B response."""
         deleted = await self.demo_b_response_repo.delete(
-            demo_b_response_id=demo_b_response_id, user_id=user_id, workspace_id=workspace_id
+            demo_b_response_id=demo_b_response_id,
+            user_id=user_id,
+            workspace_id=workspace_id,
         )
 
         if not deleted:
             raise DemoBResponseNotFoundException(demo_b_response_id=demo_b_response_id)
 
         log_user_activity(
-            f"{LogMessages.DEMO_B_RESPONSE_DELETED} {demo_b_response_id}", action_type="demo_b_response_delete"
+            f"{LogMessages.DEMO_B_RESPONSE_DELETED} {demo_b_response_id}",
+            action_type="demo_b_response_delete",
         )
 
     async def update_status(
@@ -206,4 +218,3 @@ class DemoBResponseService(BaseAppService):
         )
 
         return DemoBResponseReadSchema.model_validate(demo_b_response)
-

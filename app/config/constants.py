@@ -52,28 +52,44 @@ class DatabaseErrorMessages:
     )
 
     # DemoAResponse-related database errors
-    DEMO_A_RESPONSE_CREATION_ERROR: Final[str] = "Database error during demo A response creation"
-    DEMO_A_RESPONSE_RETRIEVAL_ERROR: Final[str] = "Database error while retrieving demo A response"
-    DEMO_A_RESPONSE_UPDATE_ERROR: Final[str] = "Database error during demo A response update"
+    DEMO_A_RESPONSE_CREATION_ERROR: Final[str] = (
+        "Database error during demo A response creation"
+    )
+    DEMO_A_RESPONSE_RETRIEVAL_ERROR: Final[str] = (
+        "Database error while retrieving demo A response"
+    )
+    DEMO_A_RESPONSE_UPDATE_ERROR: Final[str] = (
+        "Database error during demo A response update"
+    )
     DEMO_A_RESPONSE_STATUS_UPDATE_ERROR: Final[str] = (
         "Database error during demo A response status update"
     )
     DEMO_A_RESPONSE_ACTIVE_UPDATE_ERROR: Final[str] = (
         "Database error during demo A response is_active update"
     )
-    DEMO_A_RESPONSE_DELETION_ERROR: Final[str] = "Database error during demo A response deletion"
+    DEMO_A_RESPONSE_DELETION_ERROR: Final[str] = (
+        "Database error during demo A response deletion"
+    )
 
     # DemoBResponse-related database errors
-    DEMO_B_RESPONSE_CREATION_ERROR: Final[str] = "Database error during demo B response creation"
-    DEMO_B_RESPONSE_RETRIEVAL_ERROR: Final[str] = "Database error while retrieving demo B response"
-    DEMO_B_RESPONSE_UPDATE_ERROR: Final[str] = "Database error during demo B response update"
+    DEMO_B_RESPONSE_CREATION_ERROR: Final[str] = (
+        "Database error during demo B response creation"
+    )
+    DEMO_B_RESPONSE_RETRIEVAL_ERROR: Final[str] = (
+        "Database error while retrieving demo B response"
+    )
+    DEMO_B_RESPONSE_UPDATE_ERROR: Final[str] = (
+        "Database error during demo B response update"
+    )
     DEMO_B_RESPONSE_STATUS_UPDATE_ERROR: Final[str] = (
         "Database error during demo B response status update"
     )
     DEMO_B_RESPONSE_ACTIVE_UPDATE_ERROR: Final[str] = (
         "Database error during demo B response is_active update"
     )
-    DEMO_B_RESPONSE_DELETION_ERROR: Final[str] = "Database error during demo B response deletion"
+    DEMO_B_RESPONSE_DELETION_ERROR: Final[str] = (
+        "Database error during demo B response deletion"
+    )
 
     # User-to-Demo mapping errors
     USER_DEMO_MAPPING_CREATION_ERROR: Final[str] = (
@@ -157,10 +173,14 @@ class ApiErrorMessages:
     # DemoAResponse operations
     DEMO_A_RESPONSE_CREATION_FAILED: Final[str] = "Demo A response creation failed"
     DEMO_A_RESPONSE_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve demo A response"
-    DEMO_A_RESPONSES_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve demo A responses"
+    DEMO_A_RESPONSES_RETRIEVAL_FAILED: Final[str] = (
+        "Failed to retrieve demo A responses"
+    )
     DEMO_A_RESPONSE_UPDATE_FAILED: Final[str] = "Demo A response update failed"
     DEMO_A_RESPONSE_DELETION_FAILED: Final[str] = "Failed to delete demo A response"
-    DEMO_A_RESPONSE_STATUS_UPDATE_FAILED: Final[str] = "Failed to update demo A response status"
+    DEMO_A_RESPONSE_STATUS_UPDATE_FAILED: Final[str] = (
+        "Failed to update demo A response status"
+    )
     DEMO_A_RESPONSE_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = (
         "Failed to update demo A response active status"
     )
@@ -168,10 +188,14 @@ class ApiErrorMessages:
     # DemoBResponse operations
     DEMO_B_RESPONSE_CREATION_FAILED: Final[str] = "Demo B response creation failed"
     DEMO_B_RESPONSE_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve demo B response"
-    DEMO_B_RESPONSES_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve demo B responses"
+    DEMO_B_RESPONSES_RETRIEVAL_FAILED: Final[str] = (
+        "Failed to retrieve demo B responses"
+    )
     DEMO_B_RESPONSE_UPDATE_FAILED: Final[str] = "Demo B response update failed"
     DEMO_B_RESPONSE_DELETION_FAILED: Final[str] = "Failed to delete demo B response"
-    DEMO_B_RESPONSE_STATUS_UPDATE_FAILED: Final[str] = "Failed to update demo B response status"
+    DEMO_B_RESPONSE_STATUS_UPDATE_FAILED: Final[str] = (
+        "Failed to update demo B response status"
+    )
     DEMO_B_RESPONSE_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = (
         "Failed to update demo B response active status"
     )
@@ -299,7 +323,9 @@ class SuccessMessages:
     DEMO_A_RESPONSE_DELETED: Final[str] = "Demo A response deleted successfully"
     DEMO_A_RESPONSE_RETRIEVED: Final[str] = "Demo A response retrieved successfully"
     DEMO_A_RESPONSES_RETRIEVED: Final[str] = "Demo A responses retrieved successfully"
-    DEMO_A_RESPONSE_STATUS_UPDATED: Final[str] = "Demo A response status updated successfully"
+    DEMO_A_RESPONSE_STATUS_UPDATED: Final[str] = (
+        "Demo A response status updated successfully"
+    )
     DEMO_A_RESPONSE_ACTIVE_STATUS_UPDATED: Final[str] = (
         "Demo A response active status updated successfully"
     )
@@ -310,7 +336,9 @@ class SuccessMessages:
     DEMO_B_RESPONSE_DELETED: Final[str] = "Demo B response deleted successfully"
     DEMO_B_RESPONSE_RETRIEVED: Final[str] = "Demo B response retrieved successfully"
     DEMO_B_RESPONSES_RETRIEVED: Final[str] = "Demo B responses retrieved successfully"
-    DEMO_B_RESPONSE_STATUS_UPDATED: Final[str] = "Demo B response status updated successfully"
+    DEMO_B_RESPONSE_STATUS_UPDATED: Final[str] = (
+        "Demo B response status updated successfully"
+    )
     DEMO_B_RESPONSE_ACTIVE_STATUS_UPDATED: Final[str] = (
         "Demo B response active status updated successfully"
     )

@@ -256,6 +256,7 @@ async def update_demo_a_is_active(
             detail=f"{ApiErrorMessages.DEMO_A_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e
 
+
 # Update DemoA status
 @router.patch(
     "/demo-a/update/status/{demo_a_id}/",
@@ -295,6 +296,7 @@ async def update_demo_a_status(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_A_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e
+
 
 # Delete an DemoA
 @router.delete("/demo-a/delete/{demo_a_id}/", response_model=ApiResponseSchema[dict])

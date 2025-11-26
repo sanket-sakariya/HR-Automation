@@ -87,7 +87,8 @@ async def create_demo_b_response(
 
 # Retrieve a DemoBResponse by ID
 @router.get(
-    "/demo-b-response/read/{demo_b_response_id}/", response_model=ApiResponseSchema[DemoBResponseReadSchema]
+    "/demo-b-response/read/{demo_b_response_id}/",
+    response_model=ApiResponseSchema[DemoBResponseReadSchema],
 )
 async def get_demo_b_response(
     demo_b_response_id: UUID,
@@ -99,7 +100,9 @@ async def get_demo_b_response(
 
     try:
         data = await DemoBResponseService(db).read(
-            demo_b_response_id=demo_b_response_id, user_id=user_id, workspace_id=workspace_id
+            demo_b_response_id=demo_b_response_id,
+            user_id=user_id,
+            workspace_id=workspace_id,
         )
         return ApiResponseSchema[DemoBResponseReadSchema](
             success=True, data=data, message=SuccessMessages.DEMO_B_RESPONSE_RETRIEVED
@@ -119,7 +122,8 @@ async def get_demo_b_response(
 
 # Get all DemoBResponses by demo_b_id
 @router.get(
-    "/demo-b-response/by-demo-b/{demo_b_id}/", response_model=ApiResponseSchema[list[DemoBResponseReadSchema]]
+    "/demo-b-response/by-demo-b/{demo_b_id}/",
+    response_model=ApiResponseSchema[list[DemoBResponseReadSchema]],
 )
 async def get_demo_b_responses_by_demo_b_id(
     demo_b_id: UUID,
@@ -149,7 +153,10 @@ async def get_demo_b_responses_by_demo_b_id(
 
 
 # List all DemoBResponses
-@router.get("/demo-b-responses/", response_model=PaginatedResponseSchema[list[DemoBResponseReadSchema]])
+@router.get(
+    "/demo-b-responses/",
+    response_model=PaginatedResponseSchema[list[DemoBResponseReadSchema]],
+)
 async def list_demo_b_responses(
     params: ListParamsSchema = Depends(get_list_params),
     db: AsyncSession = Depends(get_async_db),
@@ -204,7 +211,8 @@ async def list_demo_b_responses(
 
 # Update a DemoBResponse
 @router.patch(
-    "/demo-b-response/update/{demo_b_response_id}/", response_model=ApiResponseSchema[DemoBResponseReadSchema]
+    "/demo-b-response/update/{demo_b_response_id}/",
+    response_model=ApiResponseSchema[DemoBResponseReadSchema],
 )
 async def update_demo_b_response(
     demo_b_response_id: UUID,
@@ -287,6 +295,7 @@ async def update_demo_b_response_is_active(
             detail=f"{ApiErrorMessages.DEMO_B_RESPONSE_ACTIVE_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e
 
+
 # Update DemoBResponse status
 @router.patch(
     "/demo-b-response/update/status/{demo_b_response_id}/",
@@ -312,7 +321,9 @@ async def update_demo_b_response_status(
             workspace_id=workspace_id,
         )
         return ApiResponseSchema[DemoBResponseReadSchema](
-            success=True, data=data, message=SuccessMessages.DEMO_B_RESPONSE_STATUS_UPDATED
+            success=True,
+            data=data,
+            message=SuccessMessages.DEMO_B_RESPONSE_STATUS_UPDATED,
         )
     except (
         DemoBResponseNotFoundException,
@@ -327,8 +338,12 @@ async def update_demo_b_response_status(
             detail=f"{ApiErrorMessages.DEMO_B_RESPONSE_STATUS_UPDATE_FAILED}: {str(e)}",
         ) from e
 
+
 # Delete a DemoBResponse
-@router.delete("/demo-b-response/delete/{demo_b_response_id}/", response_model=ApiResponseSchema[dict])
+@router.delete(
+    "/demo-b-response/delete/{demo_b_response_id}/",
+    response_model=ApiResponseSchema[dict],
+)
 async def delete_demo_b_response(
     demo_b_response_id: UUID,
     db: AsyncSession = Depends(get_async_db),
@@ -338,7 +353,9 @@ async def delete_demo_b_response(
     """Delete a demo B response by ID."""
     try:
         await DemoBResponseService(db).delete(
-            demo_b_response_id=demo_b_response_id, user_id=user_id, workspace_id=workspace_id
+            demo_b_response_id=demo_b_response_id,
+            user_id=user_id,
+            workspace_id=workspace_id,
         )
         return ApiResponseSchema[dict](
             success=True, data={}, message=SuccessMessages.DEMO_B_RESPONSE_DELETED
@@ -355,4 +372,3 @@ async def delete_demo_b_response(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"{ApiErrorMessages.DEMO_B_RESPONSE_DELETION_FAILED}: {str(e)}",
         ) from e
-

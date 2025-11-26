@@ -21,23 +21,38 @@ class DemoBResponseStatus(str, Enum):
 class DemoBResponseCreateSchema(BaseAppSchema):
     """Schema for creating a new demo B response."""
 
-    demo_b_id: UUID = Field(..., description="Demo B ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d")
-    name: str = Field(..., min_length=1, max_length=200, example="Sample Demo B Response")
+    demo_b_id: UUID = Field(
+        ..., description="Demo B ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+    )
+    name: str = Field(
+        ..., min_length=1, max_length=200, example="Sample Demo B Response"
+    )
     description: Optional[str] = Field(
-        default=None, max_length=500, example="This is a sample demo B response description."
+        default=None,
+        max_length=500,
+        example="This is a sample demo B response description.",
     )
     is_active: Optional[bool] = Field(default=True, example=True)
     status: DemoBResponseStatus = Field(
-        ..., description="Current status of the entity", example=DemoBResponseStatus.CREATED
+        ...,
+        description="Current status of the entity",
+        example=DemoBResponseStatus.CREATED,
     )
 
 
 class DemoBResponseUpdateSchema(BaseAppSchema):
     """Schema for updating an existing demo B response."""
 
-    demo_b_id: Optional[UUID] = Field(default=None, description="Demo B ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d")
+    demo_b_id: Optional[UUID] = Field(
+        default=None,
+        description="Demo B ID",
+        example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d",
+    )
     name: Optional[str] = Field(
-        default=None, min_length=1, max_length=200, example="Updated Demo B Response Name"
+        default=None,
+        min_length=1,
+        max_length=200,
+        example="Updated Demo B Response Name",
     )
     description: Optional[str] = Field(
         default=None, max_length=500, example="This is an updated description."
@@ -54,7 +69,9 @@ class DemoBResponseStatusUpdateSchema(BaseAppSchema):
     """Schema for updating demo B response status and error messages."""
 
     status: DemoBResponseStatus = Field(
-        ..., description="Current status of the entity", example=DemoBResponseStatus.CREATED
+        ...,
+        description="Current status of the entity",
+        example=DemoBResponseStatus.CREATED,
     )
     error_message: Optional[str] = Field(
         default=None,
@@ -105,17 +122,27 @@ class DemoBResponseListParamsSchema(BaseAppSchema):
 class DemoBResponseReadSchema(BaseAppSchema):
     """Schema for reading demo B response details."""
 
-    demo_b_id: UUID = Field(..., description="Demo B ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d")
-    name: str = Field(..., min_length=1, max_length=200, example="Sample Demo B Response")
+    demo_b_id: UUID = Field(
+        ..., description="Demo B ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+    )
+    name: str = Field(
+        ..., min_length=1, max_length=200, example="Sample Demo B Response"
+    )
     description: Optional[str] = Field(
-        default=None, max_length=500, example="This is a sample demo B response description."
+        default=None,
+        max_length=500,
+        example="This is a sample demo B response description.",
     )
     is_active: Optional[bool] = Field(default=True, example=True)
     status: DemoBResponseStatus = Field(
-        ..., description="Current status of the entity", example=DemoBResponseStatus.CREATED
+        ...,
+        description="Current status of the entity",
+        example=DemoBResponseStatus.CREATED,
     )
     demo_b_response_id: UUID = Field(
-        ..., description="Demo B Response ID", example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+        ...,
+        description="Demo B Response ID",
+        example="a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d",
     )
     created_at: Optional[datetime] = Field(
         default=None, description="Created at", example="2023-01-01T12:00:00Z"
@@ -136,4 +163,3 @@ class DemoBResponseReadSchema(BaseAppSchema):
 DemoBResponseCreateSchema.model_rebuild()
 DemoBResponseUpdateSchema.model_rebuild()
 DemoBResponseReadSchema.model_rebuild()
-

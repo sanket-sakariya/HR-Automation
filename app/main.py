@@ -24,7 +24,7 @@ from app.middleware.correlation import CorrelationIdMiddleware
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # pylint: disable=too-many-branches,redefined-outer-name
     """
     Handles application startup and shutdown events.
     """
@@ -93,10 +93,10 @@ async def lifespan(app: FastAPI):
 
     # Register service with APISIX Gateway
     apisix_helper = get_apisix_helper()
-    
+
     # Check if individual route registration is enabled
-    use_individual_routes = getattr(base_config, 'USE_INDIVIDUAL_APISIX_ROUTES', False)
-    
+    use_individual_routes = getattr(base_config, "USE_INDIVIDUAL_APISIX_ROUTES", False)
+
     if use_individual_routes:
         # Register each route individually for granular control
         logger.info("🔧 Using individual APISIX route registration mode")
@@ -111,7 +111,6 @@ async def lifespan(app: FastAPI):
     redis_helper = get_redis_helper()
     await redis_helper.close()
     await shutdown_logging()
-
 
 
 def create_app() -> FastAPI:
@@ -146,12 +145,14 @@ def create_app() -> FastAPI:
         template_path = Path(__file__).parent / "templates" / "swagger-ui-theme.html"
         html_content = template_path.read_text(encoding="utf-8")
         # Inject the openapi_url dynamically
-        html_content = html_content.replace("{{openapi_url}}", f"/{config.SERVICE_NAME}/openapi.json")
+        html_content = html_content.replace(
+            "{{openapi_url}}", f"/{config.SERVICE_NAME}/openapi.json"
+        )
         return HTMLResponse(content=html_content)
 
     return fastapi_app
 
 
 if __name__ == "__main__":
-    app = create_app()
+    app = create_app()  # pylint: disable=too-many-branches
     uvicorn.run(app, host="0.0.0.0", port=get_base_config.APP_PORT)

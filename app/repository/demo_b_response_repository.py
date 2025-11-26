@@ -43,7 +43,9 @@ class DemoBResponseRepository(BaseAppRepository[DemoBResponseModel]):
                 message=f"{DatabaseErrorMessages.DEMO_B_RESPONSE_CREATION_ERROR}: {str(e)}"
             ) from e
 
-    async def get_by_id(self, demo_b_response_id: UUID, workspace_id: UUID = None) -> DemoBResponseModel:
+    async def get_by_id(
+        self, demo_b_response_id: UUID, workspace_id: UUID = None
+    ) -> DemoBResponseModel:
         """Get a demo B response by ID and workspace (async)."""
         try:
             query = (
@@ -60,7 +62,9 @@ class DemoBResponseRepository(BaseAppRepository[DemoBResponseModel]):
 
             # Return None if demo B response is deleted
             if demo_b_response and demo_b_response.status == "deleted":
-                raise DemoBResponseNotFoundException(demo_b_response_id=demo_b_response_id)
+                raise DemoBResponseNotFoundException(
+                    demo_b_response_id=demo_b_response_id
+                )
 
             return demo_b_response
         except SQLAlchemyError as e:
@@ -68,7 +72,9 @@ class DemoBResponseRepository(BaseAppRepository[DemoBResponseModel]):
                 message=f"{DatabaseErrorMessages.DEMO_B_RESPONSE_RETRIEVAL_ERROR}: {str(e)}"
             ) from e
 
-    async def get_by_demo_b_id(self, demo_b_id: UUID, workspace_id: UUID = None) -> List[DemoBResponseModel]:
+    async def get_by_demo_b_id(
+        self, demo_b_id: UUID, workspace_id: UUID = None
+    ) -> List[DemoBResponseModel]:
         """Get all demo B responses for a specific demo_b_id (async)."""
         try:
             query = select(DemoBResponseModel).where(
@@ -95,9 +101,13 @@ class DemoBResponseRepository(BaseAppRepository[DemoBResponseModel]):
     ) -> DemoBResponseModel:
         """Update an existing demo B response (async)."""
         try:
-            demo_b_response = await self.get_by_id(demo_b_response_id, workspace_id=workspace_id)
+            demo_b_response = await self.get_by_id(
+                demo_b_response_id, workspace_id=workspace_id
+            )
             if not demo_b_response:
-                raise DemoBResponseNotFoundException(demo_b_response_id=demo_b_response_id)
+                raise DemoBResponseNotFoundException(
+                    demo_b_response_id=demo_b_response_id
+                )
 
             for key, value in demo_b_response_data.items():
                 setattr(demo_b_response, key, value)
@@ -128,9 +138,13 @@ class DemoBResponseRepository(BaseAppRepository[DemoBResponseModel]):
         Only works if current status is not 'deleted'.
         """
         try:
-            demo_b_response = await self.get_by_id(demo_b_response_id, workspace_id=workspace_id)
+            demo_b_response = await self.get_by_id(
+                demo_b_response_id, workspace_id=workspace_id
+            )
             if not demo_b_response:
-                raise DemoBResponseNotFoundException(demo_b_response_id=demo_b_response_id)
+                raise DemoBResponseNotFoundException(
+                    demo_b_response_id=demo_b_response_id
+                )
 
             demo_b_response.status = status
             demo_b_response.error_message = error_message
@@ -155,9 +169,13 @@ class DemoBResponseRepository(BaseAppRepository[DemoBResponseModel]):
     ) -> DemoBResponseModel:
         """Update only the is_active flag of a demo B response (async)."""
         try:
-            demo_b_response = await self.get_by_id(demo_b_response_id, workspace_id=workspace_id)
+            demo_b_response = await self.get_by_id(
+                demo_b_response_id, workspace_id=workspace_id
+            )
             if not demo_b_response:
-                raise DemoBResponseNotFoundException(demo_b_response_id=demo_b_response_id)
+                raise DemoBResponseNotFoundException(
+                    demo_b_response_id=demo_b_response_id
+                )
 
             demo_b_response.is_active = is_active
             if user_id is not None:
@@ -176,9 +194,13 @@ class DemoBResponseRepository(BaseAppRepository[DemoBResponseModel]):
     ) -> bool:
         """Soft delete a demo B response (update status & is_active) (async)."""
         try:
-            demo_b_response = await self.get_by_id(demo_b_response_id, workspace_id=workspace_id)
+            demo_b_response = await self.get_by_id(
+                demo_b_response_id, workspace_id=workspace_id
+            )
             if not demo_b_response:
-                raise DemoBResponseNotFoundException(demo_b_response_id=demo_b_response_id)
+                raise DemoBResponseNotFoundException(
+                    demo_b_response_id=demo_b_response_id
+                )
 
             # mark as deleted (soft delete)
             demo_b_response.deleted_at = datetime.now(timezone.utc)
@@ -222,4 +244,3 @@ class DemoBResponseRepository(BaseAppRepository[DemoBResponseModel]):
             user_id=user_id,
             workspace_id=workspace_id,
         )
-
