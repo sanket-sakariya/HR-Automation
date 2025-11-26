@@ -194,6 +194,18 @@ class BaseAppRepository(Generic[T]):
         }
         return operator_map.get(operator, lambda: None)()
 
+    def _get_uuid_filter(self, column_attr, operator, value):
+        """Filter for UUID columns - no case conversion needed"""
+        operator_map = {
+            "is": lambda: column_attr == value,
+            "eq": lambda: column_attr == value,
+            "is_not": lambda: column_attr != value,
+            "ne": lambda: column_attr != value,
+            "is_empty": lambda: column_attr.is_(None),
+            "not_empty": lambda: column_attr.is_not(None),
+        }
+        return operator_map.get(operator, lambda: None)()
+
     def _get_date_operator_filter(self, column_attr, operator):
         today = date.today()
         operator_map = {
@@ -389,6 +401,10 @@ class BaseAppRepository(Generic[T]):
 
         if any(t in col_type_str for t in ["char", "text", "string"]):
             return self._get_text_filter(column_attr, operator, value, case_sensitive)
+
+        if "uuid" in col_type_str:
+            # UUID columns should use dedicated UUID filter (no case conversion)
+            return self._get_uuid_filter(column_attr, operator, value)
 
         if any(t in col_type_str for t in ["int", "numeric", "float", "decimal"]):
             return self._get_number_filter(column_attr, operator, value, value2)
