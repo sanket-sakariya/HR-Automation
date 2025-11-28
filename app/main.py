@@ -3,7 +3,7 @@ from pathlib import Path
 
 import uvicorn
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.router import api_router
@@ -149,6 +149,25 @@ def create_app() -> FastAPI:
             "{{openapi_url}}", f"/{config.SERVICE_NAME}/openapi.json"
         )
         return HTMLResponse(content=html_content)
+
+    # Serve APISIX routes CSV file
+    @fastapi_app.get(f"/{config.SERVICE_NAME}/apisix.csv", include_in_schema=False)
+    async def get_apisix_routes_csv():
+        """Serve the APISIX routes CSV file."""
+        project_root = Path(__file__).parent.parent
+        csv_path = project_root / "apisix.csv"
+        
+        if not csv_path.exists():
+            return JSONResponse(
+                status_code=404,
+                content={"error": "APISIX routes CSV file not found. Routes may not have been registered yet."}
+            )
+        
+        return FileResponse(
+            path=str(csv_path),
+            media_type="text/csv",
+            filename="apisix.csv"
+        )
 
     return fastapi_app
 

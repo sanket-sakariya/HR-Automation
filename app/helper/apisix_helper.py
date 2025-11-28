@@ -31,6 +31,8 @@ Available methods:
 """
 
 import asyncio
+import csv
+from pathlib import Path
 from typing import Dict, List, Any, Optional
 import httpx
 from fastapi import FastAPI
@@ -79,6 +81,65 @@ class APISIXHelper:
         while "__" in sanitized:
             sanitized = sanitized.replace("__", "_")
         return sanitized.strip("_")
+
+    def _replace_path_params_with_wildcard(self, path: str) -> str:
+        """
+        Replace path parameters in curly braces with asterisks.
+
+        Args:
+            path: Original path with parameters like /api/v1/workspace/{workspace_id}/
+
+        Returns:
+            Path with wildcards like /api/v1/workspace/*/
+
+        Example:
+            Input:  /workspace-management-service/api/v1/workspace/update/is-active/{workspace_id}/
+            Output: /workspace-management-service/api/v1/workspace/update/is-active/*/
+        """
+        import re
+        # Replace any text within curly braces with a single asterisk
+        return re.sub(r'\{[^}]+\}', '*', path)
+
+    async def _generate_routes_csv(
+        self, route_tasks: List[tuple]
+    ) -> None:
+        """
+        Generate a CSV file containing all registered APISIX routes.
+
+        Args:
+            route_tasks: List of tuples containing (route_id, route_config, route_info, route_path)
+        """
+        try:
+            # Determine project root path (3 levels up from this file)
+            project_root = Path(__file__).parent.parent.parent
+            csv_path = project_root / "apisix.csv"
+
+            # Prepare CSV data
+            with open(csv_path, mode='w', newline='', encoding='utf-8') as csv_file:
+                fieldnames = ['route_id', 'uri', 'methods', 'status', 'tags', 'is_public']
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+
+                # Write header
+                writer.writeheader()
+
+                # Write each route
+                for route_id, route_config, route_info, _ in route_tasks:
+                    # Check if route is public (no RBAC plugin)
+                    is_public = "rbac_abac_workspace" not in route_config.get("plugins", {})
+
+                    writer.writerow({
+                        'route_id': route_id,
+                        'uri': route_config.get('uri', ''),
+                        'methods': ','.join(route_config.get('methods', [])),
+                        'status': route_config.get('status', 0),
+                        'tags': ','.join(route_info.get('tags', [])),
+                        'is_public': 'Yes' if is_public else 'No'
+                    })
+
+            logger.info(f"✅ Generated APISIX routes CSV file at: {csv_path}")
+
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            logger.error(f"❌ Error generating APISIX CSV file: {e}")
 
     def extract_routes_from_fastapi(self, app: FastAPI) -> List[Dict[str, Any]]:
         """
@@ -254,6 +315,18 @@ class APISIXHelper:
                     "tags": [],
                 }
             )
+        
+        # Add apisix.csv route
+        apisix_csv_path = f"/{self.base_config.SERVICE_NAME}/apisix.csv"
+        if apisix_csv_path not in existing_paths:
+            routes.append(
+                {
+                    "path": apisix_csv_path,
+                    "methods": ["GET"],
+                    "name": "apisix_csv",
+                    "tags": [],
+                }
+            )
 
         results = {}
 
@@ -290,6 +363,10 @@ class APISIXHelper:
                 full_uri = route_path  # Already has service name prefix
             else:
                 full_uri = f"/{self.base_config.SERVICE_NAME}{route_path}"
+
+            # Replace path parameters with wildcards for APISIX
+            # e.g., /api/v1/workspace/{workspace_id}/ -> /api/v1/workspace/*/
+            full_uri = self._replace_path_params_with_wildcard(full_uri)
 
             # Check if this is a public route (no authentication required)
             is_public = self._is_public_path(full_uri)
@@ -348,6 +425,9 @@ class APISIXHelper:
         logger.info(
             f"📊 Route registration complete: {successful}/{len(routes)} successful"
         )
+
+        # Generate CSV file with registered routes
+        await self._generate_routes_csv(route_tasks)
 
         return results
 
