@@ -19,6 +19,22 @@ class DatabaseErrorMessages:
     )
     DEMO_A_DELETION_ERROR: Final[str] = "Database error during demo A deletion"
 
+    # Company-related database errors
+    COMPANY_CREATION_ERROR: Final[str] = "Database error during company creation"
+    COMPANY_RETRIEVAL_ERROR: Final[str] = "Database error while retrieving company"
+    COMPANY_UPDATE_ERROR: Final[str] = "Database error during company update"
+    COMPANY_STATUS_UPDATE_ERROR: Final[str] = "Database error during company status update"
+    COMPANY_ACTIVE_UPDATE_ERROR: Final[str] = "Database error during company is_active update"
+    COMPANY_DELETION_ERROR: Final[str] = "Database error during company deletion"
+
+    # Job Requirement-related database errors
+    JOB_REQUIREMENT_CREATION_ERROR: Final[str] = "Database error during job requirement creation"
+    JOB_REQUIREMENT_RETRIEVAL_ERROR: Final[str] = "Database error while retrieving job requirement"
+    JOB_REQUIREMENT_UPDATE_ERROR: Final[str] = "Database error during job requirement update"
+    JOB_REQUIREMENT_STATUS_UPDATE_ERROR: Final[str] = "Database error during job requirement status update"
+    JOB_REQUIREMENT_ACTIVE_UPDATE_ERROR: Final[str] = "Database error during job requirement is_active update"
+    JOB_REQUIREMENT_DELETION_ERROR: Final[str] = "Database error during job requirement deletion"
+
     # DemoB-related database errors
     DEMO_B_CREATION_ERROR: Final[str] = "Database error during demo B creation"
     DEMO_B_RETRIEVAL_ERROR: Final[str] = "Database error while retrieving demo B"
@@ -135,6 +151,20 @@ class ApiErrorMessages:
     DEMO_A_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = (
         "Failed to update demo A active status"
     )
+
+    # Company operations
+    COMPANY_CREATION_FAILED: Final[str] = "Company creation failed"
+    COMPANY_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve company"
+    COMPANIES_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve companies"
+    COMPANY_UPDATE_FAILED: Final[str] = "Company update failed"
+    COMPANY_DELETION_FAILED: Final[str] = "Failed to delete company"
+
+    # Job Requirement operations
+    JOB_REQUIREMENT_CREATION_FAILED: Final[str] = "Job requirement creation failed"
+    JOB_REQUIREMENT_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve job requirement"
+    JOB_REQUIREMENTS_RETRIEVAL_FAILED: Final[str] = "Failed to retrieve job requirements"
+    JOB_REQUIREMENT_UPDATE_FAILED: Final[str] = "Job requirement update failed"
+    JOB_REQUIREMENT_DELETION_FAILED: Final[str] = "Failed to delete job requirement"
 
     # DemoB operations
     DEMO_B_CREATION_FAILED: Final[str] = "Demo B creation failed"
@@ -282,6 +312,20 @@ class SuccessMessages:
     DEMO_A_ACTIVE_STATUS_UPDATED: Final[str] = (
         "Demo A active status updated successfully"
     )
+
+    # Company operations
+    COMPANY_CREATED: Final[str] = "Company created successfully"
+    COMPANY_UPDATED: Final[str] = "Company updated successfully"
+    COMPANY_DELETED: Final[str] = "Company deleted successfully"
+    COMPANY_RETRIEVED: Final[str] = "Company retrieved successfully"
+    COMPANIES_RETRIEVED: Final[str] = "Companies retrieved successfully"
+
+    # Job Requirement operations
+    JOB_REQUIREMENT_CREATED: Final[str] = "Job requirement created successfully"
+    JOB_REQUIREMENT_UPDATED: Final[str] = "Job requirement updated successfully"
+    JOB_REQUIREMENT_DELETED: Final[str] = "Job requirement deleted successfully"
+    JOB_REQUIREMENT_RETRIEVED: Final[str] = "Job requirement retrieved successfully"
+    JOB_REQUIREMENTS_RETRIEVED: Final[str] = "Job requirements retrieved successfully"
 
     # DemoB operations
     DEMO_B_CREATED: Final[str] = "Demo B created successfully"

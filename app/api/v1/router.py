@@ -49,3 +49,9 @@ if base_config.IS_RABBITMQ_ENABLED:
     from app.api.v1.endpoints.rabbitmq_endpoint import router as rabbitmq_router
 
     api_router.include_router(router=rabbitmq_router, tags=["rabbitmq"])
+
+# Include company management endpoints
+from app.api.v1.endpoints.company_management_endpoint import router as company_management_router
+from app.api.v1.endpoints.job_requirement_endpoint import router as job_requirement_router
+api_router.include_router(router=company_management_router, tags=["Company Management"])
+api_router.include_router(router=job_requirement_router, tags=["Job Requirements"])

@@ -1,0 +1,3553 @@
+openapi: 3.0.3
+info:
+  title: AI-Powered Recruitment Platform API
+  description: |
+    Comprehensive API for an intelligent recruitment platform that automates the end-to-end hiring process.
+    Features include AI-powered resume screening, custom aptitude tests, AI avatar interviews with proctoring,
+    and complete hiring workflow management with CRM integration.
+    
+    ## Key Features
+    - Company onboarding and job requirement management
+    - AI-powered resume screening via Gemini API
+    - Custom aptitude test generation and evaluation
+    - AI avatar interviews (Technical & HR)
+    - Real-time proctoring and monitoring
+    - Automated offer management
+    - Talent pool management
+    - Analytics and reporting
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: api-support@recruitmentplatform.com
+  license:
+    name: Proprietary
+    
+servers:
+  - url: https://api.recruitmentplatform.com/v1
+    description: Production server
+  - url: https://staging-api.recruitmentplatform.com/v1
+    description: Staging server
+  - url: http://localhost:3000/v1
+    description: Development server
+
+tags:
+  - name: Company Management
+    description: Company registration and profile management
+  - name: Job Posting
+    description: Job creation, approval, and publishing
+  - name: Candidate Application
+    description: Candidate application and profile management
+  - name: AI Resume Screening
+    description: AI-powered resume analysis and matching
+  - name: Aptitude Test
+    description: Custom test generation and evaluation
+  - name: Technical Interview
+    description: AI avatar technical interviews
+  - name: Proctoring
+    description: Interview and test monitoring
+  - name: HR Interview
+    description: AI avatar HR interviews
+  - name: Final Selection
+    description: Candidate report generation and selection
+  - name: Offer Management
+    description: Offer letter generation and tracking
+  - name: Notifications
+    description: Email and notification management
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # ==================== COMPANY MANAGEMENT ====================
+  /api/companies/register:
+    post:
+      tags:
+        - Company Management
+      summary: Register new company
+      description: Register a new company on the platform with basic information
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - companyName
+                - email
+                - password
+                - industry
+                - size
+              properties:
+                companyName:
+                  type: string
+                  minLength: 2
+                  maxLength: 200
+                  example: "TechCorp Solutions"
+                email:
+                  type: string
+                  format: email
+                  example: "hr@techcorp.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "SecurePass123!"
+                industry:
+                  type: string
+                  example: "Technology"
+                size:
+                  type: string
+                  enum: [1-10, 11-50, 51-200, 201-500, 501-1000, 1001+]
+                  example: "51-200"
+                website:
+                  type: string
+                  format: uri
+                  example: "https://techcorp.com"
+                address:
+                  type: object
+                  properties:
+                    street:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    country:
+                      type: string
+                    zipCode:
+                      type: string
+                phone:
+                  type: string
+                  example: "+1-555-0123"
+      responses:
+        '201':
+          description: Company registered successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          score:
+                            type: number
+                          percentile:
+                            type: number
+                          categoryScores:
+                            type: object
+                          passed:
+                            type: boolean
+
+  /api/tests/{testId}/results:
+    get:
+      tags:
+        - Aptitude Test
+      summary: Get test results
+      description: Retrieve test results and evaluation
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Results retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          score:
+                            type: number
+                          totalQuestions:
+                            type: integer
+                          correctAnswers:
+                            type: integer
+                          timeTaken:
+                            type: integer
+                          evaluation:
+                            type: object
+
+  # ==================== TECHNICAL INTERVIEW ====================
+  /api/interviews/technical/schedule:
+    post:
+      tags:
+        - Technical Interview
+      summary: Schedule technical interview
+      description: Schedule AI avatar technical interview for candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - candidateId
+                - jobId
+                - scheduledDate
+              properties:
+                candidateId:
+                  type: string
+                  format: uuid
+                jobId:
+                  type: string
+                  format: uuid
+                scheduledDate:
+                  type: string
+                  format: date-time
+                duration:
+                  type: integer
+                  example: 60
+                interviewType:
+                  type: string
+                  enum: [coding, system_design, problem_solving, mixed]
+                difficulty:
+                  type: string
+                  enum: [junior, mid, senior, expert]
+      responses:
+        '201':
+          description: Interview scheduled successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Interview'
+
+  /api/interviews/technical/{candidateId}/send-invitation:
+    post:
+      tags:
+        - Technical Interview
+      summary: Send interview invitation
+      description: Send technical interview invitation to candidate
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - interviewId
+              properties:
+                interviewId:
+                  type: string
+                  format: uuid
+                customMessage:
+                  type: string
+      responses:
+        '200':
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/interviews/technical/{interviewId}:
+    get:
+      tags:
+        - Technical Interview
+      summary: Get interview details
+      description: Retrieve technical interview information
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Interview details retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Interview'
+
+  /api/interviews/technical/{interviewId}/start:
+    post:
+      tags:
+        - Technical Interview
+      summary: Start AI avatar interview
+      description: Initialize AI avatar technical interview session
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - candidateToken
+              properties:
+                candidateToken:
+                  type: string
+                deviceInfo:
+                  type: object
+      responses:
+        '200':
+          description: Interview started successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InterviewSession'
+
+  /api/interviews/technical/{interviewId}/proctoring:
+    post:
+      tags:
+        - Technical Interview
+      summary: Enable monitoring features
+      description: Enable proctoring for technical interview
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enableCamera:
+                  type: boolean
+                  default: true
+                enableEyeTracking:
+                  type: boolean
+                  default: true
+                enableTabMonitoring:
+                  type: boolean
+                  default: true
+                enableRecording:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Proctoring enabled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/interviews/technical/{interviewId}/submit:
+    post:
+      tags:
+        - Technical Interview
+      summary: Submit interview responses
+      description: Submit technical interview answers
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - responses
+              properties:
+                responses:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      questionId:
+                        type: string
+                      answer:
+                        type: string
+                      code:
+                        type: string
+                      timeTaken:
+                        type: integer
+      responses:
+        '200':
+          description: Responses submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/interviews/technical/{interviewId}/evaluate:
+    post:
+      tags:
+        - Technical Interview
+      summary: AI evaluates technical responses
+      description: AI evaluates technical interview performance
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Interview evaluated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InterviewEvaluation'
+
+  /api/interviews/technical/{interviewId}/results:
+    get:
+      tags:
+        - Technical Interview
+      summary: Get interview results
+      description: Retrieve technical interview results
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Results retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InterviewEvaluation'
+
+  # ==================== PROCTORING ====================
+  /api/proctoring/{sessionId}/start:
+    post:
+      tags:
+        - Proctoring
+      summary: Initialize proctoring session
+      description: Start proctoring session for test or interview
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deviceInfo:
+                  type: object
+                browserInfo:
+                  type: object
+      responses:
+        '200':
+          description: Proctoring started successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ProctoringSession'
+
+  /api/proctoring/{sessionId}/camera:
+    post:
+      tags:
+        - Proctoring
+      summary: Enable camera monitoring
+      description: Capture and analyze camera feed
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                frame:
+                  type: string
+                  format: binary
+                timestamp:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Camera data processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  faceDetected:
+                    type: boolean
+                  multiplePersons:
+                    type: boolean
+
+  /api/proctoring/{sessionId}/eye-tracking:
+    post:
+      tags:
+        - Proctoring
+      summary: Track eye movement
+      description: Monitor and log eye movement patterns
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gazePoints:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      x:
+                        type: number
+                      y:
+                        type: number
+                      timestamp:
+                        type: string
+                        format: date-time
+      responses:
+        '200':
+          description: Eye tracking data logged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/proctoring/{sessionId}/face-detection:
+    post:
+      tags:
+        - Proctoring
+      summary: Detect face presence
+      description: Verify candidate face presence and identity
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                imageData:
+                  type: string
+                  format: byte
+      responses:
+        '200':
+          description: Face detection completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  faceDetected:
+                    type: boolean
+                  confidence:
+                    type: number
+                  violations:
+                    type: array
+                    items:
+                      type: string
+
+  /api/proctoring/{sessionId}/tab-monitoring:
+    post:
+      tags:
+        - Proctoring
+      summary: Monitor tab switches
+      description: Log tab switch and window focus events
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event:
+                  type: string
+                  enum: [tab_switch, window_blur, window_focus]
+                timestamp:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Event logged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/proctoring/{sessionId}/violations:
+    post:
+      tags:
+        - Proctoring
+      summary: Log violations
+      description: Record proctoring violations
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProctoringViolation'
+      responses:
+        '200':
+          description: Violation logged successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/proctoring/{sessionId}/report:
+    get:
+      tags:
+        - Proctoring
+      summary: Get proctoring report
+      description: Retrieve complete proctoring session report
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Report retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          sessionId:
+                            type: string
+                          violations:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/ProctoringViolation'
+                          totalViolations:
+                            type: integer
+                          riskScore:
+                            type: number
+                          summary:
+                            type: string
+
+  /api/proctoring/{sessionId}/recording:
+    post:
+      tags:
+        - Proctoring
+      summary: Upload screen/audio recording
+      description: Upload session recording files
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                videoFile:
+                  type: string
+                  format: binary
+                audioFile:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Recording uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ==================== HR INTERVIEW ====================
+  /api/interviews/hr/schedule:
+    post:
+      tags:
+        - HR Interview
+      summary: Schedule HR interview
+      description: Schedule AI avatar HR interview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - candidateId
+                - jobId
+                - scheduledDate
+              properties:
+                candidateId:
+                  type: string
+                  format: uuid
+                jobId:
+                  type: string
+                  format: uuid
+                scheduledDate:
+                  type: string
+                  format: date-time
+                duration:
+                  type: integer
+                  example: 45
+      responses:
+        '201':
+          description: HR interview scheduled
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Interview'
+
+  /api/interviews/hr/{candidateId}/send-invitation:
+    post:
+      tags:
+        - HR Interview
+      summary: Send HR interview invitation
+      description: Send HR interview invitation email
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - interviewId
+              properties:
+                interviewId:
+                  type: string
+                  format: uuid
+                customMessage:
+                  type: string
+      responses:
+        '200':
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/interviews/hr/{interviewId}:
+    get:
+      tags:
+        - HR Interview
+      summary: Get HR interview details
+      description: Retrieve HR interview information
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Interview details retrieved
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Interview'
+
+  /api/interviews/hr/{interviewId}/start:
+    post:
+      tags:
+        - HR Interview
+      summary: Start AI avatar HR interview
+      description: Initialize HR interview session
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - candidateToken
+              properties:
+                candidateToken:
+                  type: string
+      responses:
+        '200':
+          description: Interview started successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InterviewSession'
+
+  /api/interviews/hr/{interviewId}/communication-assessment:
+    post:
+      tags:
+        - HR Interview
+      summary: Assess communication skills
+      description: AI assesses candidate communication skills
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                videoData:
+                  type: string
+                  format: byte
+                audioData:
+                  type: string
+                  format: byte
+                transcript:
+                  type: string
+      responses:
+        '200':
+          description: Assessment completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clarity:
+                    type: number
+                  confidence:
+                    type: number
+                  articulation:
+                    type: number
+                  bodyLanguage:
+                    type: number
+
+  /api/interviews/hr/{interviewId}/salary-negotiation:
+    post:
+      tags:
+        - HR Interview
+      summary: Handle salary negotiation
+      description: Process salary expectation discussion
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expectedSalary:
+                  type: number
+                currentSalary:
+                  type: number
+                negotiable:
+                  type: boolean
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Salary information recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/interviews/hr/{interviewId}/evaluate:
+    post:
+      tags:
+        - HR Interview
+      summary: AI evaluates HR round
+      description: AI evaluates HR interview performance
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Evaluation completed
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InterviewEvaluation'
+
+  /api/interviews/hr/{interviewId}/results:
+    get:
+      tags:
+        - HR Interview
+      summary: Get HR interview results
+      description: Retrieve HR interview evaluation results
+      parameters:
+        - name: interviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Results retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InterviewEvaluation'
+
+  # ==================== FINAL SELECTION ====================
+  /api/reports/generate:
+    post:
+      tags:
+        - Final Selection
+      summary: Compile complete interview report
+      description: Generate comprehensive candidate evaluation report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - candidateId
+                - jobId
+              properties:
+                candidateId:
+                  type: string
+                  format: uuid
+                jobId:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          description: Report generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CandidateReport'
+
+  /api/reports/{candidateId}/send-to-company:
+    post:
+      tags:
+        - Final Selection
+      summary: Send report for review
+      description: Send candidate report to company for review
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reportId
+              properties:
+                reportId:
+                  type: string
+                  format: uuid
+                message:
+                  type: string
+      responses:
+        '200':
+          description: Report sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/reports/{candidateId}:
+    get:
+      tags:
+        - Final Selection
+      summary: Get candidate report
+      description: Retrieve comprehensive candidate report
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+        - name: jobId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CandidateReport'
+
+  /api/selection/{candidateId}/approve:
+    post:
+      tags:
+        - Final Selection
+      summary: Company approves candidate
+      description: Company approves candidate for final selection
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - jobId
+              properties:
+                jobId:
+                  type: string
+                  format: uuid
+                feedback:
+                  type: string
+                offeredSalary:
+                  type: number
+                joiningDate:
+                  type: string
+                  format: date
+      responses:
+        '200':
+          description: Candidate approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/selection/{candidateId}/reject:
+    post:
+      tags:
+        - Final Selection
+      summary: Company rejects candidate
+      description: Company rejects candidate after final review
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - jobId
+                - reason
+              properties:
+                jobId:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+                feedback:
+                  type: string
+      responses:
+        '200':
+          description: Candidate rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ==================== OFFER MANAGEMENT ====================
+  /api/offers/generate:
+    post:
+      tags:
+        - Offer Management
+      summary: Generate offer letter
+      description: Generate offer letter for selected candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - candidateId
+                - jobId
+                - salary
+                - joiningDate
+              properties:
+                candidateId:
+                  type: string
+                  format: uuid
+                jobId:
+                  type: string
+                  format: uuid
+                salary:
+                  type: number
+                joiningDate:
+                  type: string
+                  format: date
+                benefits:
+                  type: array
+                  items:
+                    type: string
+                workLocation:
+                  type: string
+                probationPeriod:
+                  type: integer
+                  description: Probation period in months
+      responses:
+        '201':
+          description: Offer generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/OfferLetter'
+
+  /api/offers/{candidateId}/send:
+    post:
+      tags:
+        - Offer Management
+      summary: Send offer letter
+      description: Send offer letter to candidate
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - offerId
+              properties:
+                offerId:
+                  type: string
+                  format: uuid
+                expiryDate:
+                  type: string
+                  format: date
+                customMessage:
+                  type: string
+      responses:
+        '200':
+          description: Offer sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/offers/{offerId}:
+    get:
+      tags:
+        - Offer Management
+      summary: Get offer details
+      description: Retrieve offer letter details
+      parameters:
+        - name: offerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Offer retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/OfferLetter'
+
+  /api/offers/{offerId}/accept:
+    post:
+      tags:
+        - Offer Management
+      summary: Candidate accepts offer
+      description: Candidate accepts the offer letter
+      parameters:
+        - name: offerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                signedDocumentUrl:
+                  type: string
+                  format: uri
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Offer accepted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/offers/{offerId}/decline:
+    post:
+      tags:
+        - Offer Management
+      summary: Candidate declines offer
+      description: Candidate declines the offer letter
+      parameters:
+        - name: offerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                feedback:
+                  type: string
+      responses:
+        '200':
+          description: Offer declined
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+    get:
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Company'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/companies/{companyId}:
+    get:
+      tags:
+        - Company Management
+      summary: Get company details
+      description: Retrieve detailed information about a specific company
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+      responses:
+        '200':
+          description: Company details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Company'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      tags:
+        - Company Management
+      summary: Update company information
+      description: Update company profile and settings
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                companyName:
+                  type: string
+                industry:
+                  type: string
+                size:
+                  type: string
+                website:
+                  type: string
+                address:
+                  type: object
+                phone:
+                  type: string
+                logo:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Company updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Company'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/companies/{companyId}/requirements:
+    post:
+      tags:
+        - Company Management
+      summary: Store hiring requirements
+      description: Create new job requirements for the company
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobRequirementInput'
+      responses:
+        '201':
+          description: Requirements stored successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/JobRequirement'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    get:
+      tags:
+        - Company Management
+      summary: List all job requirements
+      description: Retrieve all job requirements for a company
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, active, closed]
+      responses:
+        '200':
+          description: Requirements retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/JobRequirement'
+
+  # ==================== JOB POSTING ====================
+  /api/jobs/generate-draft:
+    post:
+      tags:
+        - Job Posting
+      summary: AI generates job post from requirements
+      description: Use AI to generate a job posting draft based on requirements
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - requirementId
+              properties:
+                requirementId:
+                  type: string
+                  format: uuid
+                customInstructions:
+                  type: string
+                  example: "Focus on remote work benefits"
+      responses:
+        '200':
+          description: Job draft generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/JobPosting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/jobs:
+    post:
+      tags:
+        - Job Posting
+      summary: Create/publish job posting
+      description: Create a new job posting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobPostingInput'
+      responses:
+        '201':
+          description: Job created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/JobPosting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    
+    get:
+      tags:
+        - Job Posting
+      summary: List all active jobs
+      description: Retrieve all job postings with filtering options
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: companyId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, pending_approval, active, closed]
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: jobType
+          in: query
+          schema:
+            type: string
+            enum: [full-time, part-time, contract, internship]
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search in title and description
+      responses:
+        '200':
+          description: Jobs retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/JobPosting'
+
+  /api/jobs/{jobId}:
+    get:
+      tags:
+        - Job Posting
+      summary: Get job details
+      description: Retrieve detailed information about a specific job
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      responses:
+        '200':
+          description: Job details retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/JobPosting'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      tags:
+        - Job Posting
+      summary: Revise job posting
+      description: Update an existing job posting
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobPostingInput'
+      responses:
+        '200':
+          description: Job updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/JobPosting'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/jobs/{jobId}/approve:
+    post:
+      tags:
+        - Job Posting
+      summary: Company approves job post
+      description: Approve a job posting for publication
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Job approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/jobs/{jobId}/publish:
+    post:
+      tags:
+        - Job Posting
+      summary: Publish to LinkedIn, Indeed, portals
+      description: Publish approved job to external job boards
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - platforms
+              properties:
+                platforms:
+                  type: array
+                  items:
+                    type: string
+                    enum: [linkedin, indeed, company_portal, glassdoor]
+                  example: ["linkedin", "indeed"]
+                scheduleDate:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Job published successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          publicationIds:
+                            type: object
+                            additionalProperties:
+                              type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # ==================== CANDIDATE APPLICATION ====================
+  /api/candidates/apply:
+    post:
+      tags:
+        - Candidate Application
+      summary: Submit application via Google Form
+      description: Submit a new job application
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - jobId
+                - firstName
+                - lastName
+                - email
+                - phone
+              properties:
+                jobId:
+                  type: string
+                  format: uuid
+                firstName:
+                  type: string
+                  example: "John"
+                lastName:
+                  type: string
+                  example: "Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john.doe@email.com"
+                phone:
+                  type: string
+                  example: "+1-555-0199"
+                linkedinUrl:
+                  type: string
+                  format: uri
+                portfolioUrl:
+                  type: string
+                  format: uri
+                currentLocation:
+                  type: string
+                willingToRelocate:
+                  type: boolean
+                expectedSalary:
+                  type: number
+                noticePeriod:
+                  type: string
+                  example: "30 days"
+                coverLetter:
+                  type: string
+      responses:
+        '201':
+          description: Application submitted successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Application'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/candidates/{candidateId}/resume:
+    post:
+      tags:
+        - Candidate Application
+      summary: Upload resume document
+      description: Upload candidate resume file
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Resume file (PDF, DOC, DOCX - Max 5MB)
+      responses:
+        '200':
+          description: Resume uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Resume'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/candidates/{candidateId}:
+    get:
+      tags:
+        - Candidate Application
+      summary: Get candidate profile
+      description: Retrieve candidate profile information
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      responses:
+        '200':
+          description: Candidate retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Candidate'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      tags:
+        - Candidate Application
+      summary: Update candidate information
+      description: Update candidate profile
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phone:
+                  type: string
+                linkedinUrl:
+                  type: string
+                portfolioUrl:
+                  type: string
+                skills:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Candidate updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Candidate'
+
+  /api/jobs/{jobId}/applications:
+    get:
+      tags:
+        - Candidate Application
+      summary: List all applications for a job
+      description: Get all applications submitted for a specific job
+      parameters:
+        - $ref: '#/components/parameters/JobId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, screening, shortlisted, rejected, selected]
+      responses:
+        '200':
+          description: Applications retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Application'
+
+  # ==================== AI RESUME SCREENING ====================
+  /api/screening/scan-resume:
+    post:
+      tags:
+        - AI Resume Screening
+      summary: AI scans resume via Gemini API
+      description: Scan and extract information from resume using AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - candidateId
+                - resumeUrl
+              properties:
+                candidateId:
+                  type: string
+                  format: uuid
+                resumeUrl:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Resume scanned successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          extractedData:
+                            type: object
+                          skills:
+                            type: array
+                            items:
+                              type: string
+                          experience:
+                            type: array
+                            items:
+                              type: object
+                          education:
+                            type: array
+                            items:
+                              type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/screening/match:
+    post:
+      tags:
+        - AI Resume Screening
+      summary: Match resume against job criteria
+      description: Use AI to match candidate resume with job requirements
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - candidateId
+                - jobId
+              properties:
+                candidateId:
+                  type: string
+                  format: uuid
+                jobId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Matching completed successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ScreeningResult'
+
+  /api/screening/{candidateId}/results:
+    get:
+      tags:
+        - AI Resume Screening
+      summary: Get screening results
+      description: Retrieve AI screening results for a candidate
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+        - name: jobId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Screening results retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ScreeningResult'
+
+  /api/screening/{candidateId}/shortlist:
+    post:
+      tags:
+        - AI Resume Screening
+      summary: Shortlist candidate
+      description: Add candidate to shortlist based on screening
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - jobId
+              properties:
+                jobId:
+                  type: string
+                  format: uuid
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Candidate shortlisted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/screening/{candidateId}/reject:
+    post:
+      tags:
+        - AI Resume Screening
+      summary: Reject candidate
+      description: Reject candidate based on screening
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - jobId
+                - reason
+              properties:
+                jobId:
+                  type: string
+                  format: uuid
+                reason:
+                  type: string
+                  enum: [skills_mismatch, experience_insufficient, education_mismatch, location_constraint, other]
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Candidate rejected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ==================== APTITUDE TEST ====================
+  /api/tests/generate:
+    post:
+      tags:
+        - Aptitude Test
+      summary: AI designs custom aptitude test
+      description: Generate custom aptitude test based on job requirements
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - jobId
+                - difficulty
+              properties:
+                jobId:
+                  type: string
+                  format: uuid
+                difficulty:
+                  type: string
+                  enum: [easy, medium, hard]
+                  example: "medium"
+                questionCount:
+                  type: integer
+                  minimum: 10
+                  maximum: 100
+                  example: 30
+                duration:
+                  type: integer
+                  description: Test duration in minutes
+                  example: 60
+                categories:
+                  type: array
+                  items:
+                    type: string
+                    enum: [logical_reasoning, quantitative_aptitude, verbal_ability, technical_skills, domain_knowledge]
+      responses:
+        '201':
+          description: Test generated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AptitudeTest'
+
+  /api/tests/{candidateId}/send-invitation:
+    post:
+      tags:
+        - Aptitude Test
+      summary: Send test email
+      description: Send aptitude test invitation to candidate
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - testId
+              properties:
+                testId:
+                  type: string
+                  format: uuid
+                expiryDate:
+                  type: string
+                  format: date-time
+                customMessage:
+                  type: string
+      responses:
+        '200':
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/tests/{testId}:
+    get:
+      tags:
+        - Aptitude Test
+      summary: Get test questions
+      description: Retrieve test questions for a candidate
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: token
+          in: query
+          required: true
+          description: Secure access token sent via email
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Test retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          testId:
+                            type: string
+                            format: uuid
+                          duration:
+                            type: integer
+                          questions:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/TestQuestion'
+
+  /api/tests/{testId}/submit:
+    post:
+      tags:
+        - Aptitude Test
+      summary: Submit test answers
+      description: Submit completed test answers
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestSubmission'
+      responses:
+        '200':
+          description: Test submitted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/tests/{testId}/evaluate:
+    post:
+      tags:
+        - Aptitude Test
+      summary: AI evaluates test results
+      description: AI evaluates submitted test answers
+      parameters:
+        - name: testId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Test evaluated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          score:
+                            type: number
+                          totalQuestions:
+                            type: integer
+                          correctAnswers:
+                            type: integer
+                          evaluation:
+                            type: object
+
+  # ==================== NOTIFICATIONS ====================
+  /api/notifications/email:
+    post:
+      tags:
+        - Notifications
+      summary: Send email notification
+      description: Send custom email notification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - recipientId
+                - recipientType
+                - subject
+                - message
+              properties:
+                recipientId:
+                  type: string
+                  format: uuid
+                recipientType:
+                  type: string
+                  enum: [candidate, company]
+                subject:
+                  type: string
+                message:
+                  type: string
+                template:
+                  type: string
+                  enum: [invitation, rejection, offer, reminder]
+      responses:
+        '200':
+          description: Email sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/notifications/rejection:
+    post:
+      tags:
+        - Notifications
+      summary: Send rejection email
+      description: Send rejection notification to candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - candidateId
+                - jobId
+              properties:
+                candidateId:
+                  type: string
+                  format: uuid
+                jobId:
+                  type: string
+                  format: uuid
+                customMessage:
+                  type: string
+      responses:
+        '200':
+          description: Rejection email sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/notifications/invitation:
+    post:
+      tags:
+        - Notifications
+      summary: Send interview invitation
+      description: Send interview invitation to candidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - candidateId
+                - interviewId
+              properties:
+                candidateId:
+                  type: string
+                  format: uuid
+                interviewId:
+                  type: string
+                  format: uuid
+                customMessage:
+                  type: string
+      responses:
+        '200':
+          description: Invitation sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /api/notifications/{userId}:
+    get:
+      tags:
+        - Notifications
+      summary: Get user notifications
+      description: Retrieve notifications for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: read
+          in: query
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Notifications retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/PaginatedResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Notification'
+
+    put:
+      tags:
+        - Notifications
+      summary: Mark notification as read
+      description: Mark a notification as read
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - notificationIds
+              properties:
+                notificationIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Notifications marked as read
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  # ==================== HEALTH CHECK ====================
+  /api/health:
+    get:
+      summary: Health check endpoint
+      description: Check API health and service status
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  version:
+                    type: string
+                  services:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        enum: [up, down]
+                      gemini_api:
+                        type: string
+                        enum: [up, down]
+                      email_service:
+                        type: string
+                        enum: [up, down]
+
+  # ==================== WEBHOOKS ====================
+  /api/webhooks/{provider}:
+    post:
+      summary: Webhook endpoint for external providers
+      description: Handle webhooks from external services (LinkedIn, Indeed, etc.)
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [linkedin, indeed, email_service]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "processed"
+
+components:
+  # ==================== SECURITY SCHEMES ====================
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for external integrations
+
+  # ==================== PARAMETERS ====================
+  parameters:
+    CompanyId:
+      name: companyId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier of the company
+
+    JobId:
+      name: jobId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier of the job posting
+
+    CandidateId:
+      name: candidateId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier of the candidate
+
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier of the session
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+
+  # ==================== RESPONSES ====================
+  responses:
+    BadRequest:
+      description: Bad request - validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthenticationError'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== SCHEMAS ====================
+  schemas:
+    # ==================== RESPONSE SCHEMAS ====================
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Operation completed successfully"
+        timestamp:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+          format: uuid
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "An error occurred"
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "INTERNAL_ERROR"
+            details:
+              type: object
+        timestamp:
+          type: string
+          format: date-time
+        requestId:
+          type: string
+          format: uuid
+
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
+                  code:
+                    type: string
+
+    AuthenticationError:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            error:
+              type: object
+              properties:
+                code:
+                  type: string
+                  example: "AUTHENTICATION_FAILED"
+
+    PaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            type: object
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+            totalPages:
+              type: integer
+            hasNext:
+              type: boolean
+            hasPrev:
+              type: boolean
+        timestamp:
+          type: string
+          format: date-time
+
+    # ==================== BUSINESS SCHEMAS ====================
+    Company:
+      type: object
+      required:
+        - id
+        - companyName
+        - email
+        - industry
+        - size
+      properties:
+        id:
+          type: string
+          format: uuid
+        companyName:
+          type: string
+          minLength: 2
+          maxLength: 200
+        email:
+          type: string
+          format: email
+        industry:
+          type: string
+        size:
+          type: string
+          enum: [1-10, 11-50, 51-200, 201-500, 501-1000, 1001+]
+        website:
+          type: string
+          format: uri
+        address:
+          $ref: '#/components/schemas/Address'
+        phone:
+          type: string
+        logo:
+          type: string
+          format: uri
+        subscriptionPlan:
+          type: string
+          enum: [starter, professional, enterprise]
+        isActive:
+          type: boolean
+          default: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        zipCode:
+          type: string
+
+    JobRequirementInput:
+      type: object
+      required:
+        - title
+        - department
+        - description
+        - requirements
+      properties:
+        title:
+          type: string
+          minLength: 5
+          maxLength: 200
+        department:
+          type: string
+        description:
+          type: string
+          minLength: 50
+        requirements:
+          type: array
+          items:
+            type: object
+            properties:
+              skill:
+                type: string
+              level:
+                type: string
+                enum: [beginner, intermediate, advanced, expert]
+              required:
+                type: boolean
+                default: true
+        experience:
+          type: object
+          properties:
+            minYears:
+              type: integer
+              minimum: 0
+            maxYears:
+              type: integer
+              minimum: 0
+            preferred:
+              type: integer
+        location:
+          type: string
+        jobType:
+          type: string
+          enum: [full-time, part-time, contract, internship]
+        salaryRange:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            currency:
+              type: string
+              default: "USD"
+        benefits:
+          type: array
+          items:
+            type: string
+
+    JobRequirement:
+      allOf:
+        - $ref: '#/components/schemas/JobRequirementInput'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            companyId:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [draft, active, closed]
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+
+    JobPostingInput:
+      type: object
+      required:
+        - title
+        - description
+        - requirements
+        - companyId
+      properties:
+        title:
+          type: string
+          minLength: 5
+          maxLength: 200
+        description:
+          type: string
+          minLength: 50
+        requirements:
+          type: array
+          items:
+            type: string
+        companyId:
+          type: string
+          format: uuid
+        requirementId:
+          type: string
+          format: uuid
+        location:
+          type: string
+        jobType:
+          type: string
+          enum: [full-time, part-time, contract, internship]
+        salaryRange:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            currency:
+              type: string
+              default: "USD"
+        benefits:
+          type: array
+          items:
+            type: string
+        applicationDeadline:
+          type: string
+          format: date
+        isRemote:
+          type: boolean
+          default: false
+
+    JobPosting:
+      allOf:
+        - $ref: '#/components/schemas/JobPostingInput'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum: [draft, pending_approval, active, closed]
+            publishedAt:
+              type: string
+              format: date-time
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+            applicationCount:
+              type: integer
+              default: 0
+
+    Candidate:
+      type: object
+      required:
+        - id
+        - firstName
+        - lastName
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        linkedinUrl:
+          type: string
+          format: uri
+        portfolioUrl:
+          type: string
+          format: uri
+        currentLocation:
+          type: string
+        willingToRelocate:
+          type: boolean
+        skills:
+          type: array
+          items:
+            type: string
+        experience:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkExperience'
+        education:
+          type: array
+          items:
+            $ref: '#/components/schemas/Education'
+        expectedSalary:
+          type: number
+        noticePeriod:
+          type: string
+        resumeUrl:
+          type: string
+          format: uri
+        status:
+          type: string
+          enum: [active, inactive]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WorkExperience:
+      type: object
+      required:
+        - company
+        - position
+        - startDate
+      properties:
+        company:
+          type: string
+        position:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        current:
+          type: boolean
+          default: false
+        description:
+          type: string
+        skills:
+          type: array
+          items:
+            type: string
+
+    Education:
+      type: object
+      required:
+        - institution
+        - degree
+        - fieldOfStudy
+      properties:
+        institution:
+          type: string
+        degree:
+          type: string
+        fieldOfStudy:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        grade:
+          type: string
+
+    Application:
+      type: object
+      required:
+        - id
+        - candidateId
+        - jobId
+      properties:
+        id:
+          type: string
+          format: uuid
+        candidateId:
+          type: string
+          format: uuid
+        jobId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, screening, shortlisted, rejected, selected]
+        coverLetter:
+          type: string
+        appliedAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Resume:
+      type: object
+      required:
+        - id
+        - candidateId
+        - fileUrl
+      properties:
+        id:
+          type: string
+          format: uuid
+        candidateId:
+          type: string
+          format: uuid
+        fileUrl:
+          type: string
+          format: uri
+        fileName:
+          type: string
+        fileSize:
+          type: integer
+        mimeType:
+          type: string
+        extractedText:
+          type: string
+        parsedData:
+          type: object
+        uploadedAt:
+          type: string
+          format: date-time
+
+    ScreeningResult:
+      type: object
+      required:
+        - candidateId
+        - jobId
+      properties:
+        candidateId:
+          type: string
+          format: uuid
+        jobId:
+          type: string
+          format: uuid
+        overallScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        skillMatchScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        experienceMatchScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        educationMatchScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        keywordMatches:
+          type: array
+          items:
+            type: string
+        missingSkills:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        aiAnalysis:
+          type: string
+        screenedAt:
+          type: string
+          format: date-time
+
+    AptitudeTest:
+      type: object
+      required:
+        - id
+        - jobId
+        - title
+      properties:
+        id:
+          type: string
+          format: uuid
+        jobId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        duration:
+          type: integer
+          description: Duration in minutes
+        questionCount:
+          type: integer
+        categories:
+          type: array
+          items:
+            type: string
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestQuestion'
+        status:
+          type: string
+          enum: [draft, active, inactive]
+        createdAt:
+          type: string
+          format: date-time
+
+    TestQuestion:
+      type: object
+      required:
+        - id
+        - question
+        - type
+        - options
+        - correctAnswer
+      properties:
+        id:
+          type: string
+          format: uuid
+        question:
+          type: string
+        type:
+          type: string
+          enum: [multiple_choice, true_false, coding, essay]
+        options:
+          type: array
+          items:
+            type: string
+        correctAnswer:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        points:
+          type: integer
+          default: 1
+
+    TestSubmission:
+      type: object
+      required:
+        - testId
+        - candidateId
+        - answers
+      properties:
+        testId:
+          type: string
+          format: uuid
+        candidateId:
+          type: string
+          format: uuid
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId:
+                type: string
+                format: uuid
+              answer:
+                type: string
+              timeTaken:
+                type: integer
+                description: Time taken in seconds
+        startedAt:
+          type: string
+          format: date-time
+        submittedAt:
+          type: string
+          format: date-time
+
+    Interview:
+      type: object
+      required:
+        - id
+        - candidateId
+        - jobId
+        - type
+      properties:
+        id:
+          type: string
+          format: uuid
+        candidateId:
+          type: string
+          format: uuid
+        jobId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [technical, hr]
+        scheduledDate:
+          type: string
+          format: date-time
+        duration:
+          type: integer
+          description: Duration in minutes
+        status:
+          type: string
+          enum: [scheduled, in_progress, completed, cancelled]
+        interviewType:
+          type: string
+        difficulty:
+          type: string
+          enum: [junior, mid, senior, expert]
+        createdAt:
+          type: string
+          format: date-time
+
+    InterviewSession:
+      type: object
+      required:
+        - id
+        - interviewId
+      properties:
+        id:
+          type: string
+          format: uuid
+        interviewId:
+          type: string
+          format: uuid
+        candidateToken:
+          type: string
+        status:
+          type: string
+          enum: [waiting, in_progress, completed, terminated]
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+        deviceInfo:
+          type: object
+        recordingUrl:
+          type: string
+          format: uri
+
+    ProctoringSession:
+      type: object
+      required:
+        - id
+        - sessionId
+      properties:
+        id:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        candidateId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [active, completed, terminated]
+        violations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProctoringViolation'
+        recordingUrls:
+          type: object
+          properties:
+            video:
+              type: string
+              format: uri
+            audio:
+              type: string
+              format: uri
+            screen:
+              type: string
+              format: uri
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+
+    ProctoringViolation:
+      type: object
+      required:
+        - type
+        - timestamp
+      properties:
+        type:
+          type: string
+          enum: [multiple_faces, face_not_visible, tab_switch, window_blur, suspicious_movement, external_device, no_face_detected]
+        timestamp:
+          type: string
+          format: date-time
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        description:
+          type: string
+        evidence:
+          type: object
+
+    InterviewEvaluation:
+      type: object
+      required:
+        - interviewId
+        - candidateId
+      properties:
+        interviewId:
+          type: string
+          format: uuid
+        candidateId:
+          type: string
+          format: uuid
+        overallScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        technicalScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        communicationScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        problemSolvingScore:
+          type: number
+          minimum: 0
+          maximum: 100
+        categoryScores:
+          type: object
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: string
+        aiFeedback:
+          type: string
+        evaluatedAt:
+          type: string
+          format: date-time
+
+    CandidateReport:
+      type: object
+      required:
+        - id
+        - candidateId
+        - jobId
+      properties:
+        id:
+          type: string
+          format: uuid
+        candidateId:
+          type: string
+          format: uuid
+        jobId:
+          type: string
+          format: uuid
+        resumeScore:
+          type: number
+        testScore:
+          type: number
+        technicalInterviewScore:
+          type: number
+        hrInterviewScore:
+          type: number
+        overallRecommendation:
+          type: string
+          enum: [strong_reject, reject, hold, consider, strong_consider, hire]
+        summary:
+          type: string
+        detailedFeedback:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+
+    OfferLetter:
+      type: object
+      required:
+        - id
+        - candidateId
+        - jobId
+        - salary
+        - joiningDate
+      properties:
+        id:
+          type: string
+          format: uuid
+        candidateId:
+          type: string
+          format: uuid
+        jobId:
+          type: string
+          format: uuid
+        salary:
+          type: number
+        joiningDate:
+          type: string
+          format: date
+        benefits:
+          type: array
+          items:
+            type: string
+        workLocation:
+          type: string
+        probationPeriod:
+          type: integer
+          description: Probation period in months
+        terms:
+          type: string
+        generatedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [draft, sent, accepted, declined, expired]
+
+    Notification:
+      type: object
+      required:
+        - id
+        - recipientId
+        - type
+        - message
+      properties:
+        id:
+          type: string
+          format: uuid
+        recipientId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [email, in_app, sms]
+        title:
+          type: string
+        message:
+          type: string
+        isRead:
+          type: boolean
+          default: false
+        readAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time

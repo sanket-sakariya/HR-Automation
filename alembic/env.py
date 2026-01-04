@@ -14,6 +14,8 @@ from app.model.demo_b_model import DemoBModel
 from app.model.demo_a_to_demo_b_mapping_model import DemoAToDemoBMappingModel
 from app.model.demo_a_response_model import DemoAResponseModel
 from app.model.demo_b_response_model import DemoBResponseModel
+from app.model.company_model import CompanyModel
+from app.model.job_requirement_model import JobRequirementModel
 
 # Import your app config
 
