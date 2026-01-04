@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from uuid import UUID
 from typing import Optional
 
@@ -45,6 +46,9 @@ from app.exception.job_requirement_exception import (
 from app.exception.company_management_exception import CompanyNotFoundException
 from app.exception.baseapp_exception import InternalServerErrorException
 
+from app.service.linkedin_service import LinkedInService
+
+
 router = APIRouter(route_class=RedisCachedRoute)
 
 
@@ -67,15 +71,34 @@ async def create_job_requirement(
     This endpoint creates a new job requirement for the specified company.
     """
     try:
-        data = await JobRequirementService(db).create_job_requirement(
+        # Create job requirement and get LinkedIn posting data from service
+        data, linkedin_job_data = await JobRequirementService(db).create_job_requirement_with_linkedin_data(
             company_id=company_id,
             payload=payload,
             user_id=user_id,
             workspace_id=workspace_id
         )
 
+        # Start LinkedIn posting in background
+        linkedin_service = LinkedInService()
+
+        async def post_to_linkedin_background():
+            """Background task for LinkedIn posting with error handling"""
+            try:
+                await linkedin_service.post_job_to_linkedin(linkedin_job_data)
+            except Exception as e:
+                print(f"❌ LinkedIn posting failed for job {data.job_requirement_id}: {str(e)}")
+                # Log the error but don't fail the API response
+                import logging
+                logging.error(f"LinkedIn posting failed for job {data.job_requirement_id}: {str(e)}")
+
+        asyncio.create_task(post_to_linkedin_background())
+
+        # Update response message to indicate LinkedIn posting is initiated
+        enhanced_message = f"{SuccessMessages.JOB_REQUIREMENT_CREATED} LinkedIn posting initiated."
+
         return ApiResponseSchema[JobRequirementReadSchema](
-            success=True, data=data, message=SuccessMessages.JOB_REQUIREMENT_CREATED
+            success=True, data=data, message=enhanced_message
         )
 
     except (

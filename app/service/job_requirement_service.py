@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -66,6 +66,56 @@ class JobRequirementService(BaseAppService):
         )
 
         return JobRequirementReadSchema.model_validate(job_requirement)
+
+    async def create_job_requirement_with_linkedin_data(
+        self,
+        company_id: UUID,
+        payload: JobRequirementCreateSchema,
+        user_id: UUID,
+        workspace_id: UUID,
+    ) -> Tuple[JobRequirementReadSchema, Dict[str, Any]]:
+        """Create a new job requirement and return LinkedIn posting data."""
+
+        # Create the job requirement
+        job_data = await self.create_job_requirement(
+            company_id=company_id,
+            payload=payload,
+            user_id=user_id,
+            workspace_id=workspace_id
+        )
+
+        # Get company details for LinkedIn posting (we already validated it exists)
+        company = await self.company_repo.get_by_id(company_id, workspace_id)
+
+        # Prepare job data for LinkedIn posting
+        linkedin_job_data = {
+            "job_requirement_id": str(job_data.job_requirement_id),
+            "company_id": str(job_data.company_id),
+            "company_name": company.company_name if company else "Our Company",
+            "title": job_data.title,
+            "department": job_data.department,
+            "description": job_data.description,
+            "requirements": [{"skill": req.skill, "level": req.level, "required": req.required} for req in job_data.requirements],
+            "experience": {
+                "min_years": job_data.experience.min_years if job_data.experience else None,
+                "max_years": job_data.experience.max_years if job_data.experience else None,
+                "preferred": job_data.experience.preferred if job_data.experience else None,
+            } if job_data.experience else None,
+            "location": job_data.location,
+            "job_type": job_data.job_type,
+            "salary_range": {
+                "min": job_data.salary_range.min if job_data.salary_range else None,
+                "max": job_data.salary_range.max if job_data.salary_range else None,
+                "currency": job_data.salary_range.currency if job_data.salary_range else "USD",
+            } if job_data.salary_range else None,
+            "benefits": job_data.benefits,
+            "status": job_data.status.value,
+            "is_active": job_data.is_active,
+            "created_at": job_data.created_at.isoformat() if job_data.created_at else None,
+            "updated_at": job_data.updated_at.isoformat() if job_data.updated_at else None,
+        }
+
+        return job_data, linkedin_job_data
 
     async def get_job_requirement(
         self, job_requirement_id: UUID, user_id: UUID, workspace_id: UUID

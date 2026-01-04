@@ -39,3 +39,6 @@ alembic/versions/*
 .ruff_cache/
 .mypy_cache/
 .pylint.d/
+
+
+browser_data/
