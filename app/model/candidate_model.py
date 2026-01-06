@@ -22,7 +22,8 @@ class CandidateModel(BaseAppModel):
     skills = Column(JSONB, nullable=True)  # Array of skill strings
     expected_salary = Column(Float, nullable=True)
     notice_period = Column(String(100), nullable=True)
-    resume_url = Column(String(500), nullable=True)  # Local file path to stored resume
+    resume_url = Column(String(500), nullable=True)  # Full file path to stored resume
+    candidate_resume_score = Column(Float, nullable=True)  # AI-generated resume score
     status = Column(String(20), nullable=False, default="active")  # active, inactive
 
     # Unique constraint to prevent same candidate from applying to same job multiple times

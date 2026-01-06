@@ -29,8 +29,6 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
     async def insert(
         self,
         candidate_data: Dict[str, Any],
-        user_id: UUID = None,
-        workspace_id: UUID = None,
     ) -> CandidateModel:
         """Insert a new candidate (async). Prevents duplicate applications for same job."""
         try:
@@ -38,15 +36,11 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
             candidate_id = candidate_data.get("candidate_id")
             job_requirement_id = candidate_data.get("job_requirement_id")
 
-            existing_application = await self.get_by_candidate_and_job(candidate_id, job_requirement_id, workspace_id)
+            existing_application = await self.get_by_candidate_and_job(candidate_id, job_requirement_id)
             if existing_application:
                 raise DuplicateApplicationException(candidate_id, job_requirement_id)
 
             candidate = CandidateModel(**candidate_data)
-            if user_id is not None:
-                candidate.created_by = user_id
-            if workspace_id is not None:
-                candidate.workspace_id = workspace_id
 
             self.db.add(candidate)
             await self.db.commit()
@@ -109,7 +103,7 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
             ) from e
 
     async def get_by_candidate_and_job(
-        self, candidate_id: UUID, job_requirement_id: UUID, workspace_id: UUID = None
+        self, candidate_id: UUID, job_requirement_id: UUID
     ) -> Optional[CandidateModel]:
         """Get candidate application by candidate and job combination (async)."""
         try:
@@ -120,9 +114,6 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
                     CandidateModel.status != "deleted"
                 )
             )
-
-            if workspace_id is not None:
-                query = query.where(CandidateModel.workspace_id == workspace_id)
 
             query = query.limit(1)
 
@@ -139,12 +130,10 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
         self,
         candidate_id: UUID,
         candidate_data: Dict[str, Any],
-        user_id: UUID = None,
-        workspace_id: UUID = None,
     ) -> CandidateModel:
         """Update an existing candidate (async)."""
         try:
-            candidate = await self.get_by_id(candidate_id, workspace_id=workspace_id)
+            candidate = await self.get_by_id(candidate_id)
             if not candidate:
                 raise CandidateNotFoundException(candidate_id=candidate_id)
 
@@ -152,9 +141,6 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
 
             for key, value in candidate_data.items():
                 setattr(candidate, key, value)
-
-            if user_id is not None:
-                candidate.updated_by = user_id
 
             await self.db.commit()
             await self.db.refresh(candidate)
@@ -172,21 +158,17 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
         self,
         candidate_id: UUID,
         status: str,
-        user_id: UUID = None,
-        workspace_id: UUID = None,
     ) -> CandidateModel:
         """
         Update only the status of a candidate (async).
         Only works if current status is not 'deleted'.
         """
         try:
-            candidate = await self.get_by_id(candidate_id, workspace_id=workspace_id)
+            candidate = await self.get_by_id(candidate_id)
             if not candidate:
                 raise CandidateNotFoundException(candidate_id=candidate_id)
 
             candidate.status = status
-            if user_id is not None:
-                candidate.updated_by = user_id
 
             await self.db.commit()
             await self.db.refresh(candidate)
@@ -203,19 +185,15 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
         self,
         candidate_id: UUID,
         is_active: bool,
-        user_id: UUID = None,
-        workspace_id: UUID = None,
     ) -> CandidateModel:
         """Update only the is_active flag of a candidate (async)."""
         try:
-            candidate = await self.get_by_id(candidate_id, workspace_id=workspace_id)
+            candidate = await self.get_by_id(candidate_id)
             if not candidate:
                 raise CandidateNotFoundException(candidate_id=candidate_id)
 
             candidate.is_active = is_active
             candidate.status = "active" if is_active else "inactive"
-            if user_id is not None:
-                candidate.updated_by = user_id
 
             await self.db.commit()
             await self.db.refresh(candidate)
@@ -229,21 +207,18 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
             ) from e
 
     async def delete(
-        self, candidate_id: UUID, user_id: UUID = None, workspace_id: UUID = None
+        self, candidate_id: UUID
     ) -> bool:
         """Soft delete a candidate (update status & is_active) (async)."""
         try:
-            candidate = await self.get_by_id(candidate_id, workspace_id=workspace_id)
+            candidate = await self.get_by_id(candidate_id)
             if not candidate:
                 raise CandidateNotFoundException(candidate_id=candidate_id)
 
             # mark as deleted (soft delete)
             candidate.deleted_at = datetime.now(timezone.utc)
-            candidate.deleted_by = user_id
             candidate.status = "deleted"
             candidate.is_active = False
-            if user_id is not None:
-                candidate.updated_by = user_id
 
             # persist changes
             await self.db.commit()

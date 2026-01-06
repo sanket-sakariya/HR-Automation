@@ -46,13 +46,11 @@ class CandidateManagementService(BaseAppService):
         self,
         job_requirement_id: UUID,
         payload: CandidateCreateSchema,
-        user_id: UUID,
-        workspace_id: UUID,
     ) -> CandidateReadSchema:
         """Create a new candidate application."""
         try:
             # Verify job requirement exists
-            job_requirement = await self.job_requirement_repo.get_by_id(job_requirement_id, workspace_id)
+            job_requirement = await self.job_requirement_repo.get_by_id(job_requirement_id)
             if not job_requirement:
                 raise JobRequirementNotFoundException(job_requirement_id)
 
@@ -63,9 +61,7 @@ class CandidateManagementService(BaseAppService):
             candidate_data["candidate_id"] = candidate_id
 
             candidate = await self.candidate_repo.insert(
-                candidate_data=candidate_data,
-                user_id=user_id,
-                workspace_id=workspace_id
+                candidate_data=candidate_data
             )
 
             log_user_activity(
@@ -79,7 +75,7 @@ class CandidateManagementService(BaseAppService):
             raise
         except Exception as e:
             log_central(
-                f"Error creating candidate application: {str(e)} [job_requirement_id={job_requirement_id}, user_id={user_id}]",
+                f"Error creating candidate application: {str(e)} [job_requirement_id={job_requirement_id}]",
                 level="error"
             )
             raise CandidateCreationException(f"Failed to create candidate application: {str(e)}")
@@ -99,17 +95,13 @@ class CandidateManagementService(BaseAppService):
         self,
         candidate_id: UUID,
         payload: CandidateUpdateSchema,
-        user_id: UUID = None,
-        workspace_id: UUID = None,
     ) -> CandidateReadSchema:
         """Update candidate information."""
         candidate_data = payload.model_dump(exclude_unset=True)
 
         candidate = await self.candidate_repo.update(
             candidate_id=candidate_id,
-            candidate_data=candidate_data,
-            user_id=user_id,
-            workspace_id=workspace_id
+            candidate_data=candidate_data
         )
 
         log_user_activity(
@@ -122,14 +114,12 @@ class CandidateManagementService(BaseAppService):
     async def delete_candidate(
         self,
         candidate_id: UUID,
-        user_id: UUID = None,
-        workspace_id: UUID = None,
     ) -> bool:
         """Delete candidate (soft delete)."""
         # Also delete associated profiles
-        await self.candidate_profile_repo.delete_by_candidate_id(candidate_id, user_id, workspace_id)
+        await self.candidate_profile_repo.delete_by_candidate_id(candidate_id)
 
-        result = await self.candidate_repo.delete(candidate_id, user_id, workspace_id)
+        result = await self.candidate_repo.delete(candidate_id)
 
         log_user_activity(
             message=f"Candidate deleted: {candidate_id}",

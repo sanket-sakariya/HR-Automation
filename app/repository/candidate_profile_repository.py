@@ -74,8 +74,7 @@ class CandidateProfileRepository(BaseAppRepository[CandidateProfileModel]):
     async def get_by_candidate_id(
         self,
         candidate_id: UUID,
-        profile_type: Optional[str] = None,
-        workspace_id: UUID = None
+        profile_type: Optional[str] = None
     ) -> List[CandidateProfileModel]:
         """Get all profiles for a candidate, optionally filtered by type (async)."""
         try:
@@ -88,9 +87,6 @@ class CandidateProfileRepository(BaseAppRepository[CandidateProfileModel]):
 
             if profile_type:
                 query = query.where(CandidateProfileModel.profile_type == profile_type)
-
-            if workspace_id is not None:
-                query = query.where(CandidateProfileModel.workspace_id == workspace_id)
 
             result = await self.db.execute(query)
             profiles = result.scalars().all()
@@ -223,19 +219,16 @@ class CandidateProfileRepository(BaseAppRepository[CandidateProfileModel]):
             raise CandidateProfileDeletionException(candidate_profile_id=profile_id) from e
 
     async def delete_by_candidate_id(
-        self, candidate_id: UUID, user_id: UUID = None, workspace_id: UUID = None
+        self, candidate_id: UUID
     ) -> bool:
         """Soft delete all profiles for a candidate (async)."""
         try:
-            profiles = await self.get_by_candidate_id(candidate_id, workspace_id=workspace_id)
+            profiles = await self.get_by_candidate_id(candidate_id)
 
             for profile in profiles:
                 profile.deleted_at = datetime.now(timezone.utc)
-                profile.deleted_by = user_id
                 profile.status = "deleted"
                 profile.is_active = False
-                if user_id is not None:
-                    profile.updated_by = user_id
 
             # persist changes
             await self.db.commit()

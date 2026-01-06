@@ -48,6 +48,7 @@ class CandidateReadSchema(BaseAppSchema):
     expected_salary: Optional[float]
     notice_period: Optional[str]
     resume_url: Optional[str]
+    candidate_resume_score: Optional[float]
     status: CandidateStatus
 
 

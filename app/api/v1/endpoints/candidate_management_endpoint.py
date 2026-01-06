@@ -136,8 +136,6 @@ async def submit_application(
         candidate = await service.create_candidate_application(
             job_requirement_id=UUID(job_requirement_id),
             payload=candidate_schema,
-            user_id=None,  # Public endpoint, no user authentication
-            workspace_id=None,
         )
 
         # Save resume file
@@ -151,8 +149,6 @@ async def submit_application(
         await service.update_candidate(
             candidate_id=candidate.candidate_id,
             payload=CandidateUpdateSchema(resume_url=resume_path),
-            user_id=None,
-            workspace_id=None,
         )
 
         return ApiResponseSchema(
