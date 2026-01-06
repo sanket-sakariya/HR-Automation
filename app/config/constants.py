@@ -271,6 +271,11 @@ class LogMessages:
     DEMO_B_RESPONSE_UPDATED: Final[str] = "Updated demo B response"
     DEMO_B_RESPONSE_DELETED: Final[str] = "Deleted demo B response"
 
+    # User activities - Candidate
+    CANDIDATE_APPLICATION_CREATED: Final[str] = "Candidate application submitted"
+    CANDIDATE_UPDATED: Final[str] = "Updated candidate"
+    CANDIDATE_DELETED: Final[str] = "Deleted candidate"
+
     # Legacy activities (kept for backward compatibility)
     DEMO_CREATED: Final[str] = "Created new demo"
     DEMO_UPDATED: Final[str] = "Updated demo"
@@ -326,6 +331,13 @@ class SuccessMessages:
     JOB_REQUIREMENT_DELETED: Final[str] = "Job requirement deleted successfully"
     JOB_REQUIREMENT_RETRIEVED: Final[str] = "Job requirement retrieved successfully"
     JOB_REQUIREMENTS_RETRIEVED: Final[str] = "Job requirements retrieved successfully"
+
+    # Candidate operations
+    CANDIDATE_APPLICATION_CREATED: Final[str] = "Candidate application submitted successfully"
+    CANDIDATE_UPDATED: Final[str] = "Candidate updated successfully"
+    CANDIDATE_DELETED: Final[str] = "Candidate deleted successfully"
+    CANDIDATE_RETRIEVED: Final[str] = "Candidate retrieved successfully"
+    CANDIDATES_RETRIEVED: Final[str] = "Candidates retrieved successfully"
 
     # DemoB operations
     DEMO_B_CREATED: Final[str] = "Demo B created successfully"

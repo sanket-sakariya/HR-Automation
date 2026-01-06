@@ -16,6 +16,8 @@ from app.model.demo_a_response_model import DemoAResponseModel
 from app.model.demo_b_response_model import DemoBResponseModel
 from app.model.company_model import CompanyModel
 from app.model.job_requirement_model import JobRequirementModel
+from app.model.candidate_model import CandidateModel
+from app.model.candidate_profile_model import CandidateProfileModel
 
 # Import your app config
 

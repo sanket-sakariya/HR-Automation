@@ -53,5 +53,7 @@ if base_config.IS_RABBITMQ_ENABLED:
 # Include company management endpoints
 from app.api.v1.endpoints.company_management_endpoint import router as company_management_router
 from app.api.v1.endpoints.job_requirement_endpoint import router as job_requirement_router
+from app.api.v1.endpoints.candidate_management_endpoint import router as candidate_management_router
 api_router.include_router(router=company_management_router, tags=["Company Management"])
 api_router.include_router(router=job_requirement_router, tags=["Job Requirements"])
+api_router.include_router(router=candidate_management_router, tags=["Candidate Management"])
