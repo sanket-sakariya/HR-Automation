@@ -174,11 +174,27 @@ async def submit_application(
             job_requirement_id=UUID(job_requirement_id)
         )
 
-        # Analyze resume using AI and get score
+        # Prepare candidate data for AI analysis
+        analysis_candidate_data = {
+            'first_name': first_name,
+            'last_name': last_name,
+            'email': email,
+            'phone': phone,
+            'skills': candidate_data.get('skills'),  # Already parsed as list
+            'expected_salary': candidate_data.get('expected_salary'),
+            'notice_period': notice_period,
+            'current_location': current_location,
+            'willing_to_relocate': candidate_data.get('willing_to_relocate'),
+            'linkedin_url': linkedin_url,
+            'portfolio_url': portfolio_url,
+        }
+
+        # Analyze resume using AI with both resume content and form data
         resume_score = await service.analyze_and_score_resume(
             candidate_id=candidate.candidate_id,
             job_requirement_id=UUID(job_requirement_id),
-            resume_path=resume_path
+            resume_path=resume_path,
+            candidate_data=analysis_candidate_data
         )
 
         # Update candidate with resume path and AI-generated score

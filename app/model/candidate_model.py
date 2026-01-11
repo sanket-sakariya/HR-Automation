@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Float, Boolean, Text, Index
+from sqlalchemy import Column, String, Float, Boolean, Text, Index, Numeric
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from app.model.baseapp_model import BaseAppModel
 
@@ -23,7 +23,7 @@ class CandidateModel(BaseAppModel):
     expected_salary = Column(Float, nullable=True)
     notice_period = Column(String(100), nullable=True)
     resume_url = Column(String(500), nullable=True)  # Full file path to stored resume
-    candidate_resume_score = Column(Float, nullable=True)  # AI-generated resume score
+    candidate_resume_score = Column(Numeric(10, 4), nullable=True)  # AI-generated resume score
     status = Column(String(20), nullable=False, default="active")  # active, inactive
 
     # Unique constraint to prevent same candidate from applying to same job multiple times

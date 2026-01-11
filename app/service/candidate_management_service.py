@@ -420,7 +420,8 @@ class CandidateManagementService(BaseAppService):
         self,
         candidate_id: UUID,
         job_requirement_id: UUID,
-        resume_path: str
+        resume_path: str,
+        candidate_data: Optional[Dict[str, Any]] = None
     ) -> Optional[float]:
         """
         Analyze candidate's resume using AI and return the score.
@@ -429,6 +430,7 @@ class CandidateManagementService(BaseAppService):
             candidate_id: UUID of the candidate
             job_requirement_id: UUID of the job requirement
             resume_path: Path to the resume file
+            candidate_data: Additional candidate information from application form (optional)
             
         Returns:
             Total score out of 100.0000 or None if analysis fails
@@ -460,12 +462,13 @@ class CandidateManagementService(BaseAppService):
                 'salary_range': job_requirement.salary_range,
             }
 
-            # Analyze resume using AI
+            # Analyze resume using AI with candidate form data
             analysis_result = await self.resume_analyzer.analyze_resume(
                 resume_path=resume_path,
                 job_details=job_details,
                 candidate_id=candidate_id,
-                job_requirement_id=job_requirement_id
+                job_requirement_id=job_requirement_id,
+                candidate_data=candidate_data
             )
 
             if not analysis_result:
