@@ -65,6 +65,8 @@ class CandidateUpdateSchema(BaseModel):
     skills: Optional[List[str]] = Field(None)
     expected_salary: Optional[float] = Field(None, gt=0)
     notice_period: Optional[str] = Field(None)
+    resume_url: Optional[str] = Field(None, description="Path to resume file")
+    candidate_resume_score: Optional[float] = Field(None, ge=0, le=100, description="AI-generated resume score")
 
 
 class CandidateListParamsSchema(BaseModel):

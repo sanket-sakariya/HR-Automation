@@ -26,6 +26,7 @@ from app.service.baseapp_service import BaseAppService
 from app.repository.candidate_repository import CandidateRepository
 from app.repository.job_requirement_repository import JobRequirementRepository
 from app.repository.candidate_profile_repository import CandidateProfileRepository
+from app.service.resume_analysis_service import ResumeAnalysisService
 
 from app.exception.job_requirement_exception import JobRequirementNotFoundException
 
@@ -41,6 +42,7 @@ class CandidateManagementService(BaseAppService):
         self.candidate_repo = CandidateRepository(db=db)
         self.job_requirement_repo = JobRequirementRepository(db=db)
         self.candidate_profile_repo = CandidateProfileRepository(db=db)
+        self.resume_analyzer = ResumeAnalysisService()
 
     async def create_candidate_application(
         self,
@@ -413,3 +415,78 @@ class CandidateManagementService(BaseAppService):
                 level="error"
             )
             raise CandidateCreationException(f"Failed to save resume: {str(e)}")
+
+    async def analyze_and_score_resume(
+        self,
+        candidate_id: UUID,
+        job_requirement_id: UUID,
+        resume_path: str
+    ) -> Optional[float]:
+        """
+        Analyze candidate's resume using AI and return the score.
+        
+        Args:
+            candidate_id: UUID of the candidate
+            job_requirement_id: UUID of the job requirement
+            resume_path: Path to the resume file
+            
+        Returns:
+            Total score out of 100.0000 or None if analysis fails
+        """
+        try:
+            log_central(
+                f"Starting AI resume analysis [candidate_id={candidate_id}, job_requirement_id={job_requirement_id}]",
+                level="info"
+            )
+
+            # Get job requirement details
+            job_requirement = await self.job_requirement_repo.get_by_id(job_requirement_id)
+            if not job_requirement:
+                log_central(
+                    f"Job requirement not found for analysis [job_requirement_id={job_requirement_id}]",
+                    level="error"
+                )
+                return None
+
+            # Prepare job details for analysis
+            job_details = {
+                'title': job_requirement.title,
+                'department': job_requirement.department,
+                'description': job_requirement.description,
+                'requirements': job_requirement.requirements,
+                'experience': job_requirement.experience,
+                'location': job_requirement.location,
+                'job_type': job_requirement.job_type,
+                'salary_range': job_requirement.salary_range,
+            }
+
+            # Analyze resume using AI
+            analysis_result = await self.resume_analyzer.analyze_resume(
+                resume_path=resume_path,
+                job_details=job_details,
+                candidate_id=candidate_id,
+                job_requirement_id=job_requirement_id
+            )
+
+            if not analysis_result:
+                log_central(
+                    f"Resume analysis failed [candidate_id={candidate_id}]",
+                    level="warning"
+                )
+                return None
+
+            total_score = analysis_result.get('total_score', None)
+            
+            log_central(
+                f"Resume analysis completed successfully: Score={total_score} [candidate_id={candidate_id}]",
+                level="info"
+            )
+
+            return total_score
+
+        except Exception as e:
+            log_central(
+                f"Error during resume analysis: {str(e)} [candidate_id={candidate_id}, job_requirement_id={job_requirement_id}]",
+                level="error"
+            )
+            return None

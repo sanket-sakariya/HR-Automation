@@ -134,7 +134,7 @@ async def submit_application(
 ):
     """
     Submit job application with form data and resume upload.
-    Handles file upload and stores candidate information.
+    Handles file upload, stores candidate information, and analyzes resume using AI.
     """
     try:
         service = CandidateManagementService(db)
@@ -174,16 +174,47 @@ async def submit_application(
             job_requirement_id=UUID(job_requirement_id)
         )
 
-        # Update candidate with resume path
-        await service.update_candidate(
+        # Analyze resume using AI and get score
+        resume_score = await service.analyze_and_score_resume(
             candidate_id=candidate.candidate_id,
-            payload=CandidateUpdateSchema(resume_url=resume_path),
+            job_requirement_id=UUID(job_requirement_id),
+            resume_path=resume_path
+        )
+
+        # Update candidate with resume path and AI-generated score
+        update_data = {"resume_url": resume_path}
+        if resume_score is not None:
+            update_data["candidate_resume_score"] = resume_score
+        
+        # Log the update data for debugging
+        from app.config.logger_config import log_central
+        log_central(
+            f"Updating candidate with data: {update_data} [candidate_id={candidate.candidate_id}]",
+            level="info"
+        )
+
+        updated_candidate = await service.update_candidate(
+            candidate_id=candidate.candidate_id,
+            payload=CandidateUpdateSchema(**update_data),
+        )
+        
+        log_central(
+            f"Candidate updated - resume_score in object: {updated_candidate.candidate_resume_score} [candidate_id={candidate.candidate_id}]",
+            level="info"
+        )
+
+        # Refresh candidate to get updated data from database
+        final_candidate = await service.get_candidate_by_id(candidate.candidate_id)
+        
+        log_central(
+            f"Final candidate from DB - resume_score: {final_candidate.candidate_resume_score} [candidate_id={candidate.candidate_id}]",
+            level="info"
         )
 
         return ApiResponseSchema(
             success=True,
             message=SuccessMessages.CANDIDATE_APPLICATION_CREATED,
-            data=candidate
+            data=final_candidate
         )
 
     except DuplicateApplicationException as e:

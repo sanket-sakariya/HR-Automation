@@ -17,6 +17,7 @@ dnspython==2.8.0
 email-validator==2.3.0
 fastapi==0.121.1
 fastapi-cache2==0.2.2
+google-generativeai==0.8.3
 greenlet==3.2.4
 h11==0.16.0
 httpcore==1.0.9
@@ -44,6 +45,7 @@ pydantic==2.12.4
 pydantic-settings==2.12.0
 pydantic_core==2.41.5
 pylint==4.0.2
+pypdf==5.1.0
 pytest==7.4.3
 pytest-asyncio==0.21.1
 python-dateutil==2.9.0.post0
