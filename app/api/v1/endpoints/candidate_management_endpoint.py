@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import httpx
 from uuid import UUID
 from typing import Optional
 
@@ -54,26 +55,54 @@ router = APIRouter(
 )
 
 
-@router.get("/apply/{job_requirement_id}", response_class=HTMLResponse)
+@router.get("/apply/{job_requirement_id}", response_model=ApiResponseSchema[dict])
 async def get_application_form(
     job_requirement_id: UUID,
     db: AsyncSession = Depends(get_async_db),
 ):
     """
-    Generate HTML application form for a specific job requirement.
-    This endpoint returns a complete HTML page with Bootstrap styling.
+    Generate application form for a specific job requirement and return the URL to access it.
+    This endpoint generates the form via the Flask service and returns JSON with the form URL.
     """
     try:
-        service = CandidateManagementService(db)
+        # Call the Flask dynamic form service to generate the form
+        import httpx
 
-        # Get job requirement details
-        job_details = await service.get_job_requirement_details(job_requirement_id, None)
+        flask_service_url = f"http://localhost:8889/interview-management-service/api/v1/candidates/apply/{job_requirement_id}"
 
-        # Generate HTML form
-        html_content = service.generate_application_form_html(job_details)
+        async with httpx.AsyncClient() as client:
+            response = await client.get(flask_service_url)
 
-        return HTMLResponse(content=html_content, status_code=200)
+            if response.status_code == 200:
+                flask_response = response.json()
 
+                if flask_response.get("success"):
+                    # Return the form URL from Flask service
+                    return ApiResponseSchema(
+                        success=True,
+                        message="Form generated successfully",
+                        data={
+                            "job_requirement_id": str(job_requirement_id),
+                            "form_url": flask_response.get("form_url"),
+                            "form_path": flask_response.get("form_path")
+                        }
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Failed to generate form via Flask service: {flask_response.get('message')}"
+                    )
+            else:
+                raise HTTPException(
+                    status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Flask service returned status {response.status_code}: {response.text}"
+                )
+
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Unable to connect to Flask form service: {str(e)}"
+        )
     except JobRequirementNotFoundException as e:
         raise HTTPException(
             status_code=http_status.HTTP_404_NOT_FOUND,

@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
 from app.helper.redis_helper import get_redis_helper
@@ -127,6 +128,15 @@ def create_app() -> FastAPI:
 
     # Add middleware
     fastapi_app.add_middleware(CorrelationIdMiddleware, header_name="X-Correlation-ID")
+
+    # Add CORS middleware
+    fastapi_app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Allows all origins
+        allow_credentials=True,
+        allow_methods=["*"],  # Allows all methods
+        allow_headers=["*"],  # Allows all headers
+    )
 
     # Setup custom error handlers
     setup_error_handlers(fastapi_app)

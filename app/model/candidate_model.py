@@ -28,5 +28,5 @@ class CandidateModel(BaseAppModel):
 
     # Unique constraint to prevent same candidate from applying to same job multiple times
     __table_args__ = (
-        Index('unique_candidate_job', candidate_id, job_requirement_id, unique=True),
+        Index('unique_candidate_job', candidate_id, job_requirement_id, email, phone, unique=True),
     )

@@ -60,6 +60,11 @@ class CandidateManagementService(BaseAppService):
             candidate_data = payload.model_dump()
             candidate_data["candidate_id"] = candidate_id
 
+            # For public applications, set created_by to system user UUID
+            # since there's no authenticated user
+            system_user_uuid = "00000000-0000-0000-0000-000000000000"
+            candidate_data["created_by"] = system_user_uuid
+
             candidate = await self.candidate_repo.insert(
                 candidate_data=candidate_data
             )
