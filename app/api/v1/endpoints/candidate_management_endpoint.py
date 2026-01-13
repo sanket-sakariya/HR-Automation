@@ -61,28 +61,76 @@ async def get_application_form(
     db: AsyncSession = Depends(get_async_db),
 ):
     """
-    Generate application form for a specific job requirement and return the URL to access it.
-    This endpoint generates the form via the Flask service and returns JSON with the form URL.
+    Get job requirement details and generate application form for a specific job requirement.
+    This endpoint fetches job details from the database and generates the form via the Flask service.
     """
     try:
-        # Call the Flask dynamic form service to generate the form
-        import httpx
+        # First, fetch job requirement details from database
+        service = CandidateManagementService(db)
+        
+        from app.repository.job_requirement_repository import JobRequirementRepository
+        job_repo = JobRequirementRepository(db=db)
+        
+        # Fetch job requirement (without workspace_id since this is a public form)
+        job_requirement = await job_repo.get_by_id(job_requirement_id)
+        
+        if not job_requirement:
+            raise JobRequirementNotFoundException(job_requirement_id)
+        
+        # Prepare job details
+        job_details = {
+            "job_requirement_id": str(job_requirement.job_requirement_id),
+            "title": job_requirement.title,
+            "department": job_requirement.department,
+            "description": job_requirement.description,
+            "requirements": job_requirement.requirements,
+            "location": job_requirement.location,
+            "job_type": job_requirement.job_type,
+            "salary_range": job_requirement.salary_range,
+            "benefits": job_requirement.benefits if hasattr(job_requirement, 'benefits') else None,
+            "experience": job_requirement.experience if hasattr(job_requirement, 'experience') else None,
+            "company_id": str(job_requirement.company_id) if hasattr(job_requirement, 'company_id') else None,
+        }
+        
+        # Print job details to terminal
+        print("\n" + "="*80)
+        print("📋 JOB REQUIREMENT DETAILS - APPLICATION FORM")
+        print("="*80)
+        print(f"🆔 Job ID: {job_details['job_requirement_id']}")
+        print(f"📌 Title: {job_details['title']}")
+        print(f"🏢 Department: {job_details['department']}")
+        print(f"📍 Location: {job_details['location']}")
+        print(f"💼 Job Type: {job_details['job_type']}")
+        print(f"📝 Description: {job_details['description'][:100]}..." if len(job_details['description']) > 100 else f"📝 Description: {job_details['description']}")
+        if job_details.get('salary_range'):
+            print(f"💰 Salary Range: {job_details['salary_range']}")
+        if job_details.get('experience'):
+            print(f"🎓 Experience Required: {job_details['experience']}")
+        if job_details.get('requirements'):
+            print(f"✅ Requirements: {job_details['requirements']}")
+        print("="*80 + "\n")
 
+        # Call the Flask dynamic form service to generate the form with job details
         flask_service_url = f"http://localhost:8889/interview-management-service/api/v1/candidates/apply/{job_requirement_id}"
 
         async with httpx.AsyncClient() as client:
-            response = await client.get(flask_service_url)
+            # Send job details via POST to Flask service
+            response = await client.post(
+                flask_service_url,
+                json={"job_details": job_details},
+                timeout=10.0
+            )
 
             if response.status_code == 200:
                 flask_response = response.json()
 
                 if flask_response.get("success"):
-                    # Return the form URL from Flask service
+                    # Return both job details and form URL
                     return ApiResponseSchema(
                         success=True,
-                        message="Form generated successfully",
+                        message="Job details retrieved and form generated successfully",
                         data={
-                            "job_requirement_id": str(job_requirement_id),
+                            "job_details": job_details,
                             "form_url": flask_response.get("form_url"),
                             "form_path": flask_response.get("form_path")
                         }

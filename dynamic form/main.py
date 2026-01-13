@@ -48,7 +48,7 @@ FORM_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application Form</title>
+    <title>{{ job_title }} - Job Application</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -60,14 +60,60 @@ FORM_TEMPLATE = """
             background: white;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-            padding: 40px;
-            max-width: 800px;
+            padding: 0;
+            max-width: 900px;
             margin: 0 auto;
+            overflow: hidden;
         }
-        .form-header {
+        .job-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
             text-align: center;
-            margin-bottom: 30px;
-            color: #667eea;
+        }
+        .job-details-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-bottom: 3px solid #667eea;
+        }
+        .job-detail-item {
+            margin-bottom: 15px;
+        }
+        .job-detail-label {
+            font-weight: 600;
+            color: #495057;
+            display: inline-block;
+            min-width: 120px;
+        }
+        .requirements-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .requirements-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .skill-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            margin-right: 8px;
+        }
+        .skill-badge.required {
+            background: #dc3545;
+        }
+        .skill-badge.advanced {
+            background: #28a745;
+        }
+        .skill-badge.intermediate {
+            background: #ffc107;
+            color: #333;
+        }
+        .form-section {
+            padding: 30px;
         }
         .form-label {
             font-weight: 600;
@@ -92,11 +138,6 @@ FORM_TEMPLATE = """
             border-color: #667eea;
             box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
         }
-        .info-text {
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-bottom: 30px;
-        }
         .success-message {
             display: none;
             background: #d4edda;
@@ -120,19 +161,80 @@ FORM_TEMPLATE = """
 <body>
     <div class="container">
         <div class="form-container">
-            <div class="form-header">
-                <h2>Job Application Form</h2>
-                <p class="info-text">Job ID: <strong>{{ job_requirement_id }}</strong></p>
+            <!-- Job Header -->
+            <div class="job-header">
+                <h1 class="mb-2">{{ job_title }}</h1>
+                <p class="mb-1"><strong>{{ job_department }}</strong> Department</p>
+                <p class="mb-0"><i class="bi bi-geo-alt"></i> {{ job_location }}</p>
             </div>
 
-            <div id="successMessage" class="success-message">
-                <strong>Success!</strong> Your application has been submitted successfully.
-            </div>
-            <div id="errorMessage" class="error-message">
-                <strong>Error!</strong> <span id="errorText"></span>
-            </div>
+            <!-- Job Details Section -->
+            {% if has_job_details %}
+            <div class="job-details-section">
+                <h4 class="mb-3" style="color: #667eea;">📋 Job Details</h4>
+                
+                <div class="job-detail-item">
+                    <span class="job-detail-label">Description:</span>
+                    <p class="mb-0">{{ job_description }}</p>
+                </div>
 
-            <form id="applicationForm" action="{{ api_endpoint }}" method="POST" enctype="multipart/form-data">
+                {% if job_type %}
+                <div class="job-detail-item">
+                    <span class="job-detail-label">Job Type:</span>
+                    <span class="badge bg-primary">{{ job_type }}</span>
+                </div>
+                {% endif %}
+
+                {% if salary_range %}
+                <div class="job-detail-item">
+                    <span class="job-detail-label">Salary Range:</span>
+                    <span>{{ salary_range.get('currency', 'INR') }} {{ "{:,}".format(salary_range.get('min', 0)) }} - {{ "{:,}".format(salary_range.get('max', 0)) }}</span>
+                </div>
+                {% endif %}
+
+                {% if experience %}
+                <div class="job-detail-item">
+                    <span class="job-detail-label">Experience:</span>
+                    <span>{{ experience.get('min_years', 0) }} - {{ experience.get('max_years', 0) }} years</span>
+                </div>
+                {% endif %}
+
+                {% if requirements %}
+                <div class="job-detail-item">
+                    <span class="job-detail-label">Required Skills:</span>
+                    <div class="mt-2">
+                        {% for req in requirements %}
+                            <span class="skill-badge {{ req.level }} {% if req.required %}required{% endif %}">
+                                {{ req.skill }} ({{ req.level }}){% if req.required %} *{% endif %}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if benefits %}
+                <div class="job-detail-item">
+                    <span class="job-detail-label">Benefits:</span>
+                    <ul class="mt-2 mb-0">
+                        {% for benefit in benefits %}
+                            <li>{{ benefit }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Form Section -->
+            <div class="form-section">
+                <div id="successMessage" class="success-message">
+                    <strong>Success!</strong> Your application has been submitted successfully.
+                </div>
+                <div id="errorMessage" class="error-message">
+                    <strong>Error!</strong> <span id="errorText"></span>
+                </div>
+
+                <form id="applicationForm" action="{{ api_endpoint }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="job_requirement_id" value="{{ job_requirement_id }}">
 
                 <!-- Personal Information Section -->
@@ -224,7 +326,8 @@ FORM_TEMPLATE = """
                 <div class="text-center mt-4">
                     <button type="submit" class="btn btn-primary btn-submit">Submit Application</button>
                 </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -308,12 +411,14 @@ FORM_TEMPLATE = """
 """
 
 
-@app.route('/interview-management-service/api/v1/candidates/apply/<job_requirement_id>', methods=['GET'])
+@app.route('/interview-management-service/api/v1/candidates/apply/<job_requirement_id>', methods=['GET', 'POST'])
 def get_application_form(job_requirement_id):
     """
     Generate a form for a specific job requirement ID and return the URL to access it.
     Creates an HTML file in the forms directory and returns the URL to access that form.
 
+    Accepts POST with job_details in request body to include job information on the form.
+    
     Returns JSON response with:
     - success: boolean
     - message: string
@@ -324,20 +429,42 @@ def get_application_form(job_requirement_id):
     When you visit the form_url, you'll see the HTML form where users can fill data.
     The form submits directly to the main application's API endpoint.
     """
-    """
-    Generate a form for a specific job requirement ID and return the URL to access it.
-    Creates an HTML file in the forms directory and returns the URL to access that form.
-    """
     try:
+        # Get job details from POST request body (if available)
+        job_details = {}
+        has_job_details = False
+        
+        if request.method == 'POST' and request.is_json:
+            data = request.get_json()
+            job_details = data.get('job_details', {})
+            has_job_details = bool(job_details)
+            
+            logger.info(f"Received job details for form generation: {job_details}")
+        
         # Sanitize the job_requirement_id for filename
         safe_filename = f"{job_requirement_id}.html"
         form_file_path = FORMS_DIR / safe_filename
 
+        # Prepare template variables
+        template_vars = {
+            'job_requirement_id': job_requirement_id,
+            'api_endpoint': MAIN_APP_API_ENDPOINT,
+            'has_job_details': has_job_details,
+            'job_title': job_details.get('title', 'Job Position'),
+            'job_department': job_details.get('department', 'N/A'),
+            'job_location': job_details.get('location', 'N/A'),
+            'job_description': job_details.get('description', 'N/A'),
+            'job_type': job_details.get('job_type', ''),
+            'salary_range': job_details.get('salary_range'),
+            'experience': job_details.get('experience'),
+            'requirements': job_details.get('requirements', []),
+            'benefits': job_details.get('benefits', [])
+        }
+
         # Create the HTML content
         html_content = render_template_string(
             FORM_TEMPLATE,
-            job_requirement_id=job_requirement_id,
-            api_endpoint=MAIN_APP_API_ENDPOINT
+            **template_vars
         )
 
         # Save the HTML file to the forms directory
@@ -362,6 +489,8 @@ def get_application_form(job_requirement_id):
 
     except Exception as e:
         logger.error(f"Error generating form: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             "success": False,
             "message": f"Failed to generate application form: {str(e)}",

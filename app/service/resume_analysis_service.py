@@ -421,6 +421,17 @@ CRITICAL REMINDERS:
                 level="info"
             )
 
+            # Print token usage to terminal
+            print("\n" + "="*60)
+            print("🤖 AI RESUME ANALYSIS - TOKEN USAGE")
+            print("="*60)
+            print(f"📥 Input Tokens:  {response.usage_metadata.prompt_token_count:,}")
+            print(f"📤 Output Tokens: {response.usage_metadata.candidates_token_count:,}")
+            print(f"📊 Total Tokens:  {response.usage_metadata.total_token_count:,}")
+            print(f"⏱️  Processing Time: {processing_time:.2f}s")
+            print(f"📝 Resume Score: {analysis_result.get('total_score', 'N/A')}")
+            print("="*60 + "\n")
+
             return analysis_result
 
         except json.JSONDecodeError as e:
