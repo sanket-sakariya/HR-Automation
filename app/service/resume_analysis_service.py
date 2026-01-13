@@ -103,15 +103,28 @@ class ResumeAnalysisService:
                 else:
                     requirements_text += f"  {idx}. {req}\n"
         
-        # Format experience requirements
+        # Format experience requirements with proper handling of null values
         experience_text = ""
         if experience:
-            min_years = experience.get('minYears', experience.get('min_years', 0))
-            max_years = experience.get('maxYears', experience.get('max_years', 'N/A'))
+            min_years = experience.get('minYears', experience.get('min_years'))
+            max_years = experience.get('maxYears', experience.get('max_years'))
             preferred = experience.get('preferred', '')
-            experience_text = f"Required Experience: {min_years}-{max_years} years"
+            
+            # Format experience based on min/max availability
+            if min_years is not None and max_years is not None:
+                experience_text = f"Required Experience: {min_years} to {max_years} years"
+            elif min_years is not None and max_years is None:
+                if min_years == 0:
+                    experience_text = "Required Experience: 0+ years (Freshers welcome)"
+                else:
+                    experience_text = f"Required Experience: {min_years}+ years"
+            elif min_years is None and max_years is not None:
+                experience_text = f"Required Experience: 0 to {max_years} years"
+            else:
+                experience_text = "Experience: Not specified"
+            
             if preferred:
-                experience_text += f"\nPreferred: {preferred}"
+                experience_text += f"\nPreferred Experience: {preferred}"
         
         # Format candidate data from application form (if provided)
         candidate_info_text = ""
@@ -156,176 +169,220 @@ class ResumeAnalysisService:
             
             candidate_info_text += "\nNote: Use both resume content AND form data for comprehensive evaluation.\n"
         
-        # Create the detailed prompt
+        # Create the powerful, comprehensive prompt using ALL job requirement parameters
         prompt = f"""
-You are an expert HR recruiter and resume analyst. Analyze the following candidate's resume for the position of "{job_title}" in the {department} department.
+You are an EXPERT HR RECRUITER and TECHNICAL EVALUATOR with 15+ years of experience. Your task is to perform a COMPREHENSIVE, STRICT, and DETAILED evaluation of a candidate's resume against ALL job requirements.
 
-JOB DETAILS:
-=============
-Position: {job_title}
-Department: {department}
-Location: {location}
-Job Type: {job_type}
+═══════════════════════════════════════════════════════════════
+POSITION OVERVIEW
+═══════════════════════════════════════════════════════════════
+🎯 Position: {job_title}
+🏢 Department: {department}
+📍 Location: {location}
+💼 Job Type: {job_type}
+💰 Salary Range: {salary_range.get('min', 'N/A')} - {salary_range.get('max', 'N/A')} {salary_range.get('currency', 'INR')}
 
-Job Description:
+═══════════════════════════════════════════════════════════════
+DETAILED JOB DESCRIPTION
+═══════════════════════════════════════════════════════════════
 {description}
 
+═══════════════════════════════════════════════════════════════
+MANDATORY REQUIREMENTS - STRICT COMPARISON REQUIRED
+═══════════════════════════════════════════════════════════════
 {requirements_text}
 
+⚠️ CRITICAL: Every single requirement listed above must be STRICTLY evaluated against the candidate's resume. Each missing or weak skill significantly impacts the score.
+
+═══════════════════════════════════════════════════════════════
+EXPERIENCE REQUIREMENTS - MUST MATCH
+═══════════════════════════════════════════════════════════════
 {experience_text}
 
-Salary Range: {salary_range.get('min', 'N/A')} - {salary_range.get('max', 'N/A')} {salary_range.get('currency', '')}
+Evaluate:
+- Does the candidate have the required years of experience?
+- Are their past roles directly relevant to this position?
+- Do they have progressive career growth?
+- Have they worked on similar technologies/domains?
 
-CANDIDATE'S RESUME:
-===================
+═══════════════════════════════════════════════════════════════
+CANDIDATE'S RESUME - COMPLETE CONTENT
+═══════════════════════════════════════════════════════════════
 {resume_text}
+
+═══════════════════════════════════════════════════════════════
+CANDIDATE'S APPLICATION FORM DATA - CROSS-VALIDATE WITH RESUME
+═══════════════════════════════════════════════════════════════
 {candidate_info_text}
 
-ANALYSIS INSTRUCTIONS:
-======================
-Provide a comprehensive, granular evaluation of this candidate for this specific role. Your analysis must be extremely detailed and precise to ensure differentiation between candidates.
+⚠️ IMPORTANT: Cross-validate form-submitted skills with actual resume content. If skills claimed in form are not evident in resume, apply penalty.
 
-⚠️ CRITICAL SCORING PRIORITIES:
-- Skills and Experience are THE MOST IMPORTANT factors (60% of total score)
-- Projects demonstrate practical application (25% of total score)
-- Other factors are secondary considerations (15% of total score)
+═══════════════════════════════════════════════════════════════
+COMPREHENSIVE SCORING FRAMEWORK (0-10000 INTEGER SCALE)
+═══════════════════════════════════════════════════════════════
 
-Evaluate the candidate on the following dimensions with VERY PRECISE DECIMAL SCORING (use at least 2-4 decimal places):
+🎯 **1. SKILLS MATCH SCORE (0-3000) [30% - HIGHEST PRIORITY]**
 
-1. **Skills Match Score (0-30.0000)** [30% WEIGHT - HIGHEST PRIORITY]: 
-   - THIS IS A CRITICAL EVALUATION FACTOR
-   - Evaluate BOTH resume content AND form-submitted skills list
-   - Cross-reference: Do resume projects/experience validate the claimed skills?
-   - Consider skill level, proficiency, and recency of each skill
-   - Account for both required and preferred skills
-   - Penalize missing critical required skills significantly (-3 to -5 points per missing skill)
-   - Bonus for additional relevant skills not mentioned in requirements (+0.5 to +2 points)
-   - Deep technical skills should score higher than breadth
-   - Recent usage and current versions matter significantly
-   - Hands-on experience weighted more than theoretical knowledge
-   - If form skills match resume evidence = higher credibility score
+STRICT EVALUATION CRITERIA:
+✓ Required Skills Presence: Does resume show ALL required skills?
+✓ Proficiency Level: Do skills match required levels (beginner/intermediate/advanced)?
+✓ Hands-on Evidence: Are skills backed by projects/experience or just listed?
+✓ Recency: Are skills currently used or outdated?
+✓ Depth vs Breadth: Deep expertise vs surface-level knowledge
+✓ Technology Versions: Current frameworks/tools vs legacy versions
+✓ Form-Resume Validation: Do self-reported skills match resume evidence?
 
-2. **Experience Relevance Score (0-30.0000)** [30% WEIGHT - HIGHEST PRIORITY]:
-   - THIS IS A CRITICAL EVALUATION FACTOR
-   - Evaluate years of experience vs required range (exact match = full points)
-   - Assess direct relevance of previous roles to this specific position
-   - Consider industry alignment and domain expertise
-   - Evaluate career progression and growth trajectory
-   - Weight recent experience (last 2-3 years) more heavily than older experience
-   - Consider project complexity, team size, and impact delivered
-   - Leadership experience and ownership of outcomes matter
-   - Consistency and stability in career path is a plus
+SCORING GUIDE:
+- Perfect match (all required + advanced level + proven): 2700-3000
+- Strong match (most required + intermediate+ level): 2200-2699
+- Good match (required skills + some gaps): 1700-2199
+- Moderate match (missing some required skills): 1200-1699
+- Weak match (missing many required skills): 600-1199
+- Poor match (mostly missing skills): 100-599
 
-3. **Projects & Achievements Score (0-25.0000)** [25% WEIGHT - MAJOR PRIORITY]:
-   - THIS IS A MAJOR EVALUATION FACTOR
-   - Evaluate project complexity, scale, and technical depth
-   - Assess measurable achievements with quantified outcomes (metrics, percentages, numbers)
-   - Consider innovation, problem-solving approach, and creativity demonstrated
-   - Evaluate technical challenges overcome and solutions implemented
-   - Assess leadership, collaboration, and ownership in projects
-   - Open-source contributions and side projects are valuable
-   - Real-world production experience weighted higher than academic projects
-   - Business impact and user scale matter significantly
+PENALTIES:
+- Each missing REQUIRED skill: -150 to -300 points
+- Claimed but not proven in resume: -100 points per skill
+- Outdated technology versions: -50 to -150 points
 
-4. **Education & Certifications Score (0-8.0000)** [8% WEIGHT - SECONDARY]:
-   - Evaluate degree level and field of study alignment with role
-   - Consider institution reputation if mentioned (minor factor)
-   - Assess relevant certifications and their recency
-   - Evaluate continuous learning and professional development initiatives
-   - Consider specialized training and additional qualifications
-   - Note: Experience and skills outweigh education for technical roles
+BONUSES:
+- Extra relevant skills beyond requirements: +50 to +200 points
+- Expert-level certifications: +100 to +250 points
+- Cutting-edge technology adoption: +50 to +150 points
 
-5. **Cultural & Soft Indicators Score (0-4.0000)** [4% WEIGHT - SECONDARY]:
-   - Evaluate communication skills based on resume quality and clarity
-   - Assess leadership indicators and initiative-taking
-   - Consider teamwork and collaboration mentions
-   - Evaluate adaptability and learning agility indicators
-   - Consider location compatibility and relocation willingness
+🎯 **2. EXPERIENCE RELEVANCE SCORE (0-3000) [30% - HIGHEST PRIORITY]**
 
-6. **Overall Fit Score (0-3.0000)** [3% WEIGHT - SECONDARY]:
-   - Holistic assessment of candidate suitability for role and company
-   - Consider compensation expectations vs offered range (use form salary data)
-   - Evaluate notice period and immediate availability (use form data)
-   - Consider location match and relocation willingness (use form data)
-   - Assess career trajectory alignment with role growth path
-   - Consider any red flags or exceptional standout qualities
+STRICT EVALUATION CRITERIA:
+✓ Years Match: Does experience fall within required range?
+✓ Role Relevance: Are previous job titles/roles directly relevant?
+✓ Industry Alignment: Same or related industry experience?
+✓ Project Complexity: Handled projects of similar or greater complexity?
+✓ Team Leadership: Led teams if leadership is required?
+✓ Career Progression: Consistent growth or lateral moves?
+✓ Employment Gaps: Any unexplained gaps in career?
+✓ Domain Expertise: Deep knowledge in required domain?
 
-SCORING GRANULARITY REQUIREMENTS:
-- Use 4 decimal places for maximum differentiation (e.g., 28.4567, not 28.5)
-- Each sub-criterion should have micro-adjustments based on specifics
-- Consider nuanced factors like specific tools, frameworks, versions mentioned
-- Account for keyword matches, context, and depth of experience
-- Factor in recency, frequency, and emphasis of skills mentioned
-- Apply penalties for gaps, mismatches, or missing critical elements
-- Apply bonuses for exceptional achievements, unique combinations, or overqualifications
+SCORING GUIDE:
+- Perfect fit (exact years + highly relevant roles + leadership): 2700-3000
+- Strong fit (within range + relevant roles): 2200-2699
+- Good fit (close to range + related roles): 1700-2199
+- Moderate fit (some relevance + gaps): 1200-1699
+- Weak fit (limited relevance): 600-1199
+- Poor fit (mostly irrelevant): 100-599
 
-Return your response in the following JSON format ONLY (no additional text):
+🎯 **3. PROJECTS & ACHIEVEMENTS SCORE (0-2500) [25% - MAJOR PRIORITY]**
+
+STRICT EVALUATION CRITERIA:
+✓ Project Complexity: Technical sophistication and scale
+✓ Quantified Impact: Metrics, percentages, numbers proving impact
+✓ Problem-Solving: Challenging problems solved
+✓ Technologies Used: Alignment with job requirements
+✓ Team Size: Solo vs team projects
+✓ Business Impact: Revenue, users, performance improvements
+✓ Innovation: Novel solutions or approaches
+✓ Open Source: Contributions to community projects
+
+SCORING GUIDE:
+- Outstanding (complex + quantified + innovative): 2200-2500
+- Excellent (solid projects + measurable impact): 1800-2199
+- Good (decent projects + some metrics): 1400-1799
+- Moderate (basic projects + limited impact): 900-1399
+- Weak (minimal projects): 400-899
+- Poor (no significant projects): 100-399
+
+🎯 **4. EDUCATION & CERTIFICATIONS SCORE (0-800) [8% - SECONDARY]**
+
+STRICT EVALUATION CRITERIA:
+✓ Degree Level: Bachelor's, Master's, PhD alignment with requirements
+✓ Field of Study: Computer Science, Engineering, related fields
+✓ Relevant Certifications: Industry-recognized certifications
+✓ Continuous Learning: Recent courses, training, upskilling
+✓ Academic Achievements: Honors, publications, research
+
+SCORING GUIDE:
+- Excellent (advanced degree + certifications + learning): 700-800
+- Good (relevant degree + some certifications): 550-699
+- Moderate (basic degree + limited certifications): 350-549
+- Weak (degree but not related field): 200-349
+- Minimal (basic education only): 100-199
+
+🎯 **5. CULTURAL & SOFT SKILLS SCORE (0-400) [4% - SECONDARY]**
+
+STRICT EVALUATION CRITERIA:
+✓ Communication: Resume clarity, presentation quality
+✓ Leadership: Evidence of leading teams/initiatives
+✓ Collaboration: Team projects, cross-functional work
+✓ Adaptability: Multiple technologies, changing roles
+✓ Initiative: Self-started projects, proactive approach
+
+SCORING GUIDE:
+- Excellent (strong evidence across all areas): 350-400
+- Good (clear evidence in most areas): 280-349
+- Moderate (some evidence): 210-279
+- Weak (limited evidence): 130-209
+- Minimal (barely visible): 100-129
+
+🎯 **6. OVERALL FIT SCORE (0-300) [3% - HOLISTIC]**
+
+STRICT EVALUATION CRITERIA:
+✓ Salary Expectations: Within or close to offered range?
+✓ Location Match: Same location or willing to relocate?
+✓ Notice Period: Can join in required timeframe?
+✓ Career Goals: Aligned with role growth path?
+✓ Red Flags: Job hopping, gaps, inconsistencies?
+✓ Availability: Immediate vs delayed joining
+
+SCORING GUIDE:
+- Perfect fit (all factors align): 270-300
+- Strong fit (most factors align): 220-269
+- Good fit (reasonable alignment): 170-219
+- Moderate fit (some concerns): 120-169
+- Weak fit (multiple concerns): 100-119
+
+═══════════════════════════════════════════════════════════════
+⚠️ CRITICAL SCORING RULES - MUST FOLLOW ⚠️
+═══════════════════════════════════════════════════════════════
+
+1. **USE ALL DIGITS - NO ZEROS ALLOWED**: 
+   ❌ BAD: 2000, 1500, 800, 3000, 2500
+   ✅ GOOD: 2347, 1582, 847, 2891, 2456
+   
+   Every score MUST use varied digits. Avoid round numbers or trailing zeros.
+
+2. **GRANULAR SCORING**: 
+   Score with precision. Two similar candidates should have different scores.
+   Use the FULL range: 2347, 2856, 1923, NOT just 2000, 2500, 2000.
+
+3. **STRICT PENALTIES**:
+   - Missing required skills = major penalty
+   - Unproven claims = penalty
+   - Experience mismatch = penalty
+   - Employment gaps = penalty
+
+4. **COMPARATIVE EVALUATION**:
+   Compare EACH job requirement item against resume evidence
+   If requirement is not explicitly found in resume, apply penalty
+
+5. **CROSS-VALIDATION**:
+   Form skills vs Resume evidence - must match
+   Claimed years vs actual project timelines - must align
+
+═══════════════════════════════════════════════════════════════
+OUTPUT FORMAT - RETURN ONLY THIS JSON (NO OTHER TEXT)
+═══════════════════════════════════════════════════════════════
+
 {{
-    "total_score": <precise decimal sum of all scores, max 100.0000>,
-    "breakdown": {{
-        "skills_match": {{
-            "score": <0-30.0000>,
-            "weight": "30%",
-            "analysis": "Detailed analysis of skills match with specific examples from resume",
-            "matched_skills": ["list of matched skills with proficiency level"],
-            "missing_skills": ["list of critical missing required skills"],
-            "bonus_skills": ["list of additional relevant skills beyond requirements"]
-        }},
-        "experience_relevance": {{
-            "score": <0-30.0000>,
-            "weight": "30%",
-            "analysis": "Detailed analysis of experience relevance and career trajectory",
-            "years_of_experience": <number>,
-            "relevant_roles": ["list of directly relevant previous roles"],
-            "key_achievements": ["list of notable achievements with quantified impact"]
-        }},
-        "projects_achievements": {{
-            "score": <0-25.0000>,
-            "weight": "25%",
-            "analysis": "Detailed analysis of projects, technical depth, and measurable achievements",
-            "notable_projects": ["list of significant projects with scale/impact"],
-            "quantified_impact": ["list of measurable outcomes with numbers/metrics"],
-            "technical_complexity": "assessment of technical sophistication demonstrated"
-        }},
-        "education_certifications": {{
-            "score": <0-8.0000>,
-            "weight": "8%",
-            "analysis": "Analysis of education background and certifications",
-            "degrees": ["list of degrees with field of study"],
-            "certifications": ["list of relevant certifications with dates"],
-            "continuous_learning": "assessment of ongoing education and skill development"
-        }},
-        "cultural_soft_indicators": {{
-            "score": <0-4.0000>,
-            "weight": "4%",
-            "analysis": "Analysis of soft skills and cultural fit indicators",
-            "strengths": ["list of observed soft skill strengths"],
-            "concerns": ["list of any soft skill concerns if applicable"]
-        }},
-        "overall_fit": {{
-            "score": <0-3.0000>,
-            "weight": "3%",
-            "analysis": "Holistic fit assessment for this specific role",
-            "key_strengths": ["top 3-5 strengths for this role"],
-            "key_concerns": ["top concerns or gaps if any"],
-            "recommendation": "Brief hiring recommendation (Strong Hire/Hire/Maybe/No Hire)"
-        }}
-    }},
-    "summary": "3-4 sentence executive summary emphasizing skills and experience fit for this role",
-    "ranking_category": "<Excellent|Strong|Good|Fair|Poor> based on total score",
-    "hiring_priority": "<High|Medium|Low> based on skills and experience match",
-    "timestamp": "{time.strftime('%Y-%m-%d %H:%M:%S')}"
+    "skills_match": <integer 100-3000, use all digits, no zeros>,
+    "experience_relevance": <integer 100-3000, use all digits, no zeros>,
+    "projects_achievements": <integer 100-2500, use all digits, no zeros>,
+    "education_certifications": <integer 100-800, use all digits, no zeros>,
+    "cultural_soft_skills": <integer 100-400, use all digits, no zeros>,
+    "overall_fit": <integer 100-300, use all digits, no zeros>,
+    "total_score": <sum of all above, max 10000>,
+    "recommendation": "<Strong Hire|Hire|Maybe|No Hire>"
 }}
 
-CRITICAL REMINDERS:
-- Skills (30%) and Experience (30%) = 60% of total score - BE STRICT AND DETAILED HERE
-- Projects (25%) demonstrate practical application - LOOK FOR QUANTIFIED RESULTS
-- Education (8%) + Soft Skills (4%) + Overall Fit (3%) = 15% - SECONDARY FACTORS
-- Use 4 decimal precision to ensure unique scores for each candidate
-- Two candidates should rarely have identical scores even if similar backgrounds
-- IMPORTANT: Cross-validate form-submitted skills with resume evidence
-- Form data provides additional context - use it to enhance, not replace resume analysis
-- Salary expectations, notice period, and relocation willingness affect Overall Fit score
+REMEMBER: Be STRICT, DETAILED, and PRECISE. Use ALL DIGITS in scores (e.g., 2347 not 2300). Compare EVERY requirement against the resume!
 """
         
         return prompt
@@ -402,37 +459,68 @@ CRITICAL REMINDERS:
             
             analysis_result = json.loads(response_text.strip())
 
-            # Add metadata
-            analysis_result['metadata'] = {
-                'candidate_id': str(candidate_id),
-                'job_requirement_id': str(job_requirement_id),
-                'processing_time': processing_time,
-                'input_tokens': response.usage_metadata.prompt_token_count,
-                'output_tokens': response.usage_metadata.candidates_token_count,
-                'total_tokens': response.usage_metadata.total_token_count,
-                'resume_length': len(resume_text),
-                'analysis_timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+            # Convert scores from 0-10000 scale to 0-100 scale with 4 decimal precision
+            # This gives us precise float values like 67.5089
+            raw_total_score = analysis_result.get('total_score', 0)
+            converted_score = round(raw_total_score / 100, 4)  # Divide by 100 to get 0-100 range with 4 decimals
+            
+            # Convert individual scores as well
+            breakdown = {
+                'skills_match': round(analysis_result.get('skills_match', 0) / 100, 4),
+                'experience_relevance': round(analysis_result.get('experience_relevance', 0) / 100, 4),
+                'projects_achievements': round(analysis_result.get('projects_achievements', 0) / 100, 4),
+                'education_certifications': round(analysis_result.get('education_certifications', 0) / 100, 4),
+                'cultural_soft_skills': round(analysis_result.get('cultural_soft_skills', 0) / 100, 4),
+                'overall_fit': round(analysis_result.get('overall_fit', 0) / 100, 4)
+            }
+
+            # Reconstruct analysis result with converted scores
+            converted_result = {
+                'total_score': converted_score,
+                'raw_total_score': raw_total_score,  # Keep raw score for reference
+                'breakdown': breakdown,
+                'recommendation': analysis_result.get('recommendation', 'Maybe'),
+                'metadata': {
+                    'candidate_id': str(candidate_id),
+                    'job_requirement_id': str(job_requirement_id),
+                    'processing_time': processing_time,
+                    'input_tokens': response.usage_metadata.prompt_token_count,
+                    'output_tokens': response.usage_metadata.candidates_token_count,
+                    'total_tokens': response.usage_metadata.total_token_count,
+                    'resume_length': len(resume_text),
+                    'analysis_timestamp': time.strftime('%Y-%m-%d %H:%M:%S')
+                }
             }
 
             log_central(
-                f"Resume analysis completed successfully: Score={analysis_result.get('total_score', 'N/A')}, "
-                f"Time={processing_time:.2f}s, Tokens={response.usage_metadata.total_token_count} "
-                f"[candidate_id={candidate_id}]",
+                f"Resume analysis completed successfully: Raw Score={raw_total_score}/10000, "
+                f"Converted Score={converted_score}/100, Time={processing_time:.2f}s, "
+                f"Tokens={response.usage_metadata.total_token_count} [candidate_id={candidate_id}]",
                 level="info"
             )
 
-            # Print token usage to terminal
-            print("\n" + "="*60)
-            print("🤖 AI RESUME ANALYSIS - TOKEN USAGE")
-            print("="*60)
-            print(f"📥 Input Tokens:  {response.usage_metadata.prompt_token_count:,}")
-            print(f"📤 Output Tokens: {response.usage_metadata.candidates_token_count:,}")
-            print(f"📊 Total Tokens:  {response.usage_metadata.total_token_count:,}")
-            print(f"⏱️  Processing Time: {processing_time:.2f}s")
-            print(f"📝 Resume Score: {analysis_result.get('total_score', 'N/A')}")
-            print("="*60 + "\n")
+            # Print token usage and scores to terminal
+            print("\n" + "="*70)
+            print("🤖 AI RESUME ANALYSIS - TOKEN USAGE & SCORING")
+            print("="*70)
+            print(f"📥 Input Tokens:      {response.usage_metadata.prompt_token_count:,}")
+            print(f"📤 Output Tokens:     {response.usage_metadata.candidates_token_count:,}")
+            print(f"📊 Total Tokens:      {response.usage_metadata.total_token_count:,}")
+            print(f"⏱️  Processing Time:   {processing_time:.2f}s")
+            print("-"*70)
+            print(f"📝 Raw Score (0-10000):      {raw_total_score:,}")
+            print(f"✨ Final Score (0-100):      {converted_score}")
+            print(f"💡 Recommendation:           {converted_result['recommendation']}")
+            print("-"*70)
+            print(f"   Skills Match:             {breakdown['skills_match']}/30")
+            print(f"   Experience Relevance:     {breakdown['experience_relevance']}/30")
+            print(f"   Projects & Achievements:  {breakdown['projects_achievements']}/25")
+            print(f"   Education:                {breakdown['education_certifications']}/8")
+            print(f"   Cultural Fit:             {breakdown['cultural_soft_skills']}/4")
+            print(f"   Overall Fit:              {breakdown['overall_fit']}/3")
+            print("="*70 + "\n")
 
-            return analysis_result
+            return converted_result
 
         except json.JSONDecodeError as e:
             log_central(

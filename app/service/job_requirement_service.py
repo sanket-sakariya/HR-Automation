@@ -36,6 +36,44 @@ class JobRequirementService(BaseAppService):
         self.job_requirement_repo = JobRequirementRepository(db=db)
         self.company_repo = CompanyRepository(db=db)
 
+    def format_experience_text(self, min_years: Optional[int], max_years: Optional[int]) -> str:
+        """
+        Format experience text based on min and max years.
+        
+        Args:
+            min_years: Minimum years of experience
+            max_years: Maximum years of experience
+            
+        Returns:
+            Formatted experience string
+            
+        Examples:
+            - min=1, max=3 -> "1 to 3 years"
+            - min=1, max=None -> "1+ years"
+            - min=None, max=3 -> "0 to 3 years"
+            - min=0, max=None -> "0+ years (Freshers welcome)"
+            - min=None, max=None -> "Not specified"
+        """
+        if min_years is not None and max_years is not None:
+            # Both values present: "1 to 3 years"
+            if min_years == max_years:
+                return f"{min_years} year{'s' if min_years != 1 else ''}"
+            return f"{min_years} to {max_years} years"
+        
+        elif min_years is not None and max_years is None:
+            # Only min present: "1+ years"
+            if min_years == 0:
+                return "0+ years (Freshers welcome)"
+            return f"{min_years}+ years"
+        
+        elif min_years is None and max_years is not None:
+            # Only max present: "0 to 3 years"
+            return f"0 to {max_years} years"
+        
+        else:
+            # Neither present
+            return "Not specified"
+
     async def create_job_requirement(
         self,
         company_id: UUID,
@@ -87,6 +125,13 @@ class JobRequirementService(BaseAppService):
         # Get company details for LinkedIn posting (we already validated it exists)
         company = await self.company_repo.get_by_id(company_id, workspace_id)
 
+        # Format experience text
+        experience_text = None
+        if job_data.experience:
+            min_years = job_data.experience.min_years if job_data.experience else None
+            max_years = job_data.experience.max_years if job_data.experience else None
+            experience_text = self.format_experience_text(min_years, max_years)
+        
         # Prepare job data for LinkedIn posting
         linkedin_job_data = {
             "job_requirement_id": str(job_data.job_requirement_id),
@@ -100,6 +145,7 @@ class JobRequirementService(BaseAppService):
                 "min_years": job_data.experience.min_years if job_data.experience else None,
                 "max_years": job_data.experience.max_years if job_data.experience else None,
                 "preferred": job_data.experience.preferred if job_data.experience else None,
+                "formatted_text": experience_text,
             } if job_data.experience else None,
             "location": job_data.location,
             "job_type": job_data.job_type,
