@@ -1,0 +1,403 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Backend Developer - Aptitude Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .test-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 1000px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+        .test-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .test-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+        .question-container {
+            padding: 30px;
+            display: none;
+        }
+        .question-container.active {
+            display: block;
+        }
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 25px;
+            color: #333;
+        }
+        .option-btn {
+            width: 100%;
+            text-align: left;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            border: 2px solid #e9ecef;
+            background: white;
+            border-radius: 8px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .option-btn:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+        .option-btn.selected {
+            border-color: #667eea;
+            background: #e7f1ff;
+        }
+        .timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+            z-index: 1000;
+        }
+        .timer.warning {
+            color: #dc3545;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 30px;
+            border-top: 1px solid #e9ecef;
+        }
+        .question-indicator {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .q-indicator {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #dee2e6;
+            background: white;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .q-indicator.answered {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+        .q-indicator.current {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .proctoring-warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #dc3545;
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 2000;
+            text-align: center;
+        }
+        .difficulty-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .difficulty-simple {
+            background: #d4edda;
+            color: #155724;
+        }
+        .difficulty-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .difficulty-hard {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer" id="timer">45:00</div>
+    
+    <div class="proctoring-warning" id="proctoringWarning">
+        <h4>⚠️ Suspicious Activity Detected</h4>
+        <p>Please stay on this page. Tab switches remaining: <span id="tabSwitchCount">3</span></p>
+        <button class="btn btn-light" onclick="closeWarning()">Continue Test</button>
+    </div>
+
+    <div class="container">
+        <div class="test-container">
+            <div class="test-header">
+                <h1>Python Backend Developer</h1>
+                <p class="mb-0">Aptitude Assessment Test</p>
+            </div>
+
+            <div class="test-info">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Total Questions:</strong> 30
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Duration:</strong> 45 minutes
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Passing Score:</strong> 60%
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Question Type:</strong> MCQ
+                    </div>
+                </div>
+            </div>
+
+            <div class="question-indicator" id="questionIndicator"></div>
+
+            <div id="questionsContainer"></div>
+
+            <div class="navigation-buttons">
+                <button class="btn btn-secondary" id="prevBtn" onclick="previousQuestion()">← Previous</button>
+                <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">Next →</button>
+                <button class="btn btn-success" id="submitBtn" onclick="submitTest()" style="display:none;">Submit Test</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const testData = {"test_metadata": {"test_id": "TEST_PYTHON_BACKEND_DEVELOPER_1702819200", "job_title": "Python Backend Developer", "industry": "Technology", "total_questions": 30, "total_time_minutes": 45, "passing_score_percentage": 60, "difficulty_distribution": {"simple": 12, "medium": 12, "hard": 6}}, "proctoring_settings": {"keyboard_tracking": true, "tab_switch_detection": true, "mouse_tracking": true, "copy_paste_detection": true, "camera_required": false, "microphone_required": false, "fullscreen_mode": true, "max_tab_switches_allowed": 3, "warning_on_suspicious_activity": true}, "time_allocation": {"simple_question_seconds": 60, "medium_question_seconds": 90, "hard_question_seconds": 120, "total_test_duration_minutes": 45}, "questions": [{"question_id": "q1", "question_number": 1, "difficulty": "simple", "category": "core_logic", "question_text": "Which number comes next in the sequence: 2, 4, 8, 16, __?", "options": {"A": "20", "B": "24", "C": "32", "D": "36"}, "correct_answer": "C", "explanation": "The sequence is formed by multiplying the previous number by 2. So, 16 * 2 = 32.", "time_allocated_seconds": 60, "tags": ["numerical_reasoning", "patterns"]}, {"question_id": "q2", "question_number": 2, "difficulty": "simple", "category": "core_logic", "question_text": "If all 'P' are 'Q' and some 'Q' are 'R', then which of the following must be true?", "options": {"A": "All 'P' are 'R'", "B": "Some 'P' are 'R'", "C": "No 'P' are 'R'", "D": "None of the above"}, "correct_answer": "D", "explanation": "From the given statements, P is a subset of Q, and Q intersects with R. This does not necessarily imply any direct or guaranteed relationship between P and R.", "time_allocated_seconds": 60, "tags": ["logical_deduction"]}, {"question_id": "q3", "question_number": 3, "difficulty": "simple", "category": "core_logic", "question_text": "What is the result of 15 * (4 - 2) + 7?", "options": {"A": "37", "B": "22", "C": "32", "D": "47"}, "correct_answer": "A", "explanation": "Following the order of operations (PEMDAS/BODMAS): 15 * (2) + 7 = 30 + 7 = 37.", "time_allocated_seconds": 60, "tags": ["numerical_reasoning", "arithmetic"]}, {"question_id": "q4", "question_number": 4, "difficulty": "simple", "category": "core_logic", "question_text": "If 'APPLE' is coded as 'BQQMF', what is the code for 'GRAPE'?", "options": {"A": "HSBQG", "B": "HSBRH", "C": "HTAQG", "D": "HQAPB"}, "correct_answer": "A", "explanation": "Each letter in 'APPLE' is shifted one position forward in the alphabet (A->B, P->Q, P->Q, L->M, E->F). Applying this to 'GRAPE': G->H, R->S, A->B, P->Q, E->F, resulting in 'HSBQG'.", "time_allocated_seconds": 60, "tags": ["verbal_reasoning", "coding"]}, {"question_id": "q5", "question_number": 5, "difficulty": "simple", "category": "core_logic", "question_text": "Which of these is the odd one out: Circle, Square, Triangle, Sphere?", "options": {"A": "Circle", "B": "Square", "C": "Triangle", "D": "Sphere"}, "correct_answer": "D", "explanation": "Circle, Square, and Triangle are 2D shapes, while Sphere is a 3D shape.", "time_allocated_seconds": 60, "tags": ["pattern_recognition", "spatial_reasoning"]}, {"question_id": "q6", "question_number": 6, "difficulty": "simple", "category": "core_logic", "question_text": "A clock shows 3:00. If the minute hand is pointing towards East, in which direction is the hour hand pointing?", "options": {"A": "North", "B": "South", "C": "West", "D": "East"}, "correct_answer": "B", "explanation": "At 3:00, the minute hand is at the 12-o'clock position, and the hour hand is at the 3-o'clock position. If the 12-o'clock position is pointing East, then moving 90 degrees clockwise from East (which is where the 3-o'clock position is) points to South. Therefore, the hour hand is pointing South.", "time_allocated_seconds": 60, "tags": ["spatial_reasoning", "direction"]}, {"question_id": "q7", "question_number": 7, "difficulty": "simple", "category": "critical_thinking", "question_text": "You notice a critical bug in production affecting a small number of users. What is your immediate priority?", "options": {"A": "Find the root cause and implement a permanent fix immediately.", "B": "Rollback to the previous stable version if possible.", "C": "Inform your manager and team about the issue.", "D": "Deploy a quick hotfix to mitigate the immediate impact while investigating a long-term solution."}, "correct_answer": "D", "explanation": "In production, immediate mitigation to reduce impact is usually the first step for critical bugs, followed by root cause analysis and a permanent fix. Informing the team is important but not the 'immediate priority' for resolution compared to impact reduction.", "time_allocated_seconds": 60, "tags": ["problem_solving", "incident_management"]}, {"question_id": "q8", "question_number": 8, "difficulty": "simple", "category": "critical_thinking", "question_text": "Your team needs to implement a new feature. What's the best first step to ensure a smooth development process?", "options": {"A": "Start coding the most complex part of the feature.", "B": "Write comprehensive unit tests for the entire feature.", "C": "Clearly define the requirements and design the solution.", "D": "Delegate tasks to team members without much discussion."}, "correct_answer": "C", "explanation": "Clearly defining requirements and designing the solution upfront helps prevent misunderstandings, rework, and ensures everyone is aligned.", "time_allocated_seconds": 60, "tags": ["software_development", "planning"]}, {"question_id": "q9", "question_number": 9, "difficulty": "simple", "category": "critical_thinking", "question_text": "You are debugging a Python application and suspect a variable holds an incorrect value. What is the most straightforward way to check its value during runtime?", "options": {"A": "Restart the entire server and check logs.", "B": "Add a `print()` statement to output the variable's value.", "C": "Guess the value and continue execution.", "D": "Rewrite the function where the variable is used."}, "correct_answer": "B", "explanation": "Using `print()` statements (or a debugger) is the most direct and simple way to inspect variable values during execution for debugging purposes.", "time_allocated_seconds": 60, "tags": ["debugging", "problem_solving", "python"]}, {"question_id": "q10", "question_number": 10, "difficulty": "simple", "category": "critical_thinking", "question_text": "A project deadline is approaching, and you realize you might not finish your assigned tasks on time. What should you do?", "options": {"A": "Work extra hours in secret to try and catch up.", "B": "Ignore the deadline and hope nobody notices.", "C": "Communicate the potential delay to your team lead and discuss options.", "D": "Prioritize only the easiest tasks and skip the harder ones."}, "correct_answer": "C", "explanation": "Open and early communication about potential delays is crucial in project management. It allows the team to adjust plans, reallocate resources, or manage stakeholder expectations.", "time_allocated_seconds": 60, "tags": ["teamwork", "communication", "project_management"]}, {"question_id": "q11", "question_number": 11, "difficulty": "simple", "category": "domain_specific", "question_text": "What is the primary purpose of a Python virtual environment (e.g., `venv`)?", "options": {"A": "To run Python code directly in a web browser.", "B": "To isolate project dependencies and avoid conflicts.", "C": "To speed up Python script execution.", "D": "To convert Python code into other programming languages."}, "correct_answer": "B", "explanation": "Virtual environments allow different Python projects to have their own isolated set of dependencies, preventing conflicts between package versions required by different projects.", "time_allocated_seconds": 60, "tags": ["Python", "best_practices"]}, {"question_id": "q12", "question_number": 12, "difficulty": "simple", "category": "domain_specific", "question_text": "Which HTTP method is typically used to retrieve data from a server in a REST API?", "options": {"A": "POST", "B": "PUT", "C": "GET", "D": "DELETE"}, "correct_answer": "C", "explanation": "The GET method is used to request data from a specified resource. It should only retrieve data and have no other effect on the data.", "time_allocated_seconds": 60, "tags": ["REST_API_Design", "HTTP_methods"]}, {"question_id": "q13", "question_number": 13, "difficulty": "medium", "category": "core_logic", "question_text": "A train travels at 60 km/h for the first hour and then at 80 km/h for the next 30 minutes. What is the average speed of the train for the entire journey?", "options": {"A": "65 km/h", "B": "70 km/h", "C": "75 km/h", "D": "66.67 km/h"}, "correct_answer": "D", "explanation": "Distance 1 = 60 km/h * 1 h = 60 km. Distance 2 = 80 km/h * 0.5 h = 40 km. Total distance = 60 + 40 = 100 km. Total time = 1 h + 0.5 h = 1.5 h. Average speed = Total distance / Total time = 100 km / 1.5 h = 66.67 km/h (approx).", "time_allocated_seconds": 90, "tags": ["numerical_reasoning", "speed_distance_time"]}, {"question_id": "q14", "question_number": 14, "difficulty": "medium", "category": "core_logic", "question_text": "If A is taller than B, C is shorter than D, and B is taller than D, who is the tallest?", "options": {"A": "A", "B": "B", "C": "C", "D": "D"}, "correct_answer": "A", "explanation": "From the statements: A > B, D > C, B > D. Combining these: A > B > D > C. Therefore, A is the tallest.", "time_allocated_seconds": 90, "tags": ["logical_reasoning", "ordering"]}, {"question_id": "q15", "question_number": 15, "difficulty": "medium", "category": "core_logic", "question_text": "A certain sum of money doubles itself in 5 years at simple interest. In how many years will it become four times itself at the same rate?", "options": {"A": "10 years", "B": "15 years", "C": "20 years", "D": "25 years"}, "correct_answer": "B", "explanation": "If it doubles in 5 years, the interest earned is 100% of the principal in 5 years. So, it earns 20% interest per year. To become four times, it needs to earn 300% interest (3 times the principal). Since it earns 100% in 5 years, it will earn 300% in 3 * 5 = 15 years.", "time_allocated_seconds": 90, "tags": ["numerical_reasoning", "simple_interest"]}, {"question_id": "q16", "question_number": 16, "difficulty": "medium", "category": "core_logic", "question_text": "Which number logically completes the series: 3, 5, 9, 15, 23, __?", "options": {"A": "31", "B": "33", "C": "35", "D": "37"}, "correct_answer": "B", "explanation": "The differences between consecutive numbers are: 5-3=2, 9-5=4, 15-9=6, 23-15=8. The differences are increasing by 2 each time. The next difference should be 10. So, 23 + 10 = 33.", "time_allocated_seconds": 90, "tags": ["numerical_reasoning", "series"]}, {"question_id": "q17", "question_number": 17, "difficulty": "medium", "category": "core_logic", "question_text": "A box contains 5 red balls and 3 blue balls. If two balls are drawn at random without replacement, what is the probability that both are red?", "options": {"A": "5/14", "B": "10/64", "C": "25/64", "D": "2/7"}, "correct_answer": "A", "explanation": "Total balls = 8. Probability of first ball being red = 5/8. After drawing one red ball, 4 red balls and 7 total balls remain. Probability of second ball being red = 4/7. Combined probability = (5/8) * (4/7) = 20/56 = 5/14.", "time_allocated_seconds": 90, "tags": ["probability", "numerical_reasoning"]}, {"question_id": "q18", "question_number": 18, "difficulty": "medium", "category": "core_logic", "question_text": "If 'SPIN' is coded as 'PNIS' and 'TALK' is coded as 'KLAT', how is 'CODE' coded?", "options": {"A": "EDOC", "B": "EODC", "C": "DOEC", "D": "DCEO"}, "correct_answer": "A", "explanation": "The coding scheme reverses the word. SPIN becomes PNIS, and TALK becomes KLAT. Applying the same logic to CODE, it becomes EDOC.", "time_allocated_seconds": 90, "tags": ["verbal_reasoning", "coding"]}, {"question_id": "q19", "question_number": 19, "difficulty": "medium", "category": "critical_thinking", "question_text": "You've written a new API endpoint, and it's working correctly on your local machine. However, after deployment, requests to it fail with a database connection error. What is the MOST likely immediate cause?", "options": {"A": "Your local database has different data.", "B": "A firewall on the production server is blocking the database port.", "C": "The database credentials or connection string are incorrect in the production environment.", "D": "Frontend application has a bug sending wrong requests."}, "correct_answer": "C", "explanation": "A database connection error specifically after deployment often points to environment-specific configuration issues like incorrect credentials, host, or port settings, which differ from the local environment.", "time_allocated_seconds": 90, "tags": ["debugging", "deployment", "troubleshooting"]}, {"question_id": "q20", "question_number": 20, "difficulty": "medium", "category": "critical_thinking", "question_text": "Your team is debating whether to use Django REST Framework (DRF) or FastAPI for a new microservice. The primary requirements are high performance, asynchronous capabilities, and strict data validation. Which framework would you lean towards and why?", "options": {"A": "Django REST Framework, because it's more mature and has a larger community.", "B": "FastAPI, because it's built on Starlette and Pydantic, offering excellent async support and data validation out-of-the-box.", "C": "Django REST Framework, as it integrates seamlessly with Django's ORM which is crucial.", "D": "Flask, because it's lightweight and easy to get started with for microservices."}, "correct_answer": "B", "explanation": "FastAPI's design prioritizes high performance (async support) and relies on Pydantic for robust data validation, making it an excellent choice for the stated requirements.", "time_allocated_seconds": 90, "tags": ["architecture_design", "framework_choice", "FastAPI", "Django"]}, {"question_id": "q21", "question_number": 21, "difficulty": "medium", "category": "critical_thinking", "question_text": "You are designing a user authentication system. Which of the following is the most secure way to store user passwords in a database?", "options": {"A": "Store them as plain text.", "B": "Encrypt them using a reversible encryption algorithm.", "C": "Hash them using a strong, salted, and adaptive hashing algorithm (e.g., bcrypt, Argon2).", "D": "Obscure them by replacing characters with symbols."}, "correct_answer": "C", "explanation": "Storing passwords as plain text or using reversible encryption is highly insecure. Hashing with a strong, salted, and adaptive algorithm prevents rainbow table attacks and makes brute-forcing computationally expensive, even if the database is compromised.", "time_allocated_seconds": 90, "tags": ["security", "database_design", "best_practices"]}, {"question_id": "q22", "question_number": 22, "difficulty": "medium", "category": "critical_thinking", "question_text": "A legacy system needs to be integrated with a new microservice. The legacy system exposes data via a SOAP API, while the new microservice uses REST. What is the most common architectural pattern to bridge this gap?", "options": {"A": "Rewrite the legacy system completely to use REST.", "B": "Develop a facade or adapter layer that translates SOAP requests/responses to REST.", "C": "Force the new microservice to use SOAP.", "D": "Store all legacy data in a new database for the microservice."}, "correct_answer": "B", "explanation": "An adapter or facade pattern (often implemented as an API Gateway or a dedicated translation service) is a common and effective way to integrate systems with different communication protocols without modifying the original systems.", "time_allocated_seconds": 90, "tags": ["architecture_design", "integration", "problem_solving"]}, {"question_id": "q23", "question_number": 23, "difficulty": "medium", "category": "domain_specific", "question_text": "You have a Django model `Product` and want to fetch all products where the `price` is greater than 100. Which Django ORM query is correct?", "options": {"A": "Product.objects.filter(price > 100)", "B": "Product.objects.get(price__gt=100)", "C": "Product.objects.filter(price__gt=100)", "D": "Product.objects.select(price__gt=100)"}, "correct_answer": "C", "explanation": "Django ORM uses field lookups (like `__gt` for 'greater than') within the `filter()` method to query objects based on conditions. `get()` is for single objects, and `select()` is not a standard filtering method for value-based lookups.", "time_allocated_seconds": 90, "tags": ["Django", "ORM", "Databases"]}, {"question_id": "q24", "question_number": 24, "difficulty": "medium", "category": "domain_specific", "question_text": "Which of the following commands would you use to start a Docker container from an image named `my-backend-app` and map port 8000 on the host to port 80 on the container?", "options": {"A": "`docker run -p 80:8000 my-backend-app`", "B": "`docker start -p 8000:80 my-backend-app`", "C": "`docker run -p 8000:80 my-backend-app`", "D": "`docker create --port 8000:80 my-backend-app`"}, "correct_answer": "C", "explanation": "The `docker run` command is used to start a new container from an image. The `-p` flag maps ports, with the format `host_port:container_port`. So, `8000:80` maps host port 8000 to container port 80.", "time_allocated_seconds": 90, "tags": ["DevOps", "Docker", "Linux"]}, {"question_id": "q25", "question_number": 25, "difficulty": "hard", "category": "core_logic", "question_text": "You have an unsorted array of N distinct integers. You need to find the Kth smallest element. Which algorithm would typically have the best average-case time complexity for this task?", "options": {"A": "Bubble Sort and pick the Kth element", "B": "Merge Sort and pick the Kth element", "C": "Quickselect algorithm", "D": "Linear search K times"}, "correct_answer": "C", "explanation": "Bubble Sort (O(N^2)) and Linear Search K times (O(N*K)) are inefficient. Merge Sort (O(N log N)) would sort the entire array. Quickselect has an average-case time complexity of O(N), making it much more efficient for finding the Kth smallest element without sorting the entire array.", "time_allocated_seconds": 120, "tags": ["algorithms", "time_complexity", "data_structures"]}, {"question_id": "q26", "question_number": 26, "difficulty": "hard", "category": "core_logic", "question_text": "A software company has 3 teams: Alpha, Beta, and Gamma. Alpha completes 1/3 of a project in 10 days. Beta completes 1/4 of the remaining project in 5 days. Gamma then completes the rest in 15 days. If all three teams work together, approximately how many days would it take to complete the entire project?", "options": {"A": "8 days", "B": "9 days", "C": "10 days", "D": "12 days"}, "correct_answer": "C", "explanation": "Alpha's rate: (1/3 project) / 10 days = 1/30 project/day. Remaining project = 1 - 1/3 = 2/3. Beta completes 1/4 of 2/3 = 1/6 of project in 5 days. Beta's rate: (1/6 project) / 5 days = 1/30 project/day. Remaining project for Gamma = 2/3 - 1/6 = 3/6 = 1/2. Gamma completes 1/2 project in 15 days. Gamma's rate: (1/2 project) / 15 days = 1/30 project/day. Combined rate = 1/30 + 1/30 + 1/30 = 3/30 = 1/10 project/day. Time to complete entire project together = 1 / (1/10) = 10 days.", "time_allocated_seconds": 120, "tags": ["numerical_reasoning", "work_rate"]}, {"question_id": "q27", "question_number": 27, "difficulty": "hard", "category": "core_logic", "question_text": "You are given a dictionary representing nested objects, potentially with cyclic references. Which Python module would be most suitable for serializing this dictionary into a JSON string without encountering issues like recursion depth limits for standard `json.dumps()`?", "options": {"A": "jsonpickle", "B": "pickle", "C": "json", "D": "marshal"}, "correct_answer": "A", "explanation": "`jsonpickle` is specifically designed to serialize complex Python objects, including those with cyclic references, into JSON. `pickle` and `marshal` are for Python-specific binary serialization, not JSON. Standard `json.dumps()` cannot handle cyclic references.", "time_allocated_seconds": 120, "tags": ["Python", "serialization", "data_structures"]}, {"question_id": "q28", "question_number": 28, "difficulty": "hard", "category": "critical_thinking", "question_text": "You are building a high-traffic API endpoint that fetches data from an external service. The external service has a rate limit of 100 requests per minute. How would you design your system to handle bursts of incoming requests to your API while respecting the external service's rate limit?", "options": {"A": "Directly call the external service for every incoming request, letting it fail when rate-limited.", "B": "Implement a client-side rate limiter that makes your API clients wait.", "C": "Use a queueing system (e.g., Celery with Redis) to process external service calls asynchronously with a worker pool respecting the rate limit.", "D": "Increase the external service's rate limit immediately by contacting their support."}, "correct_answer": "C", "explanation": "A queueing system with workers that consume tasks at a controlled rate is an effective way to handle bursts of incoming requests while ensuring that calls to an external, rate-limited service do not exceed its limits. Client-side limiting or direct calls would lead to poor user experience or errors. Increasing the external rate limit might not be possible or immediate.", "time_allocated_seconds": 120, "tags": ["architecture_design", "scalability", "rate_limiting", "asynchronous_processing"]}, {"question_id": "q29", "question_number": 29, "difficulty": "hard", "category": "domain_specific", "question_text": "In FastAPI, you need to execute some setup code (e.g., connect to a database) when the application starts and cleanup code (e.g., close database connection) when it shuts down. What is the recommended way to achieve this?", "options": {"A": "Using `app.on_event('startup')` and `app.on_event('shutdown')` decorators.", "B": "Implementing a custom middleware to handle startup/shutdown logic.", "C": "Placing setup/cleanup code directly inside `main.py` before `uvicorn.run()`.", "D": "Using Python's `atexit` module for shutdown hooks."}, "correct_answer": "A", "explanation": "FastAPI provides `app.on_event('startup')` and `app.on_event('shutdown')` decorators (or the `lifespan` context manager in newer versions) specifically for running code during application startup and shutdown. This is the idiomatic and recommended way for managing application lifecycle events.", "time_allocated_seconds": 120, "tags": ["FastAPI", "application_lifecycle", "dependency_injection"]}, {"question_id": "q30", "question_number": 30, "difficulty": "hard", "category": "domain_specific", "question_text": "Consider a PostgreSQL database table `users` with a `username` column, which is frequently used in `WHERE` clauses for searching. If the `users` table has millions of rows, what is the most effective database optimization to speed up queries like `SELECT * FROM users WHERE username = 'john_doe';`?", "options": {"A": "Normalize the database schema.", "B": "Add a `FULLTEXT` index on the `username` column.", "C": "Create a B-tree index on the `username` column.", "D": "Increase the server's RAM."}, "correct_answer": "C", "explanation": "For exact match (`=`) or range queries on a column in a large table, creating a B-tree index on that column is the most effective way to speed up query performance by allowing the database to quickly locate the relevant rows without scanning the entire table. `FULLTEXT` indexes are for text search, and increasing RAM is a general performance tweak, not specific to this query type.", "time_allocated_seconds": 120, "tags": ["Databases", "PostgreSQL", "optimization", "indexing"]}]};
+        let currentQuestion = 0;
+        let answers = {};
+        let timeRemaining = 45 * 60; // in seconds
+        let tabSwitches = 0;
+        let maxTabSwitches = 3;
+        let proctoring = {"keyboard_tracking": true, "tab_switch_detection": true, "mouse_tracking": true, "copy_paste_detection": true, "camera_required": false, "microphone_required": false, "fullscreen_mode": true, "max_tab_switches_allowed": 3, "warning_on_suspicious_activity": true};
+        
+        // Initialize test
+        function initializeTest() {
+            renderQuestions();
+            renderIndicators();
+            startTimer();
+            setupProctoring();
+            showQuestion(0);
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questionsContainer');
+            testData.questions.forEach((q, index) => {
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'question-container';
+                questionDiv.id = `question-${index}`;
+                
+                questionDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>Question ${q.question_number} of ${testData.questions.length}</h4>
+                        <span class="difficulty-badge difficulty-${q.difficulty}">${q.difficulty.toUpperCase()}</span>
+                    </div>
+                    <div class="question-text">${q.question_text}</div>
+                    <div class="options">
+                        ${Object.entries(q.options).map(([key, value]) => `
+                            <button class="option-btn" data-question="${index}" data-option="${key}" onclick="selectOption(${index}, '${key}')">
+                                <strong>${key}.</strong> ${value}
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                
+                container.appendChild(questionDiv);
+            });
+        }
+
+        function renderIndicators() {
+            const container = document.getElementById('questionIndicator');
+            testData.questions.forEach((q, index) => {
+                const indicator = document.createElement('div');
+                indicator.className = 'q-indicator';
+                indicator.id = `indicator-${index}`;
+                indicator.textContent = index + 1;
+                indicator.onclick = () => showQuestion(index);
+                container.appendChild(indicator);
+            });
+        }
+
+        function showQuestion(index) {
+            document.querySelectorAll('.question-container').forEach(q => q.classList.remove('active'));
+            document.querySelectorAll('.q-indicator').forEach(i => i.classList.remove('current'));
+            
+            document.getElementById(`question-${index}`).classList.add('active');
+            document.getElementById(`indicator-${index}`).classList.add('current');
+            
+            currentQuestion = index;
+            
+            // Update navigation buttons
+            document.getElementById('prevBtn').style.display = index === 0 ? 'none' : 'block';
+            document.getElementById('nextBtn').style.display = index === testData.questions.length - 1 ? 'none' : 'block';
+            document.getElementById('submitBtn').style.display = index === testData.questions.length - 1 ? 'block' : 'none';
+            
+            // Restore selected answer
+            if (answers[index]) {
+                document.querySelectorAll(`[data-question="${index}"]`).forEach(btn => {
+                    if (btn.dataset.option === answers[index]) {
+                        btn.classList.add('selected');
+                    }
+                });
+            }
+        }
+
+        function selectOption(questionIndex, option) {
+            // Clear previous selection
+            document.querySelectorAll(`[data-question="${questionIndex}"]`).forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Mark new selection
+            event.target.closest('.option-btn').classList.add('selected');
+            
+            // Save answer
+            answers[questionIndex] = option;
+            
+            // Update indicator
+            document.getElementById(`indicator-${questionIndex}`).classList.add('answered');
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < testData.questions.length - 1) {
+                showQuestion(currentQuestion + 1);
+            }
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                showQuestion(currentQuestion - 1);
+            }
+        }
+
+        function startTimer() {
+            setInterval(() => {
+                if (timeRemaining > 0) {
+                    timeRemaining--;
+                    const minutes = Math.floor(timeRemaining / 60);
+                    const seconds = timeRemaining % 60;
+                    document.getElementById('timer').textContent = 
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    if (timeRemaining < 300) { // Last 5 minutes
+                        document.getElementById('timer').classList.add('warning');
+                    }
+                } else {
+                    submitTest();
+                }
+            }, 1000);
+        }
+
+        function setupProctoring() {
+            if (proctoring.tab_switch_detection) {
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        tabSwitches++;
+                        document.getElementById('tabSwitchCount').textContent = maxTabSwitches - tabSwitches;
+                        document.getElementById('proctoringWarning').style.display = 'block';
+                        
+                        if (tabSwitches >= maxTabSwitches) {
+                            alert('Maximum tab switches exceeded. Test will be submitted automatically.');
+                            submitTest();
+                        }
+                    }
+                });
+            }
+            
+            if (proctoring.copy_paste_detection) {
+                document.addEventListener('copy', (e) => {
+                    e.preventDefault();
+                    console.log('Copy detected and blocked');
+                });
+                
+                document.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    console.log('Paste detected and blocked');
+                });
+            }
+            
+            if (proctoring.fullscreen_mode) {
+                document.documentElement.requestFullscreen();
+            }
+        }
+
+        function closeWarning() {
+            document.getElementById('proctoringWarning').style.display = 'none';
+        }
+
+        function submitTest() {
+            const answeredCount = Object.keys(answers).length;
+            const totalQuestions = testData.questions.length;
+            
+            if (answeredCount < totalQuestions) {
+                if (!confirm(`You have answered ${answeredCount} out of ${totalQuestions} questions. Submit anyway?`)) {
+                    return;
+                }
+            }
+            
+            // Calculate score
+            let correctAnswers = 0;
+            testData.questions.forEach((q, index) => {
+                if (answers[index] === q.correct_answer) {
+                    correctAnswers++;
+                }
+            });
+            
+            const scorePercentage = (correctAnswers / totalQuestions * 100).toFixed(2);
+            const passed = scorePercentage >= testData.test_metadata.passing_score_percentage;
+            
+            // Show results
+            alert(`Test Submitted!\n\nCorrect Answers: ${correctAnswers}/${totalQuestions}\nScore: ${scorePercentage}%\nStatus: ${passed ? 'PASSED ✅' : 'FAILED ❌'}`);
+            
+            // TODO: Send results to server
+            console.log('Test Results:', {
+                answers,
+                correctAnswers,
+                scorePercentage,
+                passed,
+                tabSwitches
+            });
+        }
+
+        // Initialize on load
+        initializeTest();
+    </script>
+</body>
+</html>

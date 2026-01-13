@@ -18,6 +18,9 @@ from app.model.company_model import CompanyModel
 from app.model.job_requirement_model import JobRequirementModel
 from app.model.candidate_model import CandidateModel
 from app.model.candidate_profile_model import CandidateProfileModel
+from app.model.aptitude_test_model import AptitudeTestModel
+from app.model.aptitude_question_model import AptitudeQuestionModel
+from app.model.aptitude_test_attempt_model import AptitudeTestAttemptModel
 
 # Import your app config
 

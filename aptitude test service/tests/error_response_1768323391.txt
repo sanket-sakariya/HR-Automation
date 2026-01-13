@@ -1,0 +1,6 @@
+================================================================================
+FAILED AI RESPONSE
+================================================================================
+Error: Expecting property name enclosed in double quotes: line 1 column 874 (char 873)
+================================================================================
+{   "test_metadata": {     "test_id": "TEST_PYTHON_BACKEND_DEVELOPER_1768323352",     "job_title": "Python Backend Developer",     "industry": "Engineering",     "total_questions": 30,     "total_time_minutes": 45,     "passing_score_percentage": 60,     "difficulty_distribution": {       "simple": 12,       "medium": 12,       "hard": 6     }   },   "proctoring_settings": {     "keyboard_tracking": true,     "tab_switch_detection": true,     "mouse_tracking": true,     "copy_paste_detection": true,     "camera_required": false,     "microphone_required": false,     "fullscreen_mode": true,     "max_tab_switches_allowed": 3,     "warning_on_suspicious_activity": true   },   "time_allocation": {     "simple_question_seconds": 60,     "medium_question_seconds": 90,     "hard_question_seconds": 120,     "total_test_duration_minutes": 45   },   "questions": [     {

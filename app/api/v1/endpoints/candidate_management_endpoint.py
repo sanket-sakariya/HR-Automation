@@ -54,6 +54,16 @@ router = APIRouter(
     },
 )
 
+# Router for aptitude tests
+test_router = APIRouter(
+    prefix="/tests",
+    tags=["Aptitude Tests"],
+    responses={
+        404: {"description": "Not found"},
+        500: {"description": "Internal server error"},
+    },
+)
+
 
 @router.get("/apply/{job_requirement_id}", response_model=ApiResponseSchema[dict])
 async def get_application_form(
@@ -383,4 +393,94 @@ async def list_candidates(
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve candidates: {str(e)}"
+        )
+
+
+@test_router.get("/generate/{job_requirement_id}", response_model=ApiResponseSchema[dict])
+async def generate_aptitude_test(
+    job_requirement_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Generate an AI-powered aptitude test for a specific job requirement.
+    Fetches job details and creates a comprehensive 30-question test with proctoring features.
+    """
+    try:
+        # Fetch job requirement details from database
+        service = CandidateManagementService(db)
+        
+        from app.repository.job_requirement_repository import JobRequirementRepository
+        job_repo = JobRequirementRepository(db=db)
+        
+        # Fetch job requirement (without workspace_id since this is a public test)
+        job_requirement = await job_repo.get_by_id(job_requirement_id)
+        
+        if not job_requirement:
+            raise JobRequirementNotFoundException(job_requirement_id)
+        
+        # Prepare job details
+        job_details = {
+            "job_requirement_id": str(job_requirement.job_requirement_id),
+            "title": job_requirement.title,
+            "department": job_requirement.department,
+            "description": job_requirement.description,
+            "requirements": job_requirement.requirements,
+            "location": job_requirement.location,
+            "job_type": job_requirement.job_type,
+            "salary_range": job_requirement.salary_range,
+            "benefits": job_requirement.benefits if hasattr(job_requirement, 'benefits') else None,
+            "experience": job_requirement.experience if hasattr(job_requirement, 'experience') else None,
+            "company_id": str(job_requirement.company_id) if hasattr(job_requirement, 'company_id') else None,
+        }
+        
+        # Print job details to terminal
+        print("\n" + "="*80)
+        print("🧠 APTITUDE TEST GENERATION - JOB DETAILS")
+        print("="*80)
+        print(f"🆔 Job ID: {job_details['job_requirement_id']}")
+        print(f"📌 Title: {job_details['title']}")
+        print(f"🏢 Department: {job_details['department']}")
+        print(f"📍 Location: {job_details['location']}")
+        print(f"💼 Job Type: {job_details['job_type']}")
+        if job_details.get('requirements'):
+            print(f"✅ Requirements: {len(job_details['requirements'])} skills")
+        print("="*80 + "\n")
+
+        # Generate test internally using AI and store in database
+        from app.service.aptitude_test_service import AptitudeTestService
+        test_service = AptitudeTestService(db)
+        
+        # Generate and store test
+        result = await test_service.generate_and_store_test(job_requirement_id)
+        
+        # Generate public URL
+        public_url = f"http://localhost:8888/interview-management-service/api/v1/aptitude/test/{job_requirement_id}/{result['aptitude_test_id']}"
+        
+        return ApiResponseSchema(
+            success=True,
+            message="Aptitude test generated and stored successfully" if not result.get('already_exists') else "Test already exists",
+            data={
+                "aptitude_test_id": str(result['aptitude_test_id']),
+                "job_requirement_id": str(job_requirement_id),
+                "test_title": result.get('test_title', 'Aptitude Test'),
+                "total_questions": 30,
+                "questions_generated": result.get('questions_generated', 30),
+                "already_exists": result.get('already_exists', False),
+                "public_url": public_url,
+                "test_access_url": f"{public_url}/start",
+                "job_details": job_details
+            }
+        )
+    except JobRequirementNotFoundException as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail=f"Job requirement not found: {str(e)}"
+        )
+    except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
+        print(f"\n❌ ERROR generating test:\n{error_traceback}\n")
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate aptitude test: {str(e)}"
         )
