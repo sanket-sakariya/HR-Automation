@@ -216,6 +216,7 @@ CRITICAL RULES:
             questions_data = []
             for q in test_data.get('questions', []):
                 questions_data.append({
+                    'job_requirement_id': job_requirement_id,
                     'aptitude_test_id': test_record.aptitude_test_id,
                     'question_number': q['question_number'],
                     'difficulty': q['difficulty'],

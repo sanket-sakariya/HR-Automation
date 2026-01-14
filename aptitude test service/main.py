@@ -1,327 +1,54 @@
 """
-AI-Powered Aptitude Test Generation Service
-This service generates comprehensive aptitude tests based on job requirements.
-Port: 8890
+Aptitude Test Flask Service
+This service generates and serves HTML aptitude test forms.
+It has no database access and uses the main app's API endpoint.
 """
 import os
-import json
 import logging
-import time
 from pathlib import Path
 from flask import Flask, render_template_string, request, send_from_directory, jsonify
-from datetime import datetime
-
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-app = Flask(__name__)
 
 # Configuration
 SERVICE_HOST = '0.0.0.0'
 SERVICE_PORT = 8890
 DEBUG_MODE = True
-MAIN_APP_API_ENDPOINT = 'http://localhost:8888/interview-management-service/api/v1'
+TESTS_DIRECTORY_NAME = 'tests'
+LOG_LEVEL = 'INFO'
+LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+# Configure logging
+logging.basicConfig(level=getattr(logging, LOG_LEVEL), format=LOG_FORMAT)
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
 
 # Get the directory where this script is located
 BASE_DIR = Path(__file__).parent
-TESTS_DIR = BASE_DIR / 'tests'
-RESULTS_DIR = BASE_DIR / 'results'
+TESTS_DIR = BASE_DIR / TESTS_DIRECTORY_NAME
 
-# Create directories if they don't exist
+# Create tests directory if it doesn't exist
 TESTS_DIR.mkdir(exist_ok=True)
-RESULTS_DIR.mkdir(exist_ok=True)
 
-# Import Gemini AI
-try:
-    import google.generativeai as genai
-    GEMINI_AVAILABLE = True
-    GEMINI_API_KEY = "AIzaSyDHNd6W382fBzwf_HbPxf70sxG13XE9xgA"
-    genai.configure(api_key=GEMINI_API_KEY)
-    
-    # Configure generation parameters for clean JSON output
-    generation_config = {
-        "temperature": 0.7,
-        "top_p": 0.95,
-        "top_k": 40,
-        "max_output_tokens": 8192,
-        "response_mime_type": "application/json",  # Force JSON output
-    }
-    
-    model = genai.GenerativeModel(
-        'gemini-2.5-flash',
-        generation_config=generation_config
-    )
-    logger.info("Gemini AI initialized successfully with JSON mode")
-except ImportError:
-    GEMINI_AVAILABLE = False
-    model = None
-    logger.warning("Gemini AI not available")
-except Exception as e:
-    GEMINI_AVAILABLE = False
-    model = None
-    logger.error(f"Failed to initialize Gemini AI: {str(e)}")
-
-
-def generate_test_prompt(job_details: dict) -> str:
-    """Generate the AI prompt for test creation."""
-    
-    job_title = job_details.get('title', 'Position')
-    department = job_details.get('department', 'General')
-    description = job_details.get('description', '')
-    requirements = job_details.get('requirements', [])
-    experience = job_details.get('experience', {})
-    
-    # Extract skills
-    skills = []
-    for req in requirements:
-        if isinstance(req, dict):
-            skills.append(req.get('skill', ''))
-        else:
-            skills.append(str(req))
-    
-    # Get experience level
-    exp_level = "mid"
-    if experience:
-        min_years = experience.get('min_years', 0)
-        if min_years == 0:
-            exp_level = "entry"
-        elif min_years >= 5:
-            exp_level = "senior"
-    
-    prompt = f"""
-You are an EXPERT APTITUDE TEST GENERATOR. Create a comprehensive, industry-specific assessment test based on the job requirements provided below.
-
-═══════════════════════════════════════════════════════════════
-JOB DETAILS
-═══════════════════════════════════════════════════════════════
-Position: {job_title}
-Department: {department}
-Experience Level: {exp_level}
-Industry: Technology
-
-Description:
-{description}
-
-Required Skills:
-{', '.join(skills)}
-
-═══════════════════════════════════════════════════════════════
-TEST GENERATION REQUIREMENTS
-═══════════════════════════════════════════════════════════════
-
-**MANDATORY STRUCTURE:**
-- Generate EXACTLY 30 questions
-- Difficulty Distribution:
-  * 12 Simple questions (40%) - Basic concepts
-  * 12 Medium questions (40%) - Applied reasoning
-  * 6 Hard questions (20%) - Advanced logic
-
-**QUESTION FORMAT:**
-- All MCQ with 4 options (A, B, C, D)
-- Only ONE correct answer
-- Include plausible distractors
-- Text-based only (no images)
-
-**CONTENT FOCUS:**
-- Core Logic (50%): Analytical reasoning, patterns, numerical reasoning
-- Critical Thinking (30%): Problem-solving, decision-making
-- Domain-Specific (20%): Industry concepts from job requirements
-
-**QUALITY RULES:**
-1. Questions MUST be clear and unambiguous
-2. Options MUST be plausible (avoid obviously wrong answers)
-3. Align with job requirements and skills
-4. NO cultural bias or trick questions
-5. Each question answerable in allocated time
-
-═══════════════════════════════════════════════════════════════
-OUTPUT FORMAT - RETURN ONLY VALID JSON
-═══════════════════════════════════════════════════════════════
-
-{{
-  "test_metadata": {{
-    "test_id": "TEST_{job_title.upper().replace(' ', '_')}_{int(time.time())}",
-    "job_title": "{job_title}",
-    "industry": "{department}",
-    "total_questions": 30,
-    "total_time_minutes": 45,
-    "passing_score_percentage": 60,
-    "difficulty_distribution": {{
-      "simple": 12,
-      "medium": 12,
-      "hard": 6
-    }}
-  }},
-  "proctoring_settings": {{
-    "keyboard_tracking": true,
-    "tab_switch_detection": true,
-    "mouse_tracking": true,
-    "copy_paste_detection": true,
-    "camera_required": false,
-    "microphone_required": false,
-    "fullscreen_mode": true,
-    "max_tab_switches_allowed": 3,
-    "warning_on_suspicious_activity": true
-  }},
-  "time_allocation": {{
-    "simple_question_seconds": 60,
-    "medium_question_seconds": 90,
-    "hard_question_seconds": 120,
-    "total_test_duration_minutes": 45
-  }},
-  "questions": [
-    {{
-      "question_id": "q1",
-      "question_number": 1,
-      "difficulty": "simple",
-      "category": "core_logic",
-      "question_text": "Question text here",
-      "options": {{
-        "A": "Option A",
-        "B": "Option B",
-        "C": "Option C",
-        "D": "Option D"
-      }},
-      "correct_answer": "A",
-      "explanation": "Explanation why A is correct",
-      "time_allocated_seconds": 60,
-      "tags": ["tag1", "tag2"]
-    }}
-  ]
-}}
-
-**CRITICAL JSON FORMATTING RULES:**
-- Return ONLY valid JSON (no markdown, no extra text)
-- Exactly 30 questions in the array
-- Each question must have all required fields
-- Correct_answer must be one of: A, B, C, D
-- Questions must be relevant to {job_title} role
-- Use skills: {', '.join(skills[:5])} in domain-specific questions
-
-**IMPORTANT TEXT FORMATTING:**
-- NO line breaks or newline characters (\\n) inside question text or options
-- NO special characters like tabs (\\t) or control characters
-- Use simple plain text only
-- Keep all text on single lines
-- Use spaces instead of newlines for formatting
-- Replace any code examples with plain text descriptions
-
-Generate the test now!
-"""
-    
-    return prompt
-
-
-def clean_json_string(text: str) -> str:
-    """Clean invalid control characters from JSON string."""
-    import re
-    # Remove control characters except newlines, tabs, and carriage returns
-    # which are valid when properly escaped in JSON
-    cleaned = re.sub(r'[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]', '', text)
-    # Replace unescaped newlines in strings with spaces
-    # This is a simple approach - more sophisticated would parse JSON structure
-    cleaned = cleaned.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
-    return cleaned
-
-
-def generate_aptitude_test(job_details: dict) -> dict:
-    """Generate aptitude test using AI (synchronous)."""
-    try:
-        if not GEMINI_AVAILABLE or not model:
-            logger.error("Gemini AI not available")
-            return None
-        
-        prompt = generate_test_prompt(job_details)
-        
-        logger.info(f"Generating test for job: {job_details.get('title')}")
-        
-        start_time = time.time()
-        response = model.generate_content(prompt)
-        processing_time = time.time() - start_time
-        
-        # Parse response
-        response_text = response.text.strip()
-        
-        # Remove markdown code blocks if present
-        if response_text.startswith("```json"):
-            response_text = response_text[7:]
-        if response_text.startswith("```"):
-            response_text = response_text[3:]
-        if response_text.endswith("```"):
-            response_text = response_text[:-3]
-        
-        # Clean control characters
-        response_text = clean_json_string(response_text.strip())
-        
-        # Log the response for debugging (first 500 chars)
-        logger.info(f"AI Response (first 500 chars): {response_text[:500]}")
-        
-        test_data = json.loads(response_text)
-        
-        # Print token usage
-        print("\n" + "="*70)
-        print("🧠 AI TEST GENERATION - TOKEN USAGE")
-        print("="*70)
-        print(f"📥 Input Tokens:  {response.usage_metadata.prompt_token_count:,}")
-        print(f"📤 Output Tokens: {response.usage_metadata.candidates_token_count:,}")
-        print(f"📊 Total Tokens:  {response.usage_metadata.total_token_count:,}")
-        print(f"⏱️  Processing Time: {processing_time:.2f}s")
-        print(f"📝 Questions Generated: {len(test_data.get('questions', []))}")
-        print("="*70 + "\n")
-        
-        logger.info(f"Test generated successfully with {len(test_data.get('questions', []))} questions")
-        
-        return test_data
-        
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse AI response: {str(e)}")
-        logger.error(f"Response length: {len(response_text) if 'response_text' in locals() else 'N/A'}")
-        
-        # Save problematic response to file for debugging
-        try:
-            error_file = TESTS_DIR / f"error_response_{int(time.time())}.txt"
-            with open(error_file, 'w', encoding='utf-8') as f:
-                f.write("="*80 + "\n")
-                f.write("FAILED AI RESPONSE\n")
-                f.write("="*80 + "\n")
-                f.write(f"Error: {str(e)}\n")
-                f.write("="*80 + "\n")
-                if 'response_text' in locals():
-                    f.write(response_text)
-                else:
-                    f.write("Response text not available")
-            logger.info(f"Saved error response to: {error_file}")
-        except:
-            pass
-        
-        return None
-    except Exception as e:
-        logger.error(f"Error generating test: {str(e)}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return None
-
-
-# HTML Template for the test interface (will be continued in next message)
-TEST_TEMPLATE = """
+# HTML Template for the aptitude test
+APTITUDE_TEST_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ test_metadata.job_title }} - Aptitude Test</title>
+    <title>{{ test_title }} - Aptitude Test</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px 0;
+            padding: 40px 0;
         }
         .test-container {
             background: white;
             border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 0;
             max-width: 1000px;
             margin: 0 auto;
             overflow: hidden;
@@ -335,39 +62,80 @@ TEST_TEMPLATE = """
         .test-info {
             background: #f8f9fa;
             padding: 20px;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 3px solid #667eea;
         }
-        .question-container {
+        .test-info-item {
+            display: inline-block;
+            margin: 0 15px;
+        }
+        .test-content {
             padding: 30px;
-            display: none;
         }
-        .question-container.active {
-            display: block;
+        .question-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+        }
+        .question-number {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 10px;
         }
         .question-text {
             font-size: 1.1rem;
             font-weight: 500;
-            margin-bottom: 25px;
+            color: #333;
+            margin: 15px 0;
+        }
+        .difficulty-badge {
+            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            margin-left: 10px;
+        }
+        .difficulty-simple {
+            background: #28a745;
+            color: white;
+        }
+        .difficulty-medium {
+            background: #ffc107;
             color: #333;
         }
-        .option-btn {
-            width: 100%;
-            text-align: left;
-            padding: 15px 20px;
-            margin-bottom: 12px;
-            border: 2px solid #e9ecef;
-            background: white;
-            border-radius: 8px;
-            transition: all 0.3s;
+        .difficulty-hard {
+            background: #dc3545;
+            color: white;
+        }
+        .category-badge {
+            background: #6c757d;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-left: 5px;
+        }
+        .option-label {
             cursor: pointer;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin: 8px 0;
+            transition: all 0.2s;
         }
-        .option-btn:hover {
-            border-color: #667eea;
+        .option-label:hover {
             background: #f8f9fa;
-        }
-        .option-btn.selected {
             border-color: #667eea;
-            background: #e7f1ff;
+        }
+        .option-label input[type="radio"]:checked + .option-text {
+            font-weight: 600;
+        }
+        .option-label input[type="radio"]:checked {
+            transform: scale(1.1);
         }
         .timer {
             position: fixed;
@@ -378,435 +146,408 @@ TEST_TEMPLATE = """
             border-radius: 10px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
             font-size: 1.2rem;
-            font-weight: bold;
+            font-weight: 600;
             color: #667eea;
-            z-index: 1000;
         }
         .timer.warning {
-            color: #dc3545;
+            background: #fff3cd;
+            color: #856404;
+        }
+        .timer.danger {
+            background: #f8d7da;
+            color: #721c24;
             animation: pulse 1s infinite;
         }
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.05); }
         }
-        .navigation-buttons {
-            display: flex;
-            justify-content: space-between;
-            padding: 20px 30px;
-            border-top: 1px solid #e9ecef;
-        }
-        .question-indicator {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 20px;
-            background: #f8f9fa;
-        }
-        .q-indicator {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #dee2e6;
-            background: white;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        .q-indicator.answered {
-            background: #28a745;
-            color: white;
-            border-color: #28a745;
-        }
-        .q-indicator.current {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-        .proctoring-warning {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #dc3545;
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            display: none;
-            z-index: 2000;
-            text-align: center;
-        }
-        .difficulty-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 40px;
             font-weight: 600;
+            transition: transform 0.2s;
         }
-        .difficulty-simple {
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .progress-indicator {
+            padding: 15px 30px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .success-message, .error-message {
+            display: none;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .success-message {
             background: #d4edda;
+            border: 1px solid #c3e6cb;
             color: #155724;
         }
-        .difficulty-medium {
-            background: #fff3cd;
-            color: #856404;
-        }
-        .difficulty-hard {
+        .error-message {
             background: #f8d7da;
+            border: 1px solid #f5c6cb;
             color: #721c24;
         }
     </style>
 </head>
 <body>
-    <div class="timer" id="timer">45:00</div>
-    
-    <div class="proctoring-warning" id="proctoringWarning">
-        <h4>⚠️ Suspicious Activity Detected</h4>
-        <p>Please stay on this page. Tab switches remaining: <span id="tabSwitchCount">3</span></p>
-        <button class="btn btn-light" onclick="closeWarning()">Continue Test</button>
+    <!-- Timer -->
+    <div id="timer" class="timer">
+        ⏱️ <span id="timeRemaining">{{ total_time_minutes }}:00</span>
     </div>
 
     <div class="container">
         <div class="test-container">
+            <!-- Test Header -->
             <div class="test-header">
-                <h1>{{ test_metadata.job_title }}</h1>
-                <p class="mb-0">Aptitude Assessment Test</p>
+                <h1 class="mb-2">🧠 {{ test_title }}</h1>
+                <p class="mb-0">Aptitude Assessment</p>
             </div>
 
-            <div class="test-info">
-                <div class="row">
-                    <div class="col-md-3">
-                        <strong>Total Questions:</strong> {{ test_metadata.total_questions }}
-                    </div>
-                    <div class="col-md-3">
-                        <strong>Duration:</strong> {{ test_metadata.total_time_minutes }} minutes
-                    </div>
-                    <div class="col-md-3">
-                        <strong>Passing Score:</strong> {{ test_metadata.passing_score_percentage }}%
-                    </div>
-                    <div class="col-md-3">
-                        <strong>Question Type:</strong> MCQ
-                    </div>
+            <!-- Test Info -->
+            <div class="test-info text-center">
+                <div class="test-info-item">
+                    <strong>📋 Total Questions:</strong> {{ total_questions }}
+                </div>
+                <div class="test-info-item">
+                    <strong>⏱️ Time Limit:</strong> {{ total_time_minutes }} minutes
+                </div>
+                <div class="test-info-item">
+                    <strong>📊 Passing Score:</strong> {{ passing_score }}%
                 </div>
             </div>
 
-            <div class="question-indicator" id="questionIndicator"></div>
+            <!-- Test Content -->
+            <div class="test-content">
+                <div id="successMessage" class="success-message">
+                    <strong>Success!</strong> Your test has been submitted successfully.
+                </div>
+                <div id="errorMessage" class="error-message">
+                    <strong>Error!</strong> <span id="errorText"></span>
+                </div>
 
-            <div id="questionsContainer"></div>
+                <!-- Progress Indicator -->
+                <div class="progress-indicator">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><strong>Progress:</strong> <span id="progressText">0 of {{ total_questions }}</span> answered</span>
+                        <div class="progress" style="width: 60%; height: 10px;">
+                            <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="navigation-buttons">
-                <button class="btn btn-secondary" id="prevBtn" onclick="previousQuestion()">← Previous</button>
-                <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()">Next →</button>
-                <button class="btn btn-success" id="submitBtn" onclick="submitTest()" style="display:none;">Submit Test</button>
+                <form id="aptitudeTestForm">
+                    <input type="hidden" name="job_requirement_id" value="{{ job_requirement_id }}">
+                    <input type="hidden" name="aptitude_test_id" value="{{ aptitude_test_id }}">
+
+                    {% for question in questions %}
+                    <div class="question-card" data-question-id="{{ question.question_id }}">
+                        <div>
+                            <span class="question-number">Question {{ question.question_number }}</span>
+                            <span class="difficulty-badge difficulty-{{ question.difficulty }}">{{ question.difficulty|title }}</span>
+                            <span class="category-badge">{{ question.category }}</span>
+                            {% if question.tags %}
+                                {% for tag in question.tags %}
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">{{ tag }}</span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="question-text">
+                            {{ question.question_text }}
+                        </div>
+
+                        <div class="options mt-3">
+                            {% for option_key, option_value in question.options.items() %}
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_{{ question.question_number }}" 
+                                       value="{{ option_key }}" 
+                                       data-question-id="{{ question.question_id }}"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>{{ option_key }}.</strong> {{ option_value }}
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-submit btn-lg">
+                            📝 Submit Test
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const testData = {{ test_data_json | safe }};
-        let currentQuestion = 0;
-        let answers = {};
-        let timeRemaining = {{ test_metadata.total_time_minutes }} * 60; // in seconds
-        let tabSwitches = 0;
-        let maxTabSwitches = {{ proctoring_settings.max_tab_switches_allowed }};
-        let proctoring = {{ proctoring_settings_json | safe }};
-        
-        // Initialize test
-        function initializeTest() {
-            renderQuestions();
-            renderIndicators();
-            startTimer();
-            setupProctoring();
-            showQuestion(0);
-        }
+        // Timer functionality
+        const totalSeconds = {{ total_time_minutes }} * 60;
+        let remainingSeconds = totalSeconds;
+        const timerElement = document.getElementById('timeRemaining');
+        const timerContainer = document.getElementById('timer');
 
-        function renderQuestions() {
-            const container = document.getElementById('questionsContainer');
-            testData.questions.forEach((q, index) => {
-                const questionDiv = document.createElement('div');
-                questionDiv.className = 'question-container';
-                questionDiv.id = `question-${index}`;
-                
-                questionDiv.innerHTML = `
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4>Question ${q.question_number} of ${testData.questions.length}</h4>
-                        <span class="difficulty-badge difficulty-${q.difficulty}">${q.difficulty.toUpperCase()}</span>
-                    </div>
-                    <div class="question-text">${q.question_text}</div>
-                    <div class="options">
-                        ${Object.entries(q.options).map(([key, value]) => `
-                            <button class="option-btn" data-question="${index}" data-option="${key}" onclick="selectOption(${index}, '${key}')">
-                                <strong>${key}.</strong> ${value}
-                            </button>
-                        `).join('')}
-                    </div>
-                `;
-                
-                container.appendChild(questionDiv);
-            });
-        }
+        function updateTimer() {
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
-        function renderIndicators() {
-            const container = document.getElementById('questionIndicator');
-            testData.questions.forEach((q, index) => {
-                const indicator = document.createElement('div');
-                indicator.className = 'q-indicator';
-                indicator.id = `indicator-${index}`;
-                indicator.textContent = index + 1;
-                indicator.onclick = () => showQuestion(index);
-                container.appendChild(indicator);
-            });
-        }
-
-        function showQuestion(index) {
-            document.querySelectorAll('.question-container').forEach(q => q.classList.remove('active'));
-            document.querySelectorAll('.q-indicator').forEach(i => i.classList.remove('current'));
-            
-            document.getElementById(`question-${index}`).classList.add('active');
-            document.getElementById(`indicator-${index}`).classList.add('current');
-            
-            currentQuestion = index;
-            
-            // Update navigation buttons
-            document.getElementById('prevBtn').style.display = index === 0 ? 'none' : 'block';
-            document.getElementById('nextBtn').style.display = index === testData.questions.length - 1 ? 'none' : 'block';
-            document.getElementById('submitBtn').style.display = index === testData.questions.length - 1 ? 'block' : 'none';
-            
-            // Restore selected answer
-            if (answers[index]) {
-                document.querySelectorAll(`[data-question="${index}"]`).forEach(btn => {
-                    if (btn.dataset.option === answers[index]) {
-                        btn.classList.add('selected');
-                    }
-                });
+            if (remainingSeconds <= 60) {
+                timerContainer.classList.add('danger');
+            } else if (remainingSeconds <= 300) {
+                timerContainer.classList.add('warning');
             }
-        }
 
-        function selectOption(questionIndex, option) {
-            // Clear previous selection
-            document.querySelectorAll(`[data-question="${questionIndex}"]`).forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            
-            // Mark new selection
-            event.target.closest('.option-btn').classList.add('selected');
-            
-            // Save answer
-            answers[questionIndex] = option;
-            
-            // Update indicator
-            document.getElementById(`indicator-${questionIndex}`).classList.add('answered');
-        }
-
-        function nextQuestion() {
-            if (currentQuestion < testData.questions.length - 1) {
-                showQuestion(currentQuestion + 1);
+            if (remainingSeconds <= 0) {
+                alert('Time is up! Submitting your test...');
+                document.getElementById('aptitudeTestForm').submit();
             }
+
+            remainingSeconds--;
         }
 
-        function previousQuestion() {
-            if (currentQuestion > 0) {
-                showQuestion(currentQuestion - 1);
-            }
+        // Start timer
+        setInterval(updateTimer, 1000);
+
+        // Progress tracking
+        const totalQuestions = {{ total_questions }};
+        function updateProgress() {
+            const answeredQuestions = document.querySelectorAll('input[type="radio"]:checked').length;
+            document.getElementById('progressText').textContent = `${answeredQuestions} of ${totalQuestions}`;
+            const progressPercent = (answeredQuestions / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = progressPercent + '%';
         }
 
-        function startTimer() {
-            setInterval(() => {
-                if (timeRemaining > 0) {
-                    timeRemaining--;
-                    const minutes = Math.floor(timeRemaining / 60);
-                    const seconds = timeRemaining % 60;
-                    document.getElementById('timer').textContent = 
-                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                    
-                    if (timeRemaining < 300) { // Last 5 minutes
-                        document.getElementById('timer').classList.add('warning');
-                    }
-                } else {
-                    submitTest();
-                }
-            }, 1000);
-        }
+        // Form submission
+        document.getElementById('aptitudeTestForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-        function setupProctoring() {
-            if (proctoring.tab_switch_detection) {
-                document.addEventListener('visibilitychange', () => {
-                    if (document.hidden) {
-                        tabSwitches++;
-                        document.getElementById('tabSwitchCount').textContent = maxTabSwitches - tabSwitches;
-                        document.getElementById('proctoringWarning').style.display = 'block';
-                        
-                        if (tabSwitches >= maxTabSwitches) {
-                            alert('Maximum tab switches exceeded. Test will be submitted automatically.');
-                            submitTest();
-                        }
-                    }
-                });
-            }
-            
-            if (proctoring.copy_paste_detection) {
-                document.addEventListener('copy', (e) => {
-                    e.preventDefault();
-                    console.log('Copy detected and blocked');
-                });
-                
-                document.addEventListener('paste', (e) => {
-                    e.preventDefault();
-                    console.log('Paste detected and blocked');
-                });
-            }
-            
-            if (proctoring.fullscreen_mode) {
-                document.documentElement.requestFullscreen();
-            }
-        }
+            const form = e.target;
+            const formData = new FormData(form);
+            const submitButton = form.querySelector('button[type="submit"]');
 
-        function closeWarning() {
-            document.getElementById('proctoringWarning').style.display = 'none';
-        }
-
-        function submitTest() {
-            const answeredCount = Object.keys(answers).length;
-            const totalQuestions = testData.questions.length;
-            
-            if (answeredCount < totalQuestions) {
-                if (!confirm(`You have answered ${answeredCount} out of ${totalQuestions} questions. Submit anyway?`)) {
+            // Check if all questions are answered
+            const answeredQuestions = document.querySelectorAll('input[type="radio"]:checked').length;
+            if (answeredQuestions < totalQuestions) {
+                if (!confirm(`You have only answered ${answeredQuestions} out of ${totalQuestions} questions. Do you want to submit anyway?`)) {
                     return;
                 }
             }
-            
-            // Calculate score
-            let correctAnswers = 0;
-            testData.questions.forEach((q, index) => {
-                if (answers[index] === q.correct_answer) {
-                    correctAnswers++;
-                }
-            });
-            
-            const scorePercentage = (correctAnswers / totalQuestions * 100).toFixed(2);
-            const passed = scorePercentage >= testData.test_metadata.passing_score_percentage;
-            
-            // Show results
-            alert(`Test Submitted!\\n\\nCorrect Answers: ${correctAnswers}/${totalQuestions}\\nScore: ${scorePercentage}%\\nStatus: ${passed ? 'PASSED ✅' : 'FAILED ❌'}`);
-            
-            // TODO: Send results to server
-            console.log('Test Results:', {
-                answers,
-                correctAnswers,
-                scorePercentage,
-                passed,
-                tabSwitches
-            });
-        }
 
-        // Initialize on load
-        initializeTest();
+            // Disable submit button
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+            // Hide previous messages
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            // Collect answers
+            const answers = {};
+            const radioInputs = document.querySelectorAll('input[type="radio"]:checked');
+            radioInputs.forEach(input => {
+                const questionId = input.getAttribute('data-question-id');
+                answers[questionId] = input.value;
+            });
+
+            // Prepare submission data
+            const submissionData = {
+                job_requirement_id: formData.get('job_requirement_id'),
+                aptitude_test_id: formData.get('aptitude_test_id'),
+                answers: answers,
+                time_taken_seconds: totalSeconds - remainingSeconds
+            };
+
+            console.log('Submitting test:', submissionData);
+
+            try {
+                // TODO: Replace with actual API endpoint
+                const apiEndpoint = 'http://localhost:8888/interview-management-service/api/v1/aptitude/submit-test';
+                
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(submissionData)
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    console.log('Success response:', responseData);
+                    document.getElementById('successMessage').style.display = 'block';
+                    form.reset();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    // Optionally redirect to results page
+                    setTimeout(() => {
+                        alert('Test submitted successfully! Thank you for taking the test.');
+                    }, 1000);
+                } else {
+                    const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
+                    console.log('Error response:', errorData);
+                    document.getElementById('errorText').textContent = errorData.detail || 'Failed to submit test';
+                    document.getElementById('errorMessage').style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                document.getElementById('errorText').textContent = 'Network error. Please check your connection and try again.';
+                document.getElementById('errorMessage').style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '📝 Submit Test';
+            }
+        });
+
+        // Initialize progress on page load
+        updateProgress();
     </script>
 </body>
 </html>
 """
 
 
-@app.route('/interview-management-service/api/v1/tests/generate/<job_requirement_id>', methods=['GET', 'POST'])
-def generate_test(job_requirement_id):
-    """Generate aptitude test for a job requirement."""
+@app.route('/interview-management-service/api/v1/aptitude/generate-test-form/<job_requirement_id>/<aptitude_test_id>', methods=['POST'])
+def generate_test_form(job_requirement_id, aptitude_test_id):
+    """
+    Generate an aptitude test form for a specific test.
+    
+    Accepts POST with test_data in request body containing:
+    - test_details: dict with test metadata
+    - questions: list of question objects
+    
+    Returns JSON response with:
+    - success: boolean
+    - message: string
+    - form_url: string (URL to access the generated form)
+    - form_path: string (local file path)
+    """
     try:
-        logger.info(f"Generating test for job_requirement_id: {job_requirement_id}")
-        
-        # Get job details from request body (sent by FastAPI)
-        job_details = {}
-        if request.method == 'POST' and request.is_json:
-            data = request.get_json()
-            job_details = data.get('job_details', {})
-        
-        if not job_details:
+        # Get test data from POST request body
+        if not request.is_json:
             return jsonify({
                 "success": False,
-                "message": "Job details not provided",
-                "error": "Missing job_details in request body"
+                "message": "Request must be JSON",
+                "error": "Invalid content type"
             }), 400
         
-        # Generate test using AI
-        test_data = generate_aptitude_test(job_details)
+        data = request.get_json()
+        test_data = data.get('test_data', {})
         
         if not test_data:
             return jsonify({
                 "success": False,
-                "message": "Failed to generate test",
-                "error": "AI generation failed"
-            }), 500
+                "message": "No test data provided",
+                "error": "Missing test_data in request body"
+            }), 400
         
-        # Save test HTML
-        safe_filename = f"{job_requirement_id}.html"
-        test_file_path = TESTS_DIR / safe_filename
+        test_details = test_data.get('test_details', {})
+        questions = test_data.get('questions', [])
         
+        logger.info(f"Generating test form for job_requirement_id: {job_requirement_id}, test_id: {aptitude_test_id}")
+        logger.info(f"Test details: {test_details}")
+        logger.info(f"Number of questions: {len(questions)}")
+        
+        # Sanitize the filename
+        safe_filename = f"{job_requirement_id}_{aptitude_test_id}.html"
+        form_file_path = TESTS_DIR / safe_filename
+
+        # Prepare template variables
+        template_vars = {
+            'job_requirement_id': job_requirement_id,
+            'aptitude_test_id': aptitude_test_id,
+            'test_title': test_details.get('test_title', 'Aptitude Test'),
+            'total_questions': test_details.get('total_questions', len(questions)),
+            'total_time_minutes': test_details.get('total_time_minutes', 45),
+            'passing_score': test_details.get('passing_score_percentage', 60),
+            'questions': questions
+        }
+
+        # Create the HTML content
         html_content = render_template_string(
-            TEST_TEMPLATE,
-            test_metadata=test_data['test_metadata'],
-            proctoring_settings=test_data['proctoring_settings'],
-            test_data_json=json.dumps(test_data),
-            proctoring_settings_json=json.dumps(test_data['proctoring_settings'])
+            APTITUDE_TEST_TEMPLATE,
+            **template_vars
         )
-        
-        with open(test_file_path, 'w', encoding='utf-8') as f:
+
+        # Save the HTML file to the tests directory
+        with open(form_file_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
-        
-        # Generate test URL
-        test_url = f"http://{SERVICE_HOST}:{SERVICE_PORT}/tests/{job_requirement_id}.html"
-        
-        logger.info(f"Test generated successfully: {test_url}")
-        
+
+        # Generate the URL to access the form
+        form_url = f"http://{SERVICE_HOST}:{SERVICE_PORT}/tests/{safe_filename}"
+
+        logger.info(f"Generated test form for test ID: {aptitude_test_id}")
+        logger.info(f"Form saved at: {form_file_path}")
+        logger.info(f"Form URL: {form_url}")
+
+        # Return JSON response with the form URL
         return jsonify({
             "success": True,
-            "message": "Aptitude test generated successfully",
+            "message": "Aptitude test form generated successfully",
             "job_requirement_id": job_requirement_id,
-            "test_url": test_url,
-            "test_path": str(test_file_path),
-            "test_metadata": test_data['test_metadata']
+            "aptitude_test_id": aptitude_test_id,
+            "form_url": form_url,
+            "form_path": str(form_file_path),
+            "questions_count": len(questions)
         })
-        
+
     except Exception as e:
-        logger.error(f"Error generating test: {str(e)}")
+        logger.error(f"Error generating test form: {str(e)}")
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "message": f"Failed to generate test: {str(e)}",
+            "message": f"Failed to generate aptitude test form: {str(e)}",
             "error": str(e)
         }), 500
 
 
 @app.route('/tests/<filename>')
 def serve_test(filename):
-    """Serve a generated test HTML file."""
+    """
+    Serve a previously generated aptitude test HTML file.
+    """
     try:
         return send_from_directory(TESTS_DIR, filename)
     except Exception as e:
         logger.error(f"Error serving test: {str(e)}")
-        return f"<h1>Error</h1><p>Test not found: {filename}</p>", 404
+        return f"<h1>Error</h1><p>Test form not found: {filename}</p>", 404
 
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """Health check endpoint."""
-    return jsonify({
+    """
+    Health check endpoint.
+    """
+    return {
         "status": "healthy",
         "service": "aptitude-test-service",
-        "port": SERVICE_PORT,
         "tests_directory": str(TESTS_DIR),
-        "tests_count": len(list(TESTS_DIR.glob("*.html"))),
-        "ai_available": GEMINI_AVAILABLE
-    })
+        "tests_count": len(list(TESTS_DIR.glob("*.html")))
+    }
 
 
 @app.route('/')
 def index():
-    """Root endpoint with service information."""
+    """
+    Root endpoint with information about the service.
+    """
     tests = list(TESTS_DIR.glob("*.html"))
-    tests_info = [{"filename": f.name, "job_id": f.stem} for f in tests]
+    tests_info = [{"filename": f.name, "test_id": f.stem} for f in tests]
     
     html = """
     <!DOCTYPE html>
@@ -832,6 +573,14 @@ def index():
                 color: #667eea;
                 margin-bottom: 20px;
             }
+            .code-block {
+                background: #f8f9fa;
+                border-left: 4px solid #667eea;
+                padding: 15px;
+                margin: 15px 0;
+                border-radius: 5px;
+                overflow-x: auto;
+            }
             .badge-custom {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             }
@@ -839,28 +588,28 @@ def index():
     </head>
     <body>
         <div class="container">
-            <h1 class="service-title">🧠 AI-Powered Aptitude Test Service</h1>
-            <p class="lead">Generate comprehensive aptitude tests based on job requirements</p>
+            <h1 class="service-title">🧠 Aptitude Test Service</h1>
+            <p class="lead">Generate and serve aptitude test forms dynamically</p>
             
             <div class="alert alert-info">
                 <strong>Status:</strong> <span class="badge badge-custom text-white">Running on Port 8890</span>
             </div>
             
-            <h3 class="mt-4">📊 Service Information</h3>
-            <ul>
-                <li><strong>Port:</strong> 8890</li>
-                <li><strong>Tests Directory:</strong> <code>{{ tests_directory }}</code></li>
-                <li><strong>AI Status:</strong> {{ 'Available ✅' if ai_available else 'Not Available ❌' }}</li>
-                <li><strong>Generated Tests:</strong> {{ tests_count }}</li>
-            </ul>
+            <h3 class="mt-4">📋 How to Use</h3>
+            <div class="code-block">
+                <strong>Generate a test form:</strong><br>
+                <code>POST http://localhost:8890/interview-management-service/api/v1/aptitude/generate-test-form/{job_requirement_id}/{aptitude_test_id}</code>
+            </div>
             
-            <h3 class="mt-4">📋 Generated Tests</h3>
+            <h3 class="mt-4">📊 Generated Tests</h3>
+            <p><strong>Total tests generated:</strong> {{ tests_count }}</p>
+            
             {% if tests_info %}
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead class="table-dark">
                         <tr>
-                            <th>Job Requirement ID</th>
+                            <th>Test ID</th>
                             <th>Filename</th>
                             <th>Action</th>
                         </tr>
@@ -868,10 +617,10 @@ def index():
                     <tbody>
                         {% for test in tests_info %}
                         <tr>
-                            <td><code>{{ test.job_id }}</code></td>
+                            <td><code>{{ test.test_id }}</code></td>
                             <td>{{ test.filename }}</td>
                             <td>
-                                <a href="/tests/{{ test.filename }}" class="btn btn-sm btn-primary" target="_blank">Take Test</a>
+                                <a href="/tests/{{ test.filename }}" class="btn btn-sm btn-primary" target="_blank">View Test</a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -880,30 +629,34 @@ def index():
             </div>
             {% else %}
             <div class="alert alert-warning">
-                No tests generated yet!
+                No tests generated yet. Use the API endpoint above to generate your first test!
             </div>
             {% endif %}
+            
+            <h3 class="mt-4">ℹ️ Service Information</h3>
+            <ul>
+                <li><strong>Port:</strong> 8890</li>
+                <li><strong>Tests Directory:</strong> <code>{{ tests_directory }}</code></li>
+                <li><strong>Health Check:</strong> <a href="/health" target="_blank">/health</a></li>
+            </ul>
         </div>
     </body>
     </html>
     """
     
     return render_template_string(html, 
-                                 tests_count=len(tests),
+                                 tests_count=len(tests), 
                                  tests_info=tests_info,
-                                 tests_directory=str(TESTS_DIR),
-                                 ai_available=GEMINI_AVAILABLE)
+                                 tests_directory=str(TESTS_DIR))
 
 
 if __name__ == '__main__':
-    logger.info("Starting AI-Powered Aptitude Test Service...")
+    logger.info("Starting Aptitude Test Service...")
     logger.info(f"Tests will be stored in: {TESTS_DIR}")
     logger.info(f"Service available at: http://{SERVICE_HOST}:{SERVICE_PORT}")
     
     app.run(
         host=SERVICE_HOST,
         port=SERVICE_PORT,
-        debug=DEBUG_MODE,
-        threaded=True
+        debug=DEBUG_MODE
     )
-

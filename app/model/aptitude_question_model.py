@@ -12,6 +12,7 @@ class AptitudeQuestionModel(BaseAppModel):
     __tablename__ = "aptitude_questions"
 
     question_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_requirement_id = Column(UUID(as_uuid=True), nullable=False, index=True)
     aptitude_test_id = Column(UUID(as_uuid=True), nullable=False, index=True)  # No FK - just reference
     question_number = Column(Integer, nullable=False)
     difficulty = Column(String(20), nullable=False)  # simple, medium, hard

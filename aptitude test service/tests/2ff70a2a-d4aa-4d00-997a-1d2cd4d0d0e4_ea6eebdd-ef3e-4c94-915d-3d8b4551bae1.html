@@ -1,0 +1,2333 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Backend Developer - Aptitude Test - Aptitude Test</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 0;
+        }
+        .test-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 0;
+            max-width: 1000px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+        .test-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .test-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        .test-info-item {
+            display: inline-block;
+            margin: 0 15px;
+        }
+        .test-content {
+            padding: 30px;
+        }
+        .question-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-radius: 8px;
+        }
+        .question-number {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #333;
+            margin: 15px 0;
+        }
+        .difficulty-badge {
+            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            margin-left: 10px;
+        }
+        .difficulty-simple {
+            background: #28a745;
+            color: white;
+        }
+        .difficulty-medium {
+            background: #ffc107;
+            color: #333;
+        }
+        .difficulty-hard {
+            background: #dc3545;
+            color: white;
+        }
+        .category-badge {
+            background: #6c757d;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-left: 5px;
+        }
+        .option-label {
+            cursor: pointer;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            margin: 8px 0;
+            transition: all 0.2s;
+        }
+        .option-label:hover {
+            background: #f8f9fa;
+            border-color: #667eea;
+        }
+        .option-label input[type="radio"]:checked + .option-text {
+            font-weight: 600;
+        }
+        .option-label input[type="radio"]:checked {
+            transform: scale(1.1);
+        }
+        .timer {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+        .timer.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .timer.danger {
+            background: #f8d7da;
+            color: #721c24;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 40px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .progress-indicator {
+            padding: 15px 30px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .success-message, .error-message {
+            display: none;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <!-- Timer -->
+    <div id="timer" class="timer">
+        ⏱️ <span id="timeRemaining">45:00</span>
+    </div>
+
+    <div class="container">
+        <div class="test-container">
+            <!-- Test Header -->
+            <div class="test-header">
+                <h1 class="mb-2">🧠 Python Backend Developer - Aptitude Test</h1>
+                <p class="mb-0">Aptitude Assessment</p>
+            </div>
+
+            <!-- Test Info -->
+            <div class="test-info text-center">
+                <div class="test-info-item">
+                    <strong>📋 Total Questions:</strong> 30
+                </div>
+                <div class="test-info-item">
+                    <strong>⏱️ Time Limit:</strong> 45 minutes
+                </div>
+                <div class="test-info-item">
+                    <strong>📊 Passing Score:</strong> 60%
+                </div>
+            </div>
+
+            <!-- Test Content -->
+            <div class="test-content">
+                <div id="successMessage" class="success-message">
+                    <strong>Success!</strong> Your test has been submitted successfully.
+                </div>
+                <div id="errorMessage" class="error-message">
+                    <strong>Error!</strong> <span id="errorText"></span>
+                </div>
+
+                <!-- Progress Indicator -->
+                <div class="progress-indicator">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span><strong>Progress:</strong> <span id="progressText">0 of 30</span> answered</span>
+                        <div class="progress" style="width: 60%; height: 10px;">
+                            <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="aptitudeTestForm">
+                    <input type="hidden" name="job_requirement_id" value="2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4">
+                    <input type="hidden" name="aptitude_test_id" value="ea6eebdd-ef3e-4c94-915d-3d8b4551bae1">
+
+                    
+                    <div class="question-card" data-question-id="cd9b3936-dcd5-4ac1-8dff-107967c7846e">
+                        <div>
+                            <span class="question-number">Question 1</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">python_core</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">python</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">data_types</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">mutable</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Which of the following data types is mutable in Python?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_1" 
+                                       value="A" 
+                                       data-question-id="cd9b3936-dcd5-4ac1-8dff-107967c7846e"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> Tuple
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_1" 
+                                       value="B" 
+                                       data-question-id="cd9b3936-dcd5-4ac1-8dff-107967c7846e"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> String
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_1" 
+                                       value="C" 
+                                       data-question-id="cd9b3936-dcd5-4ac1-8dff-107967c7846e"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> List
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_1" 
+                                       value="D" 
+                                       data-question-id="cd9b3936-dcd5-4ac1-8dff-107967c7846e"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Integer
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="7e228c9e-afda-4a2b-b8f8-d5cbb922e137">
+                        <div>
+                            <span class="question-number">Question 2</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">rest_api</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">rest_api</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">http_methods</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Which HTTP method is typically used to retrieve data from a server?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_2" 
+                                       value="A" 
+                                       data-question-id="7e228c9e-afda-4a2b-b8f8-d5cbb922e137"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> POST
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_2" 
+                                       value="B" 
+                                       data-question-id="7e228c9e-afda-4a2b-b8f8-d5cbb922e137"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> PUT
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_2" 
+                                       value="C" 
+                                       data-question-id="7e228c9e-afda-4a2b-b8f8-d5cbb922e137"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> GET
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_2" 
+                                       value="D" 
+                                       data-question-id="7e228c9e-afda-4a2b-b8f8-d5cbb922e137"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> DELETE
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="35dcf956-3284-4799-bd49-56f29572acc6">
+                        <div>
+                            <span class="question-number">Question 3</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">django</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">django</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">architecture</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            In Django, what is the purpose of an &#39;app&#39;?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_3" 
+                                       value="A" 
+                                       data-question-id="35dcf956-3284-4799-bd49-56f29572acc6"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> To define the database schema for the entire project.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_3" 
+                                       value="B" 
+                                       data-question-id="35dcf956-3284-4799-bd49-56f29572acc6"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> To serve as a self-contained module for a specific feature.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_3" 
+                                       value="C" 
+                                       data-question-id="35dcf956-3284-4799-bd49-56f29572acc6"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> To manage user authentication globally.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_3" 
+                                       value="D" 
+                                       data-question-id="35dcf956-3284-4799-bd49-56f29572acc6"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> To configure the web server settings.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="a87f3d09-5e7a-4fac-8d6c-7f672912bfb0">
+                        <div>
+                            <span class="question-number">Question 4</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">databases</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">sql</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">databases</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Which SQL keyword is used to retrieve unique values from a column?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_4" 
+                                       value="A" 
+                                       data-question-id="a87f3d09-5e7a-4fac-8d6c-7f672912bfb0"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> DISTINCT
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_4" 
+                                       value="B" 
+                                       data-question-id="a87f3d09-5e7a-4fac-8d6c-7f672912bfb0"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> UNIQUE
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_4" 
+                                       value="C" 
+                                       data-question-id="a87f3d09-5e7a-4fac-8d6c-7f672912bfb0"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> GROUP BY
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_4" 
+                                       value="D" 
+                                       data-question-id="a87f3d09-5e7a-4fac-8d6c-7f672912bfb0"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> ORDER BY
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="757f7e69-93bc-4dfc-b726-0a4049be0a89">
+                        <div>
+                            <span class="question-number">Question 5</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">python_core</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">python</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">virtual_env</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">dependencies</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            What is the primary benefit of using virtual environments in Python?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_5" 
+                                       value="A" 
+                                       data-question-id="757f7e69-93bc-4dfc-b726-0a4049be0a89"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> To improve Python&#39;s execution speed.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_5" 
+                                       value="B" 
+                                       data-question-id="757f7e69-93bc-4dfc-b726-0a4049be0a89"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> To isolate project dependencies.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_5" 
+                                       value="C" 
+                                       data-question-id="757f7e69-93bc-4dfc-b726-0a4049be0a89"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> To allow Python to run on different operating systems.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_5" 
+                                       value="D" 
+                                       data-question-id="757f7e69-93bc-4dfc-b726-0a4049be0a89"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> To encrypt Python code.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="3d4183a9-91e5-47bd-8857-d18bf539f524">
+                        <div>
+                            <span class="question-number">Question 6</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">devops</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">docker</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">devops</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">containers</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            What is Docker primarily used for?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_6" 
+                                       value="A" 
+                                       data-question-id="3d4183a9-91e5-47bd-8857-d18bf539f524"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> Writing Python code.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_6" 
+                                       value="B" 
+                                       data-question-id="3d4183a9-91e5-47bd-8857-d18bf539f524"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> Managing cloud infrastructure.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_6" 
+                                       value="C" 
+                                       data-question-id="3d4183a9-91e5-47bd-8857-d18bf539f524"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> Containerizing applications.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_6" 
+                                       value="D" 
+                                       data-question-id="3d4183a9-91e5-47bd-8857-d18bf539f524"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Database administration.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="8250df87-38e0-41e0-9cfd-edd9e5e080e5">
+                        <div>
+                            <span class="question-number">Question 7</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">rest_api</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">rest_api</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">http_status</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Which HTTP status code indicates that a request has been successfully processed and a new resource has been created?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_7" 
+                                       value="A" 
+                                       data-question-id="8250df87-38e0-41e0-9cfd-edd9e5e080e5"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> 200 OK
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_7" 
+                                       value="B" 
+                                       data-question-id="8250df87-38e0-41e0-9cfd-edd9e5e080e5"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> 201 Created
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_7" 
+                                       value="C" 
+                                       data-question-id="8250df87-38e0-41e0-9cfd-edd9e5e080e5"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> 204 No Content
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_7" 
+                                       value="D" 
+                                       data-question-id="8250df87-38e0-41e0-9cfd-edd9e5e080e5"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> 400 Bad Request
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="918dc1f8-c367-4602-97c7-9f3456ed1e9d">
+                        <div>
+                            <span class="question-number">Question 8</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">django</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">django</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">migrations</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">database</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Which command is used to apply database migrations in Django?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_8" 
+                                       value="A" 
+                                       data-question-id="918dc1f8-c367-4602-97c7-9f3456ed1e9d"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> python manage.py makemigrations
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_8" 
+                                       value="B" 
+                                       data-question-id="918dc1f8-c367-4602-97c7-9f3456ed1e9d"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> python manage.py migrate
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_8" 
+                                       value="C" 
+                                       data-question-id="918dc1f8-c367-4602-97c7-9f3456ed1e9d"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> python manage.py syncdb
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_8" 
+                                       value="D" 
+                                       data-question-id="918dc1f8-c367-4602-97c7-9f3456ed1e9d"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> python manage.py runserver
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="90ccd1e4-e46e-42b7-bccf-cb4277e93438">
+                        <div>
+                            <span class="question-number">Question 9</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">fastapi_flask</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">flask</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">routing</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            In Flask, what is the purpose of the `@app.route(&#39;/&#39;)` decorator?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_9" 
+                                       value="A" 
+                                       data-question-id="90ccd1e4-e46e-42b7-bccf-cb4277e93438"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> To define a database model.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_9" 
+                                       value="B" 
+                                       data-question-id="90ccd1e4-e46e-42b7-bccf-cb4277e93438"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> To register a function as a view for a specific URL path.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_9" 
+                                       value="C" 
+                                       data-question-id="90ccd1e4-e46e-42b7-bccf-cb4277e93438"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> To create a new application instance.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_9" 
+                                       value="D" 
+                                       data-question-id="90ccd1e4-e46e-42b7-bccf-cb4277e93438"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> To start the Flask development server.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="97490a77-261a-4f71-abb8-9483dfed091a">
+                        <div>
+                            <span class="question-number">Question 10</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">databases</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">orm</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">databases</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            What does the acronym ORM stand for in the context of databases and programming?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_10" 
+                                       value="A" 
+                                       data-question-id="97490a77-261a-4f71-abb8-9483dfed091a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> Object-Relational Mapping
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_10" 
+                                       value="B" 
+                                       data-question-id="97490a77-261a-4f71-abb8-9483dfed091a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> Operational Resource Management
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_10" 
+                                       value="C" 
+                                       data-question-id="97490a77-261a-4f71-abb8-9483dfed091a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> Ordered Record Model
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_10" 
+                                       value="D" 
+                                       data-question-id="97490a77-261a-4f71-abb8-9483dfed091a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Online Report Maker
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="b1a0ff23-86f2-43e9-9953-7dea7d50bd11">
+                        <div>
+                            <span class="question-number">Question 11</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">devops</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">linux</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">cli</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">devops</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Which of these is a common command-line tool for navigating and managing files in a Linux environment?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_11" 
+                                       value="A" 
+                                       data-question-id="b1a0ff23-86f2-43e9-9953-7dea7d50bd11"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> dir
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_11" 
+                                       value="B" 
+                                       data-question-id="b1a0ff23-86f2-43e9-9953-7dea7d50bd11"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> ipconfig
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_11" 
+                                       value="C" 
+                                       data-question-id="b1a0ff23-86f2-43e9-9953-7dea7d50bd11"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> ls
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_11" 
+                                       value="D" 
+                                       data-question-id="b1a0ff23-86f2-43e9-9953-7dea7d50bd11"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> regedit
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="f0753b5a-d0ca-4cd2-ac2e-01dca61f25ed">
+                        <div>
+                            <span class="question-number">Question 12</span>
+                            <span class="difficulty-badge difficulty-simple">Simple</span>
+                            <span class="category-badge">python_core</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">python</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">oop</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">classes</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            What is the purpose of the `__init__` method in a Python class?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_12" 
+                                       value="A" 
+                                       data-question-id="f0753b5a-d0ca-4cd2-ac2e-01dca61f25ed"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> To destroy an object.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_12" 
+                                       value="B" 
+                                       data-question-id="f0753b5a-d0ca-4cd2-ac2e-01dca61f25ed"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> To define class methods.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_12" 
+                                       value="C" 
+                                       data-question-id="f0753b5a-d0ca-4cd2-ac2e-01dca61f25ed"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> To initialize object attributes when an object is created.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_12" 
+                                       value="D" 
+                                       data-question-id="f0753b5a-d0ca-4cd2-ac2e-01dca61f25ed"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> To convert an object to a string.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="f951a527-9a62-4c06-866e-9f1922a793bc">
+                        <div>
+                            <span class="question-number">Question 13</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">python_core</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">python</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">dictionaries</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">data_structures</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Consider the following Python code: `my_dict = {&#39;a&#39;: 1, &#39;b&#39;: 2}; my_dict.update({&#39;b&#39;: 3, &#39;c&#39;: 4}); print(my_dict)` What will be the output?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_13" 
+                                       value="A" 
+                                       data-question-id="f951a527-9a62-4c06-866e-9f1922a793bc"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> {&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;c&#39;: 4}
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_13" 
+                                       value="B" 
+                                       data-question-id="f951a527-9a62-4c06-866e-9f1922a793bc"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> {&#39;a&#39;: 1, &#39;b&#39;: 3, &#39;c&#39;: 4}
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_13" 
+                                       value="C" 
+                                       data-question-id="f951a527-9a62-4c06-866e-9f1922a793bc"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> {&#39;a&#39;: 1, &#39;c&#39;: 4}
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_13" 
+                                       value="D" 
+                                       data-question-id="f951a527-9a62-4c06-866e-9f1922a793bc"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Error
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="32367c9a-3d65-4b78-9acb-59155538739c">
+                        <div>
+                            <span class="question-number">Question 14</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">django</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">django</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">drf</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">security</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">authentication</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            In Django, how do you typically secure a REST API endpoint to require authentication?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_14" 
+                                       value="A" 
+                                       data-question-id="32367c9a-3d65-4b78-9acb-59155538739c"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> By setting `AUTH_REQUIRED = True` in `settings.py`.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_14" 
+                                       value="B" 
+                                       data-question-id="32367c9a-3d65-4b78-9acb-59155538739c"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> By using decorators like `@login_required` or permission classes in Django REST Framework.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_14" 
+                                       value="C" 
+                                       data-question-id="32367c9a-3d65-4b78-9acb-59155538739c"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> By adding `is_authenticated = True` to the request header.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_14" 
+                                       value="D" 
+                                       data-question-id="32367c9a-3d65-4b78-9acb-59155538739c"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> By enabling HTTPS only.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="aebf53f8-25c1-4cac-85de-8cf02c3398a9">
+                        <div>
+                            <span class="question-number">Question 15</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">fastapi_flask</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">fastapi</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">flask</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">api_design</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">pydantic</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            What is the main advantage of FastAPI over Flask for building APIs, especially concerning data validation?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_15" 
+                                       value="A" 
+                                       data-question-id="aebf53f8-25c1-4cac-85de-8cf02c3398a9"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> FastAPI is written in Rust, making it faster.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_15" 
+                                       value="B" 
+                                       data-question-id="aebf53f8-25c1-4cac-85de-8cf02c3398a9"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> FastAPI automatically generates API documentation using OpenAPI/Swagger UI.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_15" 
+                                       value="C" 
+                                       data-question-id="aebf53f8-25c1-4cac-85de-8cf02c3398a9"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> FastAPI has a built-in ORM.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_15" 
+                                       value="D" 
+                                       data-question-id="aebf53f8-25c1-4cac-85de-8cf02c3398a9"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> FastAPI uses synchronous programming by default.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="dd7cdaa1-bc0e-4497-bcf5-a377cd0d52a2">
+                        <div>
+                            <span class="question-number">Question 16</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">databases</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">databases</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">acid</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">transactions</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Which of the following database concepts ensures that a transaction is either fully completed or completely rolled back, maintaining data consistency?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_16" 
+                                       value="A" 
+                                       data-question-id="dd7cdaa1-bc0e-4497-bcf5-a377cd0d52a2"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> Isolation
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_16" 
+                                       value="B" 
+                                       data-question-id="dd7cdaa1-bc0e-4497-bcf5-a377cd0d52a2"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> Durability
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_16" 
+                                       value="C" 
+                                       data-question-id="dd7cdaa1-bc0e-4497-bcf5-a377cd0d52a2"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> Atomicity
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_16" 
+                                       value="D" 
+                                       data-question-id="dd7cdaa1-bc0e-4497-bcf5-a377cd0d52a2"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Consistency
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="1a6a7b95-6bcd-46a3-8cfa-aae7ebcc444e">
+                        <div>
+                            <span class="question-number">Question 17</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">python_core</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">python</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">generators</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">iterators</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            What is the purpose of the `yield` keyword in Python?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_17" 
+                                       value="A" 
+                                       data-question-id="1a6a7b95-6bcd-46a3-8cfa-aae7ebcc444e"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> To define a static method.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_17" 
+                                       value="B" 
+                                       data-question-id="1a6a7b95-6bcd-46a3-8cfa-aae7ebcc444e"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> To return a value from a function and terminate its execution.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_17" 
+                                       value="C" 
+                                       data-question-id="1a6a7b95-6bcd-46a3-8cfa-aae7ebcc444e"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> To create a generator function.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_17" 
+                                       value="D" 
+                                       data-question-id="1a6a7b95-6bcd-46a3-8cfa-aae7ebcc444e"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> To handle exceptions.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="22ba6241-1003-4bbb-91df-3122ffcbda38">
+                        <div>
+                            <span class="question-number">Question 18</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">devops</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">ci_cd</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">devops</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">integration</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            In a CI/CD pipeline, what is the primary goal of the &#39;Continuous Integration&#39; phase?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_18" 
+                                       value="A" 
+                                       data-question-id="22ba6241-1003-4bbb-91df-3122ffcbda38"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> To deploy code to production automatically.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_18" 
+                                       value="B" 
+                                       data-question-id="22ba6241-1003-4bbb-91df-3122ffcbda38"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> To continuously test and merge code changes from multiple developers.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_18" 
+                                       value="C" 
+                                       data-question-id="22ba6241-1003-4bbb-91df-3122ffcbda38"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> To manually review all code before deployment.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_18" 
+                                       value="D" 
+                                       data-question-id="22ba6241-1003-4bbb-91df-3122ffcbda38"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> To monitor application performance in production.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="b8452df1-e609-4c34-989d-1cbb0260018f">
+                        <div>
+                            <span class="question-number">Question 19</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">django</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">django</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">orm</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">querysets</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            When using Django&#39;s ORM, what does `MyModel.objects.filter(field__gt=10)` do?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_19" 
+                                       value="A" 
+                                       data-question-id="b8452df1-e609-4c34-989d-1cbb0260018f"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> Filters objects where &#39;field&#39; is exactly 10.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_19" 
+                                       value="B" 
+                                       data-question-id="b8452df1-e609-4c34-989d-1cbb0260018f"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> Filters objects where &#39;field&#39; is greater than 10.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_19" 
+                                       value="C" 
+                                       data-question-id="b8452df1-e609-4c34-989d-1cbb0260018f"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> Filters objects where &#39;field&#39; is less than 10.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_19" 
+                                       value="D" 
+                                       data-question-id="b8452df1-e609-4c34-989d-1cbb0260018f"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Filters objects where &#39;field&#39; is a string containing &#39;10&#39;.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="c351a98b-5dbd-4869-9fb1-099a18baea49">
+                        <div>
+                            <span class="question-number">Question 20</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">fastapi_flask</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">fastapi</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">async</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">concurrency</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            How does FastAPI handle asynchronous operations (async/await)?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_20" 
+                                       value="A" 
+                                       data-question-id="c351a98b-5dbd-4869-9fb1-099a18baea49"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> It converts all functions to synchronous internally.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_20" 
+                                       value="B" 
+                                       data-question-id="c351a98b-5dbd-4869-9fb1-099a18baea49"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> It requires an external library for async support.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_20" 
+                                       value="C" 
+                                       data-question-id="c351a98b-5dbd-4869-9fb1-099a18baea49"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> It fully supports and leverages Python&#39;s `async` and `await` syntax natively.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_20" 
+                                       value="D" 
+                                       data-question-id="c351a98b-5dbd-4869-9fb1-099a18baea49"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> It only supports async in specific database operations.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="0c767040-d7af-42e7-aea0-91944de1ec4a">
+                        <div>
+                            <span class="question-number">Question 21</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">python_core</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">python</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">sets</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">data_structures</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Which of the following is NOT a correct way to create a set in Python?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_21" 
+                                       value="A" 
+                                       data-question-id="0c767040-d7af-42e7-aea0-91944de1ec4a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> `my_set = {1, 2, 3}`
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_21" 
+                                       value="B" 
+                                       data-question-id="0c767040-d7af-42e7-aea0-91944de1ec4a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> `my_set = set([1, 2, 3])`
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_21" 
+                                       value="C" 
+                                       data-question-id="0c767040-d7af-42e7-aea0-91944de1ec4a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> `my_set = {}`
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_21" 
+                                       value="D" 
+                                       data-question-id="0c767040-d7af-42e7-aea0-91944de1ec4a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> `my_set = set()`
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="d701e1ab-f3a0-4f72-a7f7-bc81b63b664b">
+                        <div>
+                            <span class="question-number">Question 22</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">devops</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">docker</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">devops</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">containers</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            What is the primary purpose of a `Dockerfile`?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_22" 
+                                       value="A" 
+                                       data-question-id="d701e1ab-f3a0-4f72-a7f7-bc81b63b664b"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> To define network configurations for a cluster.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_22" 
+                                       value="B" 
+                                       data-question-id="d701e1ab-f3a0-4f72-a7f7-bc81b63b664b"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> To specify the steps to build a Docker image.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_22" 
+                                       value="C" 
+                                       data-question-id="d701e1ab-f3a0-4f72-a7f7-bc81b63b664b"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> To manage Kubernetes deployments.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_22" 
+                                       value="D" 
+                                       data-question-id="d701e1ab-f3a0-4f72-a7f7-bc81b63b664b"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> To store environment variables for an application.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="a026789f-09d1-4753-8620-dfa18783c2b6">
+                        <div>
+                            <span class="question-number">Question 23</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">django</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">django</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">orm</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">optimization</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">database</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            What is the purpose of Django&#39;s `select_related()` and `prefetch_related()` methods in ORM queries?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_23" 
+                                       value="A" 
+                                       data-question-id="a026789f-09d1-4753-8620-dfa18783c2b6"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> They are used to define relationships between models.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_23" 
+                                       value="B" 
+                                       data-question-id="a026789f-09d1-4753-8620-dfa18783c2b6"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> They are used to optimize database queries by reducing the number of database hits.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_23" 
+                                       value="C" 
+                                       data-question-id="a026789f-09d1-4753-8620-dfa18783c2b6"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> They are used for database migrations.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_23" 
+                                       value="D" 
+                                       data-question-id="a026789f-09d1-4753-8620-dfa18783c2b6"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> They define custom managers for models.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="f3a45552-494f-408c-83d4-28112af786ed">
+                        <div>
+                            <span class="question-number">Question 24</span>
+                            <span class="difficulty-badge difficulty-medium">Medium</span>
+                            <span class="category-badge">databases</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">sql</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">joins</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">databases</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Which of the following would be an appropriate use case for a `LEFT JOIN` in SQL?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_24" 
+                                       value="A" 
+                                       data-question-id="f3a45552-494f-408c-83d4-28112af786ed"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> To return only rows that have matching values in both tables.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_24" 
+                                       value="B" 
+                                       data-question-id="f3a45552-494f-408c-83d4-28112af786ed"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> To return all rows from the left table, and the matching rows from the right table. If no match, NULLs for the right table.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_24" 
+                                       value="C" 
+                                       data-question-id="f3a45552-494f-408c-83d4-28112af786ed"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> To return all rows from both tables, with NULLs where there is no match.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_24" 
+                                       value="D" 
+                                       data-question-id="f3a45552-494f-408c-83d4-28112af786ed"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> To return only rows that have no matching values in either table.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="4c477f40-d0db-4ae9-9c10-074d836888ba">
+                        <div>
+                            <span class="question-number">Question 25</span>
+                            <span class="difficulty-badge difficulty-hard">Hard</span>
+                            <span class="category-badge">python_core</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">python</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">gil</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">concurrency</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">threading</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Explain the Global Interpreter Lock (GIL) in Python and its implications for multi-threaded CPU-bound applications.
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_25" 
+                                       value="A" 
+                                       data-question-id="4c477f40-d0db-4ae9-9c10-074d836888ba"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> The GIL is a mechanism that allows multiple Python threads to execute Python bytecode concurrently on multiple CPU cores.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_25" 
+                                       value="B" 
+                                       data-question-id="4c477f40-d0db-4ae9-9c10-074d836888ba"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> The GIL is a mutex that protects access to Python objects, preventing multiple native threads from executing Python bytecodes at once, even on multi-core processors.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_25" 
+                                       value="C" 
+                                       data-question-id="4c477f40-d0db-4ae9-9c10-074d836888ba"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> The GIL is a feature in Python that optimizes I/O-bound operations in multi-threaded programs.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_25" 
+                                       value="D" 
+                                       data-question-id="4c477f40-d0db-4ae9-9c10-074d836888ba"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> The GIL is a security feature that prevents unauthorized access to Python&#39;s interpreter.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="81679c7c-d87e-4509-9648-1d733ae320e0">
+                        <div>
+                            <span class="question-number">Question 26</span>
+                            <span class="difficulty-badge difficulty-hard">Hard</span>
+                            <span class="category-badge">django</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">django</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">database</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">scalability</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">postgresql</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">caching</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">architecture</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            You are building a high-traffic Django application. What strategies would you employ to handle database scalability and prevent bottlenecks, assuming PostgreSQL as your database?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_26" 
+                                       value="A" 
+                                       data-question-id="81679c7c-d87e-4509-9648-1d733ae320e0"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> Use only a single, large PostgreSQL instance and rely on Django&#39;s ORM optimizations.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_26" 
+                                       value="B" 
+                                       data-question-id="81679c7c-d87e-4509-9648-1d733ae320e0"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> Implement database sharding, read replicas, connection pooling, and judicious use of caching (e.g., Redis).
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_26" 
+                                       value="C" 
+                                       data-question-id="81679c7c-d87e-4509-9648-1d733ae320e0"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> Switch to a NoSQL database like MongoDB for all data without changing application logic.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_26" 
+                                       value="D" 
+                                       data-question-id="81679c7c-d87e-4509-9648-1d733ae320e0"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Increase the number of Django application servers without optimizing database interactions.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="f5f5f4db-c2fd-4b6f-b825-e61bb8851b09">
+                        <div>
+                            <span class="question-number">Question 27</span>
+                            <span class="difficulty-badge difficulty-hard">Hard</span>
+                            <span class="category-badge">fastapi_flask</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">fastapi</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">flask</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">async</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">synchronous</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">concurrency</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">architecture</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Compare and contrast synchronous and asynchronous programming models in the context of a web backend (FastAPI/Flask). When would you choose one over the other?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_27" 
+                                       value="A" 
+                                       data-question-id="f5f5f4db-c2fd-4b6f-b825-e61bb8851b09"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> Synchronous is always faster, while asynchronous is harder to debug.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_27" 
+                                       value="B" 
+                                       data-question-id="f5f5f4db-c2fd-4b6f-b825-e61bb8851b09"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> Synchronous executes tasks sequentially; asynchronous allows non-blocking I/O. Choose async for I/O-bound tasks in FastAPI, sync for CPU-bound tasks or simpler Flask apps.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_27" 
+                                       value="C" 
+                                       data-question-id="f5f5f4db-c2fd-4b6f-b825-e61bb8851b09"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> Asynchronous programming requires multiple CPU cores to be effective, whereas synchronous doesn&#39;t.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_27" 
+                                       value="D" 
+                                       data-question-id="f5f5f4db-c2fd-4b6f-b825-e61bb8851b09"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Flask only supports asynchronous, and FastAPI only supports synchronous.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="723f9aee-0cce-4b4b-ad7d-a58d88e8408b">
+                        <div>
+                            <span class="question-number">Question 28</span>
+                            <span class="difficulty-badge difficulty-hard">Hard</span>
+                            <span class="category-badge">rest_api</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">rest_api</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">api_design</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">http_methods</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">idempotency</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">error_handling</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Design an API endpoint for creating a new user, ensuring idempotency and proper error handling. What HTTP method, status codes, and considerations are crucial?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_28" 
+                                       value="A" 
+                                       data-question-id="723f9aee-0cce-4b4b-ad7d-a58d88e8408b"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> Use GET for creation, return 200 OK always, and put error messages in the response body.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_28" 
+                                       value="B" 
+                                       data-question-id="723f9aee-0cce-4b4b-ad7d-a58d88e8408b"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> Use POST for creation; return 201 Created on success, 409 Conflict if user exists, and 400 Bad Request for validation errors. Idempotency is not a concern for creation.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_28" 
+                                       value="C" 
+                                       data-question-id="723f9aee-0cce-4b4b-ad7d-a58d88e8408b"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> Use PUT for creation with a client-generated ID; return 201 Created or 200 OK. For POST, use a unique request ID in headers or body to handle idempotency. Return 4xx for client errors, 5xx for server errors.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_28" 
+                                       value="D" 
+                                       data-question-id="723f9aee-0cce-4b4b-ad7d-a58d88e8408b"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Use DELETE for creation, return 202 Accepted, and handle all errors asynchronously.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="a4f2dc23-5cd7-42d4-94c1-ac04be96866a">
+                        <div>
+                            <span class="question-number">Question 29</span>
+                            <span class="difficulty-badge difficulty-hard">Hard</span>
+                            <span class="category-badge">system_design</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">microservices</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">system_design</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">architecture</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">inter_service_communication</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">rest</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">grpc</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">message_queue</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            You need to implement a microservices architecture using Python. What are the key considerations for inter-service communication, and what tools/protocols would you recommend?
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_29" 
+                                       value="A" 
+                                       data-question-id="a4f2dc23-5cd7-42d4-94c1-ac04be96866a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> Use only direct HTTP calls between services, ignoring any messaging queues.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_29" 
+                                       value="B" 
+                                       data-question-id="a4f2dc23-5cd7-42d4-94c1-ac04be96866a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> Only use a shared database for all microservices to simplify data management.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_29" 
+                                       value="C" 
+                                       data-question-id="a4f2dc23-5cd7-42d4-94c1-ac04be96866a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> Key considerations include synchronous vs. asynchronous, data contracts, and error handling. Recommend REST/gRPC for synchronous and message queues (e.g., RabbitMQ, Kafka) for asynchronous communication.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_29" 
+                                       value="D" 
+                                       data-question-id="a4f2dc23-5cd7-42d4-94c1-ac04be96866a"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Deploy all microservices on a single server to avoid network latency issues.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+                    <div class="question-card" data-question-id="239495e1-edcb-4b03-a0a5-9f397e0bb2ec">
+                        <div>
+                            <span class="question-number">Question 30</span>
+                            <span class="difficulty-badge difficulty-hard">Hard</span>
+                            <span class="category-badge">system_design</span>
+                            
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">api_design</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">security</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">scalability</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">rate_limiting</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">redis</span>
+                                
+                                <span class="badge bg-secondary" style="font-size: 0.75rem;">architecture</span>
+                                
+                            
+                        </div>
+                        
+                        <div class="question-text">
+                            Describe a strategy for implementing robust rate limiting for an API endpoint to protect against abuse and ensure fair usage, without causing a single point of failure.
+                        </div>
+
+                        <div class="options mt-3">
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_30" 
+                                       value="A" 
+                                       data-question-id="239495e1-edcb-4b03-a0a5-9f397e0bb2ec"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>A.</strong> Implement a simple counter in memory on each API server, resetting every minute.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_30" 
+                                       value="B" 
+                                       data-question-id="239495e1-edcb-4b03-a0a5-9f397e0bb2ec"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>B.</strong> Use a centralized, distributed rate-limiting mechanism, often backed by a fast data store like Redis, with algorithms like Token Bucket or Leaky Bucket, and deploy it across multiple instances.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_30" 
+                                       value="C" 
+                                       data-question-id="239495e1-edcb-4b03-a0a5-9f397e0bb2ec"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>C.</strong> Block any IP address that makes more than 10 requests per hour.
+                                </span>
+                            </label>
+                            
+                            <label class="option-label d-block">
+                                <input type="radio" name="question_30" 
+                                       value="D" 
+                                       data-question-id="239495e1-edcb-4b03-a0a5-9f397e0bb2ec"
+                                       onchange="updateProgress()" required>
+                                <span class="option-text ms-2">
+                                    <strong>D.</strong> Only allow authenticated users to make requests, removing the need for rate limiting.
+                                </span>
+                            </label>
+                            
+                        </div>
+                    </div>
+                    
+
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-submit btn-lg">
+                            📝 Submit Test
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Timer functionality
+        const totalSeconds = 45 * 60;
+        let remainingSeconds = totalSeconds;
+        const timerElement = document.getElementById('timeRemaining');
+        const timerContainer = document.getElementById('timer');
+
+        function updateTimer() {
+            const minutes = Math.floor(remainingSeconds / 60);
+            const seconds = remainingSeconds % 60;
+            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            if (remainingSeconds <= 60) {
+                timerContainer.classList.add('danger');
+            } else if (remainingSeconds <= 300) {
+                timerContainer.classList.add('warning');
+            }
+
+            if (remainingSeconds <= 0) {
+                alert('Time is up! Submitting your test...');
+                document.getElementById('aptitudeTestForm').submit();
+            }
+
+            remainingSeconds--;
+        }
+
+        // Start timer
+        setInterval(updateTimer, 1000);
+
+        // Progress tracking
+        const totalQuestions = 30;
+        function updateProgress() {
+            const answeredQuestions = document.querySelectorAll('input[type="radio"]:checked').length;
+            document.getElementById('progressText').textContent = `${answeredQuestions} of ${totalQuestions}`;
+            const progressPercent = (answeredQuestions / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = progressPercent + '%';
+        }
+
+        // Form submission
+        document.getElementById('aptitudeTestForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const formData = new FormData(form);
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            // Check if all questions are answered
+            const answeredQuestions = document.querySelectorAll('input[type="radio"]:checked').length;
+            if (answeredQuestions < totalQuestions) {
+                if (!confirm(`You have only answered ${answeredQuestions} out of ${totalQuestions} questions. Do you want to submit anyway?`)) {
+                    return;
+                }
+            }
+
+            // Disable submit button
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+
+            // Hide previous messages
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            // Collect answers
+            const answers = {};
+            const radioInputs = document.querySelectorAll('input[type="radio"]:checked');
+            radioInputs.forEach(input => {
+                const questionId = input.getAttribute('data-question-id');
+                answers[questionId] = input.value;
+            });
+
+            // Prepare submission data
+            const submissionData = {
+                job_requirement_id: formData.get('job_requirement_id'),
+                aptitude_test_id: formData.get('aptitude_test_id'),
+                answers: answers,
+                time_taken_seconds: totalSeconds - remainingSeconds
+            };
+
+            console.log('Submitting test:', submissionData);
+
+            try {
+                // TODO: Replace with actual API endpoint
+                const apiEndpoint = 'http://localhost:8888/interview-management-service/api/v1/aptitude/submit-test';
+                
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(submissionData)
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    console.log('Success response:', responseData);
+                    document.getElementById('successMessage').style.display = 'block';
+                    form.reset();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    // Optionally redirect to results page
+                    setTimeout(() => {
+                        alert('Test submitted successfully! Thank you for taking the test.');
+                    }, 1000);
+                } else {
+                    const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
+                    console.log('Error response:', errorData);
+                    document.getElementById('errorText').textContent = errorData.detail || 'Failed to submit test';
+                    document.getElementById('errorMessage').style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                document.getElementById('errorText').textContent = 'Network error. Please check your connection and try again.';
+                document.getElementById('errorMessage').style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '📝 Submit Test';
+            }
+        });
+
+        // Initialize progress on page load
+        updateProgress();
+    </script>
+</body>
+</html>
