@@ -167,6 +167,21 @@
     </style>
 </head>
 <body>
+    <script>
+        // Session guard: allow access only with a valid session token stored in sessionStorage.
+        // No token is kept in the URL; token must exist in sessionStorage for this origin/tab.
+        (function() {
+            const sessionKey = `test_session_2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4_ea6eebdd-ef3e-4c94-915d-3d8b4551bae1`;
+            const storedToken = sessionStorage.getItem(sessionKey);
+
+            if (!storedToken) {
+                const loginUrl = `http://localhost:8890/tests/login_2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4_ea6eebdd-ef3e-4c94-915d-3d8b4551bae1.html`;
+                window.location.replace(loginUrl);
+                return;
+            }
+        })();
+    </script>
+
     <!-- Timer -->
     <div id="timer" class="timer">
         ⏱️ <span id="timeRemaining">45:00</span>

@@ -199,6 +199,21 @@ APTITUDE_TEST_TEMPLATE = """
     </style>
 </head>
 <body>
+    <script>
+        // Session guard: allow access only with a valid session token stored in sessionStorage.
+        // No token is kept in the URL; token must exist in sessionStorage for this origin/tab.
+        (function() {
+            const sessionKey = `test_session_{{ job_requirement_id }}_{{ aptitude_test_id }}`;
+            const storedToken = sessionStorage.getItem(sessionKey);
+
+            if (!storedToken) {
+                const loginUrl = `http://localhost:8890/tests/login_{{ job_requirement_id }}_{{ aptitude_test_id }}.html`;
+                window.location.replace(loginUrl);
+                return;
+            }
+        })();
+    </script>
+
     <!-- Timer -->
     <div id="timer" class="timer">
         ⏱️ <span id="timeRemaining">{{ total_time_minutes }}:00</span>
@@ -651,6 +666,7 @@ LOGIN_FORM_TEMPLATE = """
                 const jobReqId = document.getElementById('job_requirement_id').value;
                 const testId = document.getElementById('aptitude_test_id').value;
                 const apiEndpoint = `http://localhost:8888/interview-management-service/api/v1/aptitude/validate-login/${jobReqId}/${testId}`;
+                const sessionKey = `test_session_${jobReqId}_${testId}`;
 
                 const response = await fetch(apiEndpoint, {
                     method: 'POST',
@@ -667,7 +683,13 @@ LOGIN_FORM_TEMPLATE = """
                     document.getElementById('successText').textContent = responseData.message;
                     document.getElementById('successMessage').style.display = 'block';
 
-                    // Redirect to test form after a short delay
+                    // Store session token for this test (per-origin sessionStorage)
+                    const sessionToken = responseData.data?.session_token;
+                    if (sessionToken) {
+                        sessionStorage.setItem(sessionKey, sessionToken);
+                    }
+
+                    // Redirect to test form after a short delay (URL without token)
                     setTimeout(() => {
                         const formUrl = responseData.data?.test_form_url;
                         if (formUrl) {
