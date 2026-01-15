@@ -39,6 +39,7 @@ class CandidateReadSchema(BaseAppSchema):
     first_name: str
     last_name: str
     email: EmailStr
+    password: str  # Auto-generated 8-character password
     phone: Optional[str]
     linkedin_url: Optional[str]
     portfolio_url: Optional[str]

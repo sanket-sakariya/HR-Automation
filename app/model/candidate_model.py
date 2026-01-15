@@ -14,6 +14,7 @@ class CandidateModel(BaseAppModel):
     first_name = Column(String(50), nullable=False, info={"search": True}, index=True)
     last_name = Column(String(50), nullable=False, info={"search": True}, index=True)
     email = Column(String(255), nullable=False, index=True)
+    password = Column(String(255), nullable=False)  # 8-character random password
     phone = Column(String(20), nullable=True)
     linkedin_url = Column(String(500), nullable=True)
     portfolio_url = Column(String(500), nullable=True)

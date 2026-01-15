@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import Optional, Dict, Any, List
 from uuid import UUID, uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
+import secrets
+import string
 
 from app.config.logger_config import log_user_activity, log_central
 from app.config.constants import LogMessages
@@ -44,6 +46,11 @@ class CandidateManagementService(BaseAppService):
         self.candidate_profile_repo = CandidateProfileRepository(db=db)
         self.resume_analyzer = ResumeAnalysisService()
 
+    def _generate_random_password(self, length: int = 8) -> str:
+        """Generate a random password of specified length."""
+        alphabet = string.ascii_letters + string.digits
+        return ''.join(secrets.choice(alphabet) for i in range(length))
+
     async def create_candidate_application(
         self,
         job_requirement_id: UUID,
@@ -61,6 +68,9 @@ class CandidateManagementService(BaseAppService):
 
             candidate_data = payload.model_dump()
             candidate_data["candidate_id"] = candidate_id
+
+            # Generate random 8-character password for the candidate
+            candidate_data["password"] = self._generate_random_password(8)
 
             # For public applications, set created_by to system user UUID
             # since there's no authenticated user
