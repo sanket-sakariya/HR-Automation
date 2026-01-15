@@ -58,4 +58,4 @@ from app.api.v1.endpoints.aptitude_endpoint import router as aptitude_router
 api_router.include_router(router=company_management_router, tags=["Company Management"])
 api_router.include_router(router=job_requirement_router, tags=["Job Requirements"])
 api_router.include_router(router=candidate_management_router, tags=["Candidate Management"])
-api_router.include_router(router=aptitude_router, tags=["Aptitude Management"])
+api_router.include_router(router=aptitude_router, prefix="/aptitude", tags=["Aptitude Management"])

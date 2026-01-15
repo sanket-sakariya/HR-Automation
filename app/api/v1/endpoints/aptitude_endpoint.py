@@ -28,7 +28,7 @@ from app.repository.aptitude_test_repository import AptitudeTestRepository
 
 router = APIRouter(
     prefix="/aptitude",
-    tags=["Aptitude Tests"],
+    tags=["Aptitude Management"],
     responses={
         404: {"description": "Not found"},
         422: {"description": "Validation error"},
@@ -182,7 +182,7 @@ async def generate_aptitude_test_form(
             if response.status_code == 200:
                 flask_response = response.json()
 
-                if flask_response.get("success"):
+                if flask_response.get("success"):              
                     # Return test details and form URL
                     return ApiResponseSchema(
                         success=True,
