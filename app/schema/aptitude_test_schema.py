@@ -75,19 +75,6 @@ class AptitudeTestWithQuestions(AptitudeTestRead):
     questions: List[AptitudeQuestionRead]
 
 
-# Test Attempt Schemas
-class TestAttemptStart(BaseModel):
-    """Schema for starting a test attempt."""
-    candidate_email: EmailStr
-    candidate_name: Optional[str] = None
-
-
-class TestAttemptVerifyOTP(BaseModel):
-    """Schema for verifying OTP."""
-    attempt_id: UUID
-    otp_code: str
-
-
 class TestAnswerSubmit(BaseModel):
     """Schema for submitting test answers."""
     attempt_id: UUID
@@ -122,19 +109,4 @@ class TestCreatedResponse(BaseModel):
     total_questions: int
     questions_generated: int
     public_url: str
-
-
-class TestAccessResponse(BaseModel):
-    """Response for test access (after OTP verification)."""
-    test: AptitudeTestWithQuestions
-    attempt_id: UUID
-    time_remaining_seconds: int
-
-
-class OTPSentResponse(BaseModel):
-    """Response after OTP is sent."""
-    attempt_id: UUID
-    message: str
-    email: str
-    expires_in_minutes: int = 10
 

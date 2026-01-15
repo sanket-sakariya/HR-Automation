@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.logger_config import log_central
 from app.repository.aptitude_test_repository import AptitudeTestRepository
 from app.repository.job_requirement_repository import JobRequirementRepository
-from app.service.email_otp_service import EmailOTPService
 from app.schema.aptitude_test_schema import (
     AptitudeTestRead,
     AptitudeQuestionRead,
@@ -34,7 +33,6 @@ class AptitudeTestService:
         self.db = db
         self.test_repo = AptitudeTestRepository(db)
         self.job_repo = JobRequirementRepository(db)
-        self.email_service = EmailOTPService()
         
         # Initialize Gemini AI with JSON mode
         if GEMINI_AVAILABLE:
@@ -247,118 +245,6 @@ CRITICAL RULES:
             log_central(f"Error generating test: {str(e)}", level="error")
             raise
 
-    async def start_test_attempt(
-        self,
-        job_requirement_id: UUID,
-        aptitude_test_id: UUID,
-        candidate_email: str,
-        candidate_name: Optional[str] = None
-    ) -> Dict[str, Any]:
-        """Start a new test attempt and send OTP."""
-        try:
-            # Verify test exists
-            test = await self.test_repo.get_test_by_id(aptitude_test_id)
-            if not test or test.job_requirement_id != job_requirement_id:
-                raise Exception("Test not found or doesn't match job requirement")
-
-            # Generate OTP
-            otp_code = self.email_service.generate_otp()
-
-            # Create attempt record
-            attempt = await self.test_repo.create_attempt({
-                'aptitude_test_id': aptitude_test_id,
-                'job_requirement_id': job_requirement_id,
-                'candidate_email': candidate_email,
-                'candidate_name': candidate_name,
-                'otp_code': otp_code,
-                'otp_verified': False,
-                'status': 'pending'
-            })
-
-            # Send OTP email
-            email_sent = self.email_service.send_otp_email(
-                recipient_email=candidate_email,
-                otp_code=otp_code,
-                test_title=test.test_title
-            )
-
-            if not email_sent:
-                log_central(f"Failed to send OTP email to {candidate_email}", level="warning")
-
-            return {
-                "attempt_id": attempt.attempt_id,
-                "otp_sent": email_sent,
-                "message": "OTP sent to your email" if email_sent else "OTP generated (check logs)"
-            }
-
-        except Exception as e:
-            log_central(f"Error starting test attempt: {str(e)}", level="error")
-            raise
-
-    async def verify_otp_and_get_test(
-        self,
-        attempt_id: UUID,
-        otp_code: str
-    ) -> Dict[str, Any]:
-        """Verify OTP and return test questions."""
-        try:
-            # Get attempt
-            attempt = await self.test_repo.get_attempt_by_id(attempt_id)
-            if not attempt:
-                raise Exception("Test attempt not found")
-
-            # Verify OTP
-            if not self.email_service.verify_otp(otp_code, attempt.otp_code):
-                raise Exception("Invalid OTP code")
-
-            # Check if already verified
-            if attempt.otp_verified:
-                log_central(f"OTP already verified for attempt {attempt_id}", level="info")
-
-            # Update attempt as verified
-            await self.test_repo.update_attempt(attempt_id, {
-                'otp_verified': True,
-                'otp_verified_at': datetime.now().isoformat(),
-                'status': 'in_progress',
-                'started_at': datetime.now().isoformat()
-            })
-
-            # Get test and questions (without answers)
-            test = await self.test_repo.get_test_by_id(attempt.aptitude_test_id)
-            questions = await self.test_repo.get_questions_by_test_id(attempt.aptitude_test_id)
-
-            # Format questions (remove correct answers)
-            questions_public = []
-            for q in questions:
-                questions_public.append({
-                    'question_id': str(q.question_id),
-                    'question_number': q.question_number,
-                    'difficulty': q.difficulty,
-                    'category': q.category,
-                    'question_text': q.question_text,
-                    'options': q.options,
-                    'time_allocated_seconds': q.time_allocated_seconds,
-                    'tags': q.tags
-                })
-
-            return {
-                "test": {
-                    "aptitude_test_id": str(test.aptitude_test_id),
-                    "test_title": test.test_title,
-                    "total_questions": test.total_questions,
-                    "total_time_minutes": test.total_time_minutes,
-                    "passing_score_percentage": test.passing_score_percentage,
-                    "proctoring_settings": test.proctoring_settings,
-                    "questions": questions_public
-                },
-                "attempt_id": str(attempt_id),
-                "candidate_name": attempt.candidate_name
-            }
-
-        except Exception as e:
-            log_central(f"Error verifying OTP: {str(e)}", level="error")
-            raise
-
     async def submit_test_answers(
         self,
         attempt_id: UUID,
@@ -372,9 +258,6 @@ CRITICAL RULES:
             attempt = await self.test_repo.get_attempt_by_id(attempt_id)
             if not attempt:
                 raise Exception("Test attempt not found")
-
-            if not attempt.otp_verified:
-                raise Exception("Test not verified")
 
             if attempt.status == 'completed':
                 raise Exception("Test already submitted")

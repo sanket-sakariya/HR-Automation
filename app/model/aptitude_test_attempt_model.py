@@ -18,11 +18,6 @@ class AptitudeTestAttemptModel(BaseAppModel):
     candidate_name = Column(String(255), nullable=True)
     user_attempt = Column(Integer, nullable=False, default=1)  # Track attempt number for user
 
-    # Test session info
-    otp_code = Column(String(6), nullable=True)
-    otp_verified = Column(Boolean, nullable=False, default=False)
-    otp_verified_at = Column(String(50), nullable=True)
-    
     # Test progress
     started_at = Column(String(50), nullable=True)
     submitted_at = Column(String(50), nullable=True)

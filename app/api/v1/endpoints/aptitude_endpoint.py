@@ -14,11 +14,7 @@ from app.config.constants import SuccessMessages
 
 from app.schema.response_schema import ApiResponseSchema
 from app.schema.aptitude_test_schema import (
-    TestAttemptStart,
-    TestAttemptVerifyOTP,
     TestAnswerSubmit,
-    OTPSentResponse,
-    TestAccessResponse,
     TestAttemptResult,
     TestCreatedResponse
 )

@@ -9,7 +9,7 @@ from pathlib import Path
 from flask import Flask, render_template_string, request, send_from_directory, jsonify
 
 # Configuration
-SERVICE_HOST = '0.0.0.0'
+SERVICE_HOST = 'localhost'
 SERVICE_PORT = 8890
 DEBUG_MODE = True
 TESTS_DIRECTORY_NAME = 'tests'
