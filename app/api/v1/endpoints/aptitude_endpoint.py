@@ -25,6 +25,8 @@ from app.schema.aptitude_test_schema import (
 from app.service.aptitude_test_service import AptitudeTestService
 from app.exception.job_requirement_exception import JobRequirementNotFoundException
 from app.repository.aptitude_test_repository import AptitudeTestRepository
+from app.repository.candidate_repository import CandidateRepository
+from app.schema.candidate_management_schema import CandidateReadSchema
 
 router = APIRouter(
     prefix="/aptitude",
@@ -217,5 +219,244 @@ async def generate_aptitude_test_form(
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate aptitude test form: {str(e)}"
+        )
+
+
+@router.get("/generate-login-form/{job_requirement_id}/{aptitude_test_id}", response_model=ApiResponseSchema[dict])
+async def generate_login_form(
+    job_requirement_id: UUID,
+    aptitude_test_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Generate login form for aptitude test access.
+    This endpoint creates a login form on port 8890 where candidates can enter their email and password.
+    """
+    try:
+        # Initialize services
+        test_repo = AptitudeTestRepository(db)
+
+        # Verify the test exists and belongs to the job requirement
+        test = await test_repo.get_test_by_id(aptitude_test_id)
+        if not test:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Aptitude test not found: {aptitude_test_id}"
+            )
+
+        if test.job_requirement_id != job_requirement_id:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail=f"Test {aptitude_test_id} does not belong to job requirement {job_requirement_id}"
+            )
+
+        # Prepare login data
+        login_data = {
+            "job_requirement_id": str(job_requirement_id),
+            "aptitude_test_id": str(aptitude_test_id),
+            "test_title": test.test_title,
+            "login_instructions": "Please enter your email and password to access the aptitude test."
+        }
+
+        # Print login form details to terminal
+        print("\n" + "="*80)
+        print("🔐 APTITUDE TEST LOGIN FORM GENERATION")
+        print("="*80)
+        print(f"🆔 Test ID: {login_data['aptitude_test_id']}")
+        print(f"💼 Job Req ID: {login_data['job_requirement_id']}")
+        print(f"📋 Test Title: {login_data['test_title']}")
+        print(f"🔑 Login Required: Email + Password")
+        print("="*80 + "\n")
+
+        # Call the Flask aptitude test service to generate the login form
+        flask_service_url = f"http://localhost:8890/interview-management-service/api/v1/aptitude/generate-login-form/{job_requirement_id}/{aptitude_test_id}"
+
+        async with httpx.AsyncClient() as client:
+            # Send login data via POST to Flask service
+            response = await client.post(
+                flask_service_url,
+                json={"login_data": login_data},
+                timeout=30.0
+            )
+
+            if response.status_code == 200:
+                flask_response = response.json()
+
+                if flask_response.get("success"):
+                    # Return login details and form URL
+                    return ApiResponseSchema(
+                        success=True,
+                        message="Login form generated successfully",
+                        data={
+                            "login_data": login_data,
+                            "form_url": flask_response.get("form_url"),
+                            "form_path": flask_response.get("form_path"),
+                            "login_url": f"{flask_response.get('form_url')}/login" if flask_response.get("form_url") else None
+                        }
+                    )
+                else:
+                    raise HTTPException(
+                        status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Failed to generate login form via Flask service: {flask_response.get('message')}"
+                    )
+            else:
+                raise HTTPException(
+                    status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Flask service returned status {response.status_code}: {response.text}"
+                )
+
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Unable to connect to Flask login service: {str(e)}"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate login form: {str(e)}"
+        )
+
+
+@router.post("/validate-login/{job_requirement_id}/{aptitude_test_id}", response_model=ApiResponseSchema[dict])
+async def validate_login(
+    job_requirement_id: UUID,
+    aptitude_test_id: UUID,
+    login_data: dict,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Validate candidate login credentials and provide test access.
+    Checks email and password against candidates table and manages test attempts.
+    """
+    try:
+        # Extract login credentials
+        email = login_data.get("email")
+        password = login_data.get("password")
+
+        if not email or not password:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="Email and password are required"
+            )
+
+        # Initialize repositories
+        candidate_repo = CandidateRepository(db)
+        test_repo = AptitudeTestRepository(db)
+
+        # Verify the test exists
+        test = await test_repo.get_test_by_id(aptitude_test_id)
+        if not test:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Aptitude test not found: {aptitude_test_id}"
+            )
+
+        if test.job_requirement_id != job_requirement_id:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail=f"Test {aptitude_test_id} does not belong to job requirement {job_requirement_id}"
+            )
+
+        # Find candidate by email and job_requirement_id
+        # This ensures the candidate is specifically applying for this job
+        candidate = await candidate_repo.get_by_email_and_job_requirement(email, job_requirement_id)
+        if not candidate:
+            raise HTTPException(
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid credentials or candidate not found for this job requirement"
+            )
+
+        # Verify password
+        if candidate.password != password:
+            raise HTTPException(
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+
+        # Check if candidate already has an attempt for this test
+        existing_attempt = await test_repo.get_attempt_by_email_and_test(email, aptitude_test_id)
+
+        if existing_attempt:
+            # User already has an attempt, redirect to existing attempt
+            attempt_data = {
+                "attempt_id": str(existing_attempt.attempt_id),
+                "status": existing_attempt.status,
+                "user_attempt": existing_attempt.user_attempt,
+                "message": "You have already attempted this test"
+            }
+
+            # Direct test form URL (already generated by generate-test-form)
+            test_form_url = f"http://localhost:8890/tests/{job_requirement_id}_{aptitude_test_id}.html"
+
+            print(f"\n🔄 Existing attempt found for {email}: Attempt #{existing_attempt.user_attempt}")
+            print(f"📊 Status: {existing_attempt.status}\n")
+
+            # Return JSON so client JS can redirect cleanly
+            return ApiResponseSchema(
+                success=True,
+                message="Login successful - existing attempt found",
+                data={
+                    "candidate_info": {
+                        "candidate_id": str(candidate.candidate_id),
+                        "email": candidate.email,
+                        "first_name": candidate.first_name,
+                        "last_name": candidate.last_name
+                    },
+                    "attempt_info": attempt_data,
+                    "test_form_url": test_form_url,
+                    "action": "existing_attempt"
+                }
+            )
+        else:
+            # First time attempt - create new attempt record
+            attempt_data = {
+                'aptitude_test_id': aptitude_test_id,
+                'job_requirement_id': job_requirement_id,
+                'candidate_email': email,
+                'candidate_name': f"{candidate.first_name} {candidate.last_name}",
+                'user_attempt': 1,  # First attempt
+                'status': 'pending'
+            }
+
+            new_attempt = await test_repo.create_attempt(attempt_data)
+
+            # Direct test form URL
+            test_form_url = f"http://localhost:8890/tests/{job_requirement_id}_{aptitude_test_id}.html"
+
+            print(f"\n✅ New attempt created for {email}")
+            print(f"🆔 Attempt ID: {new_attempt.attempt_id}")
+            print(f"📊 Attempt #: {new_attempt.user_attempt}\n")
+
+            # Return JSON so client JS can redirect cleanly
+            return ApiResponseSchema(
+                success=True,
+                message="Login successful - new test attempt created",
+                data={
+                    "candidate_info": {
+                        "candidate_id": str(candidate.candidate_id),
+                        "email": candidate.email,
+                        "first_name": candidate.first_name,
+                        "last_name": candidate.last_name
+                    },
+                    "attempt_info": {
+                        "attempt_id": str(new_attempt.attempt_id),
+                        "status": new_attempt.status,
+                        "user_attempt": new_attempt.user_attempt,
+                        "message": "New test attempt created"
+                    },
+                    "test_form_url": test_form_url,
+                    "action": "new_attempt"
+                }
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Login validation error: {str(e)}")
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Login validation failed: {str(e)}"
         )
 

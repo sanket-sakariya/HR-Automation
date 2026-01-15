@@ -102,6 +102,28 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
                 message=f"{DatabaseErrorMessages.GENERAL_RETRIEVAL_ERROR}: {str(e)}"
             ) from e
 
+    async def get_by_email_and_job_requirement(self, email: str, job_requirement_id: str) -> Optional[CandidateModel]:
+        """Get a candidate by email and job_requirement_id (async)."""
+        try:
+            query = select(CandidateModel).where(
+                and_(
+                    CandidateModel.email == email,
+                    CandidateModel.job_requirement_id == job_requirement_id,
+                    CandidateModel.status != "deleted"
+                )
+            )
+
+            query = query.limit(1)
+
+            result = await self.db.execute(query)
+            candidate = result.scalar_one_or_none()
+
+            return candidate
+        except SQLAlchemyError as e:
+            raise InternalServerErrorException(
+                message=f"{DatabaseErrorMessages.GENERAL_RETRIEVAL_ERROR}: {str(e)}"
+            ) from e
+
     async def get_by_candidate_and_job(
         self, candidate_id: UUID, job_requirement_id: UUID
     ) -> Optional[CandidateModel]:

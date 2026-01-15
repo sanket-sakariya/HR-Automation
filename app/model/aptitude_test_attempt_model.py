@@ -16,7 +16,8 @@ class AptitudeTestAttemptModel(BaseAppModel):
     job_requirement_id = Column(UUID(as_uuid=True), nullable=False, index=True)  # No FK - just reference
     candidate_email = Column(String(255), nullable=False, index=True)
     candidate_name = Column(String(255), nullable=True)
-    
+    user_attempt = Column(Integer, nullable=False, default=1)  # Track attempt number for user
+
     # Test session info
     otp_code = Column(String(6), nullable=True)
     otp_verified = Column(Boolean, nullable=False, default=False)

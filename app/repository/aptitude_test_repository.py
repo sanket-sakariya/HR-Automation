@@ -98,7 +98,17 @@ class AptitudeTestRepository:
             AptitudeTestAttemptModel.candidate_email == email,
             AptitudeTestAttemptModel.aptitude_test_id == test_id
         ).order_by(AptitudeTestAttemptModel.created_at.desc())
-        
+
         result = await self.db.execute(query)
         return result.scalars().all()
+
+    async def get_attempt_by_email_and_test(self, email: str, test_id: UUID) -> Optional[AptitudeTestAttemptModel]:
+        """Get the most recent attempt by email for a specific test."""
+        query = select(AptitudeTestAttemptModel).where(
+            AptitudeTestAttemptModel.candidate_email == email,
+            AptitudeTestAttemptModel.aptitude_test_id == test_id
+        ).order_by(AptitudeTestAttemptModel.created_at.desc()).limit(1)
+
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
 

@@ -516,6 +516,273 @@ def generate_test_form(job_requirement_id, aptitude_test_id):
         }), 500
 
 
+# HTML Template for the login form
+LOGIN_FORM_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aptitude Test Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 0;
+        }
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .success-message, .error-message {
+            display: none;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <div class="login-header">
+                <h1 class="mb-2">🔐 Test Login</h1>
+                <p class="mb-0">{{ test_title }}</p>
+            </div>
+
+            <div id="successMessage" class="success-message">
+                <strong>Success!</strong> <span id="successText"></span>
+            </div>
+            <div id="errorMessage" class="error-message">
+                <strong>Error!</strong> <span id="errorText"></span>
+            </div>
+
+            <form id="loginForm">
+                <input type="hidden" id="job_requirement_id" value="{{ job_requirement_id }}">
+                <input type="hidden" id="aptitude_test_id" value="{{ aptitude_test_id }}">
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" class="form-control" id="email" name="email" required
+                           placeholder="Enter your email">
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required
+                           placeholder="Enter your password">
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary btn-login btn-lg">
+                        🔑 Login & Start Test
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-center mt-3">
+                <small class="text-muted">{{ login_instructions }}</small>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const form = e.target;
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            // Get form data
+            const loginData = {
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            };
+
+            // Disable submit button
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Logging in...';
+
+            // Hide previous messages
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            try {
+                // Call the validation endpoint
+                const jobReqId = document.getElementById('job_requirement_id').value;
+                const testId = document.getElementById('aptitude_test_id').value;
+                const apiEndpoint = `http://localhost:8888/interview-management-service/api/v1/aptitude/validate-login/${jobReqId}/${testId}`;
+
+                const response = await fetch(apiEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(loginData)
+                });
+
+                const responseData = await response.json();
+
+                if (response.ok && responseData.success) {
+                    // Login successful
+                    document.getElementById('successText').textContent = responseData.message;
+                    document.getElementById('successMessage').style.display = 'block';
+
+                    // Redirect to test form after a short delay
+                    setTimeout(() => {
+                        const formUrl = responseData.data?.test_form_url;
+                        if (formUrl) {
+                            window.location.href = formUrl;
+                        } else {
+                            alert('Test access granted! Redirecting...');
+                        }
+                    }, 800);
+
+                } else {
+                    // Login failed
+                    document.getElementById('errorText').textContent =
+                        responseData.error_message || responseData.detail || 'Login failed. Please check your credentials.';
+                    document.getElementById('errorMessage').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                document.getElementById('errorText').textContent = 'Network error. Please check your connection and try again.';
+                document.getElementById('errorMessage').style.display = 'block';
+            } finally {
+                // Re-enable submit button
+                submitButton.disabled = false;
+                submitButton.innerHTML = '🔑 Login & Start Test';
+            }
+        });
+    </script>
+</body>
+</html>
+"""
+
+
+@app.route('/interview-management-service/api/v1/aptitude/generate-login-form/<job_requirement_id>/<aptitude_test_id>', methods=['POST'])
+def generate_login_form(job_requirement_id, aptitude_test_id):
+    """
+    Generate a login form for aptitude test access.
+
+    Accepts POST with login_data in request body to include test information on the form.
+
+    Returns JSON response with:
+    - success: boolean
+    - message: string
+    - form_url: string (URL to access the generated login form)
+    - form_path: string (local file path)
+    """
+    try:
+        # Get login data from POST request body
+        if not request.is_json:
+            return jsonify({
+                "success": False,
+                "message": "Request must be JSON",
+                "error": "Invalid content type"
+            }), 400
+
+        data = request.get_json()
+        login_data = data.get('login_data', {})
+
+        if not login_data:
+            return jsonify({
+                "success": False,
+                "message": "No login data provided",
+                "error": "Missing login_data in request body"
+            }), 400
+
+        logger.info(f"Generating login form for job_requirement_id: {job_requirement_id}, test_id: {aptitude_test_id}")
+
+        # Sanitize the filename
+        safe_filename = f"login_{job_requirement_id}_{aptitude_test_id}.html"
+        form_file_path = TESTS_DIR / safe_filename
+
+        # Prepare template variables
+        template_vars = {
+            'job_requirement_id': job_requirement_id,
+            'aptitude_test_id': aptitude_test_id,
+            'test_title': login_data.get('test_title', 'Aptitude Test'),
+            'login_instructions': login_data.get('login_instructions', 'Please enter your email and password to access the aptitude test.')
+        }
+
+        # Create the HTML content
+        html_content = render_template_string(
+            LOGIN_FORM_TEMPLATE,
+            **template_vars
+        )
+
+        # Save the HTML file to the tests directory
+        with open(form_file_path, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+
+        # Generate the URL to access the form
+        form_url = f"http://{SERVICE_HOST}:{SERVICE_PORT}/tests/{safe_filename}"
+
+        logger.info(f"Generated login form for test ID: {aptitude_test_id}")
+        logger.info(f"Login form saved at: {form_file_path}")
+        logger.info(f"Login form URL: {form_url}")
+
+        # Return JSON response with the form URL
+        return jsonify({
+            "success": True,
+            "message": "Login form generated successfully",
+            "job_requirement_id": job_requirement_id,
+            "aptitude_test_id": aptitude_test_id,
+            "form_url": form_url,
+            "form_path": str(form_file_path)
+        })
+
+    except Exception as e:
+        logger.error(f"Error generating login form: {str(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({
+            "success": False,
+            "message": f"Failed to generate login form: {str(e)}",
+            "error": str(e)
+        }), 500
+
+
 @app.route('/tests/<filename>')
 def serve_test(filename):
     """
