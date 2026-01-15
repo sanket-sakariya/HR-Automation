@@ -473,3 +473,33 @@ async def validate_login(
             detail=f"Login validation failed: {str(e)}"
         )
 
+
+@router.post("/submit-test", response_model=ApiResponseSchema[TestAttemptResult])
+async def submit_test(
+    payload: TestAnswerSubmit,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Submit test answers and store results in aptitude_test_attempts.
+    Calculates correct answers by matching with aptitude_questions.
+    """
+    try:
+        service = AptitudeTestService(db)
+        result = await service.submit_test_answers(
+            attempt_id=payload.attempt_id,
+            answers=payload.answers,
+            time_taken_seconds=payload.time_taken_seconds,
+            tab_switches=payload.tab_switches
+        )
+
+        return ApiResponseSchema(
+            success=True,
+            message="Test submitted successfully",
+            data=result
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to submit test: {str(e)}"
+        )
+

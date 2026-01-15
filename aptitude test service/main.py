@@ -243,7 +243,7 @@ APTITUDE_TEST_TEMPLATE = """
             <!-- Test Content -->
             <div class="test-content">
                 <div id="successMessage" class="success-message">
-                    <strong>Success!</strong> Your test has been submitted successfully.
+                    <strong>Thank you!</strong> Your valuable time to attempt the test is appreciated.
                 </div>
                 <div id="errorMessage" class="error-message">
                     <strong>Error!</strong> <span id="errorText"></span>
@@ -286,6 +286,7 @@ APTITUDE_TEST_TEMPLATE = """
                                 <input type="radio" name="question_{{ question.question_number }}" 
                                        value="{{ option_key }}" 
                                        data-question-id="{{ question.question_id }}"
+                                       data-question-number="{{ question.question_number }}"
                                        onchange="updateProgress()" required>
                                 <span class="option-text ms-2">
                                     <strong>{{ option_key }}.</strong> {{ option_value }}
@@ -369,18 +370,29 @@ APTITUDE_TEST_TEMPLATE = """
             document.getElementById('successMessage').style.display = 'none';
             document.getElementById('errorMessage').style.display = 'none';
 
-            // Collect answers
+            // Collect answers (keyed by 0-based question index)
             const answers = {};
             const radioInputs = document.querySelectorAll('input[type="radio"]:checked');
             radioInputs.forEach(input => {
-                const questionId = input.getAttribute('data-question-id');
-                answers[questionId] = input.value;
+                const questionNumber = parseInt(input.getAttribute('data-question-number'), 10);
+                if (!Number.isNaN(questionNumber)) {
+                    const indexKey = String(questionNumber - 1);
+                    answers[indexKey] = input.value;
+                }
             });
 
             // Prepare submission data
+            const attemptKey = `test_attempt_{{ job_requirement_id }}_{{ aptitude_test_id }}`;
+            const attemptId = sessionStorage.getItem(attemptKey);
+            if (!attemptId) {
+                alert('Session expired. Please login again.');
+                const loginUrl = `http://localhost:8890/tests/login_{{ job_requirement_id }}_{{ aptitude_test_id }}.html`;
+                window.location.replace(loginUrl);
+                return;
+            }
+
             const submissionData = {
-                job_requirement_id: formData.get('job_requirement_id'),
-                aptitude_test_id: formData.get('aptitude_test_id'),
+                attempt_id: attemptId,
                 answers: answers,
                 time_taken_seconds: totalSeconds - remainingSeconds
             };
@@ -404,12 +416,22 @@ APTITUDE_TEST_TEMPLATE = """
                     console.log('Success response:', responseData);
                     document.getElementById('successMessage').style.display = 'block';
                     form.reset();
+                    form.style.display = 'none';
+                    const timerEl = document.getElementById('timer');
+                    if (timerEl) {
+                        timerEl.style.display = 'none';
+                    }
+                    const progressEl = document.querySelector('.progress-indicator');
+                    if (progressEl) {
+                        progressEl.style.display = 'none';
+                    }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
-                    
-                    // Optionally redirect to results page
-                    setTimeout(() => {
-                        alert('Test submitted successfully! Thank you for taking the test.');
-                    }, 1000);
+
+                    // Clear session tokens to force fresh login next time
+                    const sessionKey = `test_session_{{ job_requirement_id }}_{{ aptitude_test_id }}`;
+                    const attemptKey = `test_attempt_{{ job_requirement_id }}_{{ aptitude_test_id }}`;
+                    sessionStorage.removeItem(sessionKey);
+                    sessionStorage.removeItem(attemptKey);
                 } else {
                     const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
                     console.log('Error response:', errorData);
@@ -667,6 +689,7 @@ LOGIN_FORM_TEMPLATE = """
                 const testId = document.getElementById('aptitude_test_id').value;
                 const apiEndpoint = `http://localhost:8888/interview-management-service/api/v1/aptitude/validate-login/${jobReqId}/${testId}`;
                 const sessionKey = `test_session_${jobReqId}_${testId}`;
+                const attemptKey = `test_attempt_${jobReqId}_${testId}`;
 
                 const response = await fetch(apiEndpoint, {
                     method: 'POST',
@@ -685,8 +708,12 @@ LOGIN_FORM_TEMPLATE = """
 
                     // Store session token for this test (per-origin sessionStorage)
                     const sessionToken = responseData.data?.session_token;
+                    const attemptId = responseData.data?.attempt_info?.attempt_id;
                     if (sessionToken) {
                         sessionStorage.setItem(sessionKey, sessionToken);
+                    }
+                    if (attemptId) {
+                        sessionStorage.setItem(attemptKey, attemptId);
                     }
 
                     // Redirect to test form after a short delay (URL without token)

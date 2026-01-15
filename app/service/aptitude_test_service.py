@@ -269,7 +269,13 @@ CRITICAL RULES:
             correct_count = 0
             for q in questions:
                 q_index = q.question_number - 1  # Convert to 0-based index
-                if str(q_index) in answers and answers[str(q_index)] == q.correct_answer:
+                # Accept both int and string keys (JSON keys arrive as strings)
+                answer_value = None
+                if q_index in answers:
+                    answer_value = answers[q_index]
+                elif str(q_index) in answers:
+                    answer_value = answers[str(q_index)]
+                if answer_value is not None and answer_value == q.correct_answer:
                     correct_count += 1
 
             total_questions = len(questions)
