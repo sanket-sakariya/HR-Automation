@@ -81,6 +81,7 @@ class TestAnswerSubmit(BaseModel):
     answers: Dict[int, str]  # {0: "A", 1: "C", ...}
     time_taken_seconds: int
     tab_switches: int = 0
+    keyboard_violations: int = 0
 
 
 class TestAttemptResult(BaseModel):

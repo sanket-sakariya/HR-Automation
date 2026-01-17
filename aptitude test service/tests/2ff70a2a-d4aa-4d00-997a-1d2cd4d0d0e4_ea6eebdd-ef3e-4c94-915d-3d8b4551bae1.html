@@ -164,6 +164,50 @@
             border: 1px solid #f5c6cb;
             color: #721c24;
         }
+        /* Fullscreen mode styles */
+        body.fullscreen-active {
+            overflow-y: auto !important;
+            height: 100vh !important;
+        }
+        .timer {
+            position: fixed !important;
+            top: 50px !important;
+            right: 10px !important;
+            z-index: 10000 !important;
+        }
+        body:not(.fullscreen-active) .timer {
+            top: 10px !important;
+        }
+        body.fullscreen-active .container {
+            margin: 0 !important;
+            padding: 20px !important;
+            max-width: none !important;
+            min-height: 100vh !important;
+        }
+        body.fullscreen-active .test-container {
+            margin: 0 !important;
+            border-radius: 0 !important;
+        }
+        .fullscreen-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #dc3545;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            z-index: 10001;
+            font-weight: bold;
+        }
+        body.fullscreen-active .fullscreen-warning {
+            display: block !important;
+        }
+        #fullscreenEntry button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4) !important;
+        }
     </style>
 </head>
 <body>
@@ -182,6 +226,23 @@
         })();
     </script>
 
+    <!-- Fullscreen Entry Screen -->
+    <div id="fullscreenEntry" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 99999; display: flex; align-items: center; justify-content: center;">
+        <div style="text-align: center; color: white;">
+            <h1 style="font-size: 3rem; margin-bottom: 30px;">🧠 Aptitude Test</h1>
+            <p style="font-size: 1.5rem; margin-bottom: 40px;">Python Backend Developer - Aptitude Test</p>
+            <button onclick="startTest()" style="background: white; color: #667eea; border: none; padding: 20px 60px; font-size: 1.5rem; font-weight: 600; border-radius: 50px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.2s;">
+                🚀 Start Test in Fullscreen
+            </button>
+            <p style="margin-top: 30px; font-size: 1rem; opacity: 0.9;">⚠️ The test will open in fullscreen mode. Do not exit fullscreen during the test.</p>
+        </div>
+    </div>
+
+    <!-- Fullscreen Warning -->
+    <div class="fullscreen-warning" id="fullscreenWarning">
+        ⚠️ Test is in Fullscreen Mode - Do not exit fullscreen
+    </div>
+
     <!-- Timer -->
     <div id="timer" class="timer">
         ⏱️ <span id="timeRemaining">45:00</span>
@@ -199,14 +260,14 @@
             <div class="test-info text-center">
                 <div class="test-info-item">
                     <strong>📋 Total Questions:</strong> 30
-                </div>
+                    </div>
                 <div class="test-info-item">
                     <strong>⏱️ Time Limit:</strong> 45 minutes
-                </div>
+                    </div>
                 <div class="test-info-item">
                     <strong>📊 Passing Score:</strong> 60%
-                </div>
-            </div>
+                    </div>
+                    </div>
 
             <!-- Test Content -->
             <div class="test-content">
@@ -215,7 +276,7 @@
                 </div>
                 <div id="errorMessage" class="error-message">
                     <strong>Error!</strong> <span id="errorText"></span>
-                </div>
+            </div>
 
                 <!-- Progress Indicator -->
                 <div class="progress-indicator">
@@ -223,9 +284,9 @@
                         <span><strong>Progress:</strong> <span id="progressText">0 of 30</span> answered</span>
                         <div class="progress" style="width: 60%; height: 10px;">
                             <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </div>
+    </div>
 
                 <form id="aptitudeTestForm">
                     <input type="hidden" name="job_requirement_id" value="2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4">
@@ -298,7 +359,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="7e228c9e-afda-4a2b-b8f8-d5cbb922e137">
@@ -365,7 +426,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="35dcf956-3284-4799-bd49-56f29572acc6">
@@ -432,7 +493,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="a87f3d09-5e7a-4fac-8d6c-7f672912bfb0">
@@ -499,7 +560,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="757f7e69-93bc-4dfc-b726-0a4049be0a89">
@@ -568,7 +629,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="3d4183a9-91e5-47bd-8857-d18bf539f524">
@@ -637,7 +698,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="8250df87-38e0-41e0-9cfd-edd9e5e080e5">
@@ -704,7 +765,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="918dc1f8-c367-4602-97c7-9f3456ed1e9d">
@@ -773,7 +834,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="90ccd1e4-e46e-42b7-bccf-cb4277e93438">
@@ -840,7 +901,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="97490a77-261a-4f71-abb8-9483dfed091a">
@@ -907,7 +968,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="b1a0ff23-86f2-43e9-9953-7dea7d50bd11">
@@ -976,7 +1037,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="f0753b5a-d0ca-4cd2-ac2e-01dca61f25ed">
@@ -1045,7 +1106,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="f951a527-9a62-4c06-866e-9f1922a793bc">
@@ -1114,7 +1175,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="32367c9a-3d65-4b78-9acb-59155538739c">
@@ -1185,7 +1246,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="aebf53f8-25c1-4cac-85de-8cf02c3398a9">
@@ -1256,7 +1317,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="dd7cdaa1-bc0e-4497-bcf5-a377cd0d52a2">
@@ -1325,7 +1386,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="1a6a7b95-6bcd-46a3-8cfa-aae7ebcc444e">
@@ -1394,7 +1455,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="22ba6241-1003-4bbb-91df-3122ffcbda38">
@@ -1463,7 +1524,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="b8452df1-e609-4c34-989d-1cbb0260018f">
@@ -1532,7 +1593,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="c351a98b-5dbd-4869-9fb1-099a18baea49">
@@ -1601,7 +1662,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="0c767040-d7af-42e7-aea0-91944de1ec4a">
@@ -1670,7 +1731,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="d701e1ab-f3a0-4f72-a7f7-bc81b63b664b">
@@ -1739,7 +1800,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="a026789f-09d1-4753-8620-dfa18783c2b6">
@@ -1810,7 +1871,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="f3a45552-494f-408c-83d4-28112af786ed">
@@ -1879,7 +1940,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="4c477f40-d0db-4ae9-9c10-074d836888ba">
@@ -1950,7 +2011,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="81679c7c-d87e-4509-9648-1d733ae320e0">
@@ -2025,7 +2086,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="f5f5f4db-c2fd-4b6f-b825-e61bb8851b09">
@@ -2100,7 +2161,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="723f9aee-0cce-4b4b-ad7d-a58d88e8408b">
@@ -2173,7 +2234,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="a4f2dc23-5cd7-42d4-94c1-ac04be96866a">
@@ -2250,7 +2311,7 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
                     <div class="question-card" data-question-id="239495e1-edcb-4b03-a0a5-9f397e0bb2ec">
@@ -2325,16 +2386,36 @@
                                 </span>
                             </label>
                             
-                        </div>
+                    </div>
                     </div>
                     
 
                     <div class="text-center mt-4">
                         <button type="submit" class="btn btn-primary btn-submit btn-lg">
                             📝 Submit Test
-                        </button>
+                            </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proctoring Warning Modal -->
+    <div class="modal fade warning-modal" id="proctoringModal" tabindex="-1" aria-labelledby="proctoringModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="proctoringModalLabel">⚠️ Proctoring Warning</h5>
+                </div>
+                <div class="modal-body">
+                    <p id="warningText">This action is not allowed during the test.</p>
+                    <div class="alert alert-danger">
+                        <strong>Violation Recorded:</strong> This incident will be reported.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">I Understand</button>
+                </div>
             </div>
         </div>
     </div>
@@ -2366,8 +2447,7 @@
             remainingSeconds--;
         }
 
-        // Start timer
-        setInterval(updateTimer, 1000);
+        // Timer will be started by startTest() function
 
         // Progress tracking
         const totalQuestions = 30;
@@ -2393,6 +2473,15 @@
                     return;
                 }
             }
+
+            // Disable proctoring before submission
+            disableProctoring();
+            
+            // Exit fullscreen mode
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+                exitFullscreen();
+            }
+            document.body.classList.remove('fullscreen-active');
 
             // Disable submit button
             submitButton.disabled = true;
@@ -2426,7 +2515,9 @@
             const submissionData = {
                 attempt_id: attemptId,
                 answers: answers,
-                time_taken_seconds: totalSeconds - remainingSeconds
+                time_taken_seconds: totalSeconds - remainingSeconds,
+                tab_switches: tabSwitchCount,
+                keyboard_violations: keyboardViolationCount
             };
 
             console.log('Submitting test:', submissionData);
@@ -2459,11 +2550,12 @@
                     }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-                    // Clear session tokens to force fresh login next time
+                    // Clear session tokens and saved answers
                     const sessionKey = `test_session_2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4_ea6eebdd-ef3e-4c94-915d-3d8b4551bae1`;
                     const attemptKey = `test_attempt_2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4_ea6eebdd-ef3e-4c94-915d-3d8b4551bae1`;
                     sessionStorage.removeItem(sessionKey);
                     sessionStorage.removeItem(attemptKey);
+                    localStorage.removeItem(answersStorageKey);
                 } else {
                     const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
                     console.log('Error response:', errorData);
@@ -2484,6 +2576,169 @@
 
         // Initialize progress on page load
         updateProgress();
+
+        // Fullscreen mode functionality
+        let isFullscreen = false;
+
+        function enterFullscreen() {
+            const element = document.documentElement;
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+            }
+        }
+
+        // Start test button handler
+        window.startTest = function() {
+            // Enter fullscreen
+            enterFullscreen();
+            
+            // Hide entry screen and start timer
+            setTimeout(() => {
+                document.getElementById('fullscreenEntry').style.display = 'none';
+                // Start the timer
+                setInterval(updateTimer, 1000);
+            }, 500);
+        }
+
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+
+        function handleFullscreenChange() {
+            isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+
+            if (isFullscreen) {
+                document.body.classList.add('fullscreen-active');
+                console.log('Entered fullscreen mode');
+            } else {
+                document.body.classList.remove('fullscreen-active');
+                const entryScreen = document.getElementById('fullscreenEntry');
+                if (!document.hidden && entryScreen.style.display === 'none') {
+                    // User has started test but exited fullscreen
+                    showWarning('Exiting fullscreen mode is not allowed during the test.');
+                    // Auto re-enter fullscreen
+                    setTimeout(() => {
+                        enterFullscreen();
+                    }, 2000);
+                }
+                console.log('Exited fullscreen mode');
+            }
+        }
+
+        // Listen for fullscreen changes
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+        // Prevent refresh and show confirmation
+        window.addEventListener('beforeunload', function(e) {
+                    e.preventDefault();
+            e.returnValue = 'Are you sure you want to leave? Your test progress will be lost.';
+            return e.returnValue;
+        });
+
+        // Answer persistence
+        const answersStorageKey = `test_answers_2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4_ea6eebdd-ef3e-4c94-915d-3d8b4551bae1`;
+
+        function saveAnswers() {
+            const answers = {};
+            const radioInputs = document.querySelectorAll('input[type="radio"]:checked');
+            radioInputs.forEach(input => {
+                const questionNumber = parseInt(input.getAttribute('data-question-number'), 10);
+                if (!Number.isNaN(questionNumber)) {
+                    answers[questionNumber - 1] = input.value;
+                }
+            });
+            localStorage.setItem(answersStorageKey, JSON.stringify(answers));
+        }
+
+        function loadAnswers() {
+            const savedAnswers = localStorage.getItem(answersStorageKey);
+            if (savedAnswers) {
+                const answers = JSON.parse(savedAnswers);
+                Object.keys(answers).forEach(index => {
+                    const questionNumber = parseInt(index, 10) + 1;
+                    const radioInput = document.querySelector(`input[type="radio"][data-question-number="${questionNumber}"][value="${answers[index]}"]`);
+                    if (radioInput) {
+                        radioInput.checked = true;
+                    }
+                });
+                updateProgress();
+            }
+        }
+
+        // Auto-save answers every 30 seconds
+        setInterval(saveAnswers, 30000);
+
+        // Load saved answers on page load
+        window.addEventListener('load', function() {
+            loadAnswers();
+        });
+
+        // Proctoring: Track violations
+        let tabSwitchCount = 0;
+        let keyboardViolationCount = 0;
+        let proctoringEnabled = true;
+
+        // Tab switching detection
+        function handleTabSwitch() {
+            if (document.hidden && proctoringEnabled) {
+                tabSwitchCount++;
+                showWarning('Tab switching is not allowed during the test. Please return to the test window.');
+                console.log(`Tab switch violation #${tabSwitchCount}`);
+            }
+        }
+        document.addEventListener('visibilitychange', handleTabSwitch);
+
+        // Keyboard key press detection (excluding input fields)
+        function handleKeyPress(event) {
+            if (!proctoringEnabled) return;
+            
+            // Allow typing in input fields, but warn for other keys
+            const activeElement = document.activeElement;
+            const isInInput = activeElement && (
+                activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.contentEditable === 'true'
+            );
+
+            if (!isInInput) {
+                keyboardViolationCount++;
+                showWarning('Using keyboard shortcuts or keys is not allowed during the test.');
+                console.log(`Keyboard violation #${keyboardViolationCount}`);
+            }
+        }
+        document.addEventListener('keydown', handleKeyPress);
+
+        // Remove all proctoring
+        function disableProctoring() {
+            proctoringEnabled = false;
+            document.removeEventListener('visibilitychange', handleTabSwitch);
+            document.removeEventListener('keydown', handleKeyPress);
+            // Hide the fullscreen warning bar
+            const warningBar = document.getElementById('fullscreenWarning');
+            if (warningBar) {
+                warningBar.style.display = 'none';
+            }
+            console.log('Proctoring disabled');
+        }
+
+        // Show warning modal
+        function showWarning(message) {
+            document.getElementById('warningText').textContent = message;
+            const modal = new bootstrap.Modal(document.getElementById('proctoringModal'));
+            modal.show();
+        }
     </script>
 </body>
 </html>

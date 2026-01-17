@@ -196,6 +196,50 @@ APTITUDE_TEST_TEMPLATE = """
             border: 1px solid #f5c6cb;
             color: #721c24;
         }
+        /* Fullscreen mode styles */
+        body.fullscreen-active {
+            overflow-y: auto !important;
+            height: 100vh !important;
+        }
+        .timer {
+            position: fixed !important;
+            top: 50px !important;
+            right: 10px !important;
+            z-index: 10000 !important;
+        }
+        body:not(.fullscreen-active) .timer {
+            top: 10px !important;
+        }
+        body.fullscreen-active .container {
+            margin: 0 !important;
+            padding: 20px !important;
+            max-width: none !important;
+            min-height: 100vh !important;
+        }
+        body.fullscreen-active .test-container {
+            margin: 0 !important;
+            border-radius: 0 !important;
+        }
+        .fullscreen-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #dc3545;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            z-index: 10001;
+            font-weight: bold;
+        }
+        body.fullscreen-active .fullscreen-warning {
+            display: block !important;
+        }
+        #fullscreenEntry button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4) !important;
+        }
     </style>
 </head>
 <body>
@@ -214,6 +258,23 @@ APTITUDE_TEST_TEMPLATE = """
         })();
     </script>
 
+    <!-- Fullscreen Entry Screen -->
+    <div id="fullscreenEntry" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 99999; display: flex; align-items: center; justify-content: center;">
+        <div style="text-align: center; color: white;">
+            <h1 style="font-size: 3rem; margin-bottom: 30px;">🧠 Aptitude Test</h1>
+            <p style="font-size: 1.5rem; margin-bottom: 40px;">{{ test_title }}</p>
+            <button onclick="startTest()" style="background: white; color: #667eea; border: none; padding: 20px 60px; font-size: 1.5rem; font-weight: 600; border-radius: 50px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.2s;">
+                🚀 Start Test in Fullscreen
+            </button>
+            <p style="margin-top: 30px; font-size: 1rem; opacity: 0.9;">⚠️ The test will open in fullscreen mode. Do not exit fullscreen during the test.</p>
+        </div>
+    </div>
+
+    <!-- Fullscreen Warning -->
+    <div class="fullscreen-warning" id="fullscreenWarning">
+        ⚠️ Test is in Fullscreen Mode - Do not exit fullscreen
+    </div>
+
     <!-- Timer -->
     <div id="timer" class="timer">
         ⏱️ <span id="timeRemaining">{{ total_time_minutes }}:00</span>
@@ -231,14 +292,14 @@ APTITUDE_TEST_TEMPLATE = """
             <div class="test-info text-center">
                 <div class="test-info-item">
                     <strong>📋 Total Questions:</strong> {{ total_questions }}
-                </div>
+                    </div>
                 <div class="test-info-item">
                     <strong>⏱️ Time Limit:</strong> {{ total_time_minutes }} minutes
-                </div>
+                    </div>
                 <div class="test-info-item">
                     <strong>📊 Passing Score:</strong> {{ passing_score }}%
-                </div>
-            </div>
+                    </div>
+                    </div>
 
             <!-- Test Content -->
             <div class="test-content">
@@ -247,7 +308,7 @@ APTITUDE_TEST_TEMPLATE = """
                 </div>
                 <div id="errorMessage" class="error-message">
                     <strong>Error!</strong> <span id="errorText"></span>
-                </div>
+            </div>
 
                 <!-- Progress Indicator -->
                 <div class="progress-indicator">
@@ -255,9 +316,9 @@ APTITUDE_TEST_TEMPLATE = """
                         <span><strong>Progress:</strong> <span id="progressText">0 of {{ total_questions }}</span> answered</span>
                         <div class="progress" style="width: 60%; height: 10px;">
                             <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </div>
+    </div>
 
                 <form id="aptitudeTestForm">
                     <input type="hidden" name="job_requirement_id" value="{{ job_requirement_id }}">
@@ -293,16 +354,36 @@ APTITUDE_TEST_TEMPLATE = """
                                 </span>
                             </label>
                             {% endfor %}
-                        </div>
+                    </div>
                     </div>
                     {% endfor %}
 
                     <div class="text-center mt-4">
                         <button type="submit" class="btn btn-primary btn-submit btn-lg">
                             📝 Submit Test
-                        </button>
+                            </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Proctoring Warning Modal -->
+    <div class="modal fade warning-modal" id="proctoringModal" tabindex="-1" aria-labelledby="proctoringModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="proctoringModalLabel">⚠️ Proctoring Warning</h5>
+                </div>
+                <div class="modal-body">
+                    <p id="warningText">This action is not allowed during the test.</p>
+                    <div class="alert alert-danger">
+                        <strong>Violation Recorded:</strong> This incident will be reported.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">I Understand</button>
+                </div>
             </div>
         </div>
     </div>
@@ -334,8 +415,7 @@ APTITUDE_TEST_TEMPLATE = """
             remainingSeconds--;
         }
 
-        // Start timer
-        setInterval(updateTimer, 1000);
+        // Timer will be started by startTest() function
 
         // Progress tracking
         const totalQuestions = {{ total_questions }};
@@ -361,6 +441,15 @@ APTITUDE_TEST_TEMPLATE = """
                     return;
                 }
             }
+
+            // Disable proctoring before submission
+            disableProctoring();
+            
+            // Exit fullscreen mode
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+                exitFullscreen();
+            }
+            document.body.classList.remove('fullscreen-active');
 
             // Disable submit button
             submitButton.disabled = true;
@@ -394,7 +483,9 @@ APTITUDE_TEST_TEMPLATE = """
             const submissionData = {
                 attempt_id: attemptId,
                 answers: answers,
-                time_taken_seconds: totalSeconds - remainingSeconds
+                time_taken_seconds: totalSeconds - remainingSeconds,
+                tab_switches: tabSwitchCount,
+                keyboard_violations: keyboardViolationCount
             };
 
             console.log('Submitting test:', submissionData);
@@ -427,11 +518,12 @@ APTITUDE_TEST_TEMPLATE = """
                     }
                     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-                    // Clear session tokens to force fresh login next time
+                    // Clear session tokens and saved answers
                     const sessionKey = `test_session_{{ job_requirement_id }}_{{ aptitude_test_id }}`;
                     const attemptKey = `test_attempt_{{ job_requirement_id }}_{{ aptitude_test_id }}`;
                     sessionStorage.removeItem(sessionKey);
                     sessionStorage.removeItem(attemptKey);
+                    localStorage.removeItem(answersStorageKey);
                 } else {
                     const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
                     console.log('Error response:', errorData);
@@ -452,6 +544,169 @@ APTITUDE_TEST_TEMPLATE = """
 
         // Initialize progress on page load
         updateProgress();
+
+        // Fullscreen mode functionality
+        let isFullscreen = false;
+
+        function enterFullscreen() {
+            const element = document.documentElement;
+            if (element.requestFullscreen) {
+                element.requestFullscreen();
+            } else if (element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+            } else if (element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+            }
+        }
+
+        // Start test button handler
+        window.startTest = function() {
+            // Enter fullscreen
+            enterFullscreen();
+            
+            // Hide entry screen and start timer
+            setTimeout(() => {
+                document.getElementById('fullscreenEntry').style.display = 'none';
+                // Start the timer
+                setInterval(updateTimer, 1000);
+            }, 500);
+        }
+
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+
+        function handleFullscreenChange() {
+            isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+
+            if (isFullscreen) {
+                document.body.classList.add('fullscreen-active');
+                console.log('Entered fullscreen mode');
+            } else {
+                document.body.classList.remove('fullscreen-active');
+                const entryScreen = document.getElementById('fullscreenEntry');
+                if (!document.hidden && entryScreen.style.display === 'none') {
+                    // User has started test but exited fullscreen
+                    showWarning('Exiting fullscreen mode is not allowed during the test.');
+                    // Auto re-enter fullscreen
+                    setTimeout(() => {
+                        enterFullscreen();
+                    }, 2000);
+                }
+                console.log('Exited fullscreen mode');
+            }
+        }
+
+        // Listen for fullscreen changes
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('msfullscreenchange', handleFullscreenChange);
+
+        // Prevent refresh and show confirmation
+        window.addEventListener('beforeunload', function(e) {
+                    e.preventDefault();
+            e.returnValue = 'Are you sure you want to leave? Your test progress will be lost.';
+            return e.returnValue;
+        });
+
+        // Answer persistence
+        const answersStorageKey = `test_answers_{{ job_requirement_id }}_{{ aptitude_test_id }}`;
+
+        function saveAnswers() {
+            const answers = {};
+            const radioInputs = document.querySelectorAll('input[type="radio"]:checked');
+            radioInputs.forEach(input => {
+                const questionNumber = parseInt(input.getAttribute('data-question-number'), 10);
+                if (!Number.isNaN(questionNumber)) {
+                    answers[questionNumber - 1] = input.value;
+                }
+            });
+            localStorage.setItem(answersStorageKey, JSON.stringify(answers));
+        }
+
+        function loadAnswers() {
+            const savedAnswers = localStorage.getItem(answersStorageKey);
+            if (savedAnswers) {
+                const answers = JSON.parse(savedAnswers);
+                Object.keys(answers).forEach(index => {
+                    const questionNumber = parseInt(index, 10) + 1;
+                    const radioInput = document.querySelector(`input[type="radio"][data-question-number="${questionNumber}"][value="${answers[index]}"]`);
+                    if (radioInput) {
+                        radioInput.checked = true;
+                    }
+                });
+                updateProgress();
+            }
+        }
+
+        // Auto-save answers every 30 seconds
+        setInterval(saveAnswers, 30000);
+
+        // Load saved answers on page load
+        window.addEventListener('load', function() {
+            loadAnswers();
+        });
+
+        // Proctoring: Track violations
+        let tabSwitchCount = 0;
+        let keyboardViolationCount = 0;
+        let proctoringEnabled = true;
+
+        // Tab switching detection
+        function handleTabSwitch() {
+            if (document.hidden && proctoringEnabled) {
+                tabSwitchCount++;
+                showWarning('Tab switching is not allowed during the test. Please return to the test window.');
+                console.log(`Tab switch violation #${tabSwitchCount}`);
+            }
+        }
+        document.addEventListener('visibilitychange', handleTabSwitch);
+
+        // Keyboard key press detection (excluding input fields)
+        function handleKeyPress(event) {
+            if (!proctoringEnabled) return;
+            
+            // Allow typing in input fields, but warn for other keys
+            const activeElement = document.activeElement;
+            const isInInput = activeElement && (
+                activeElement.tagName === 'INPUT' ||
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.contentEditable === 'true'
+            );
+
+            if (!isInInput) {
+                keyboardViolationCount++;
+                showWarning('Using keyboard shortcuts or keys is not allowed during the test.');
+                console.log(`Keyboard violation #${keyboardViolationCount}`);
+            }
+        }
+        document.addEventListener('keydown', handleKeyPress);
+
+        // Remove all proctoring
+        function disableProctoring() {
+            proctoringEnabled = false;
+            document.removeEventListener('visibilitychange', handleTabSwitch);
+            document.removeEventListener('keydown', handleKeyPress);
+            // Hide the fullscreen warning bar
+            const warningBar = document.getElementById('fullscreenWarning');
+            if (warningBar) {
+                warningBar.style.display = 'none';
+            }
+            console.log('Proctoring disabled');
+        }
+
+        // Show warning modal
+        function showWarning(message) {
+            document.getElementById('warningText').textContent = message;
+            const modal = new bootstrap.Modal(document.getElementById('proctoringModal'));
+            modal.show();
+        }
     </script>
 </body>
 </html>
@@ -481,7 +736,7 @@ def generate_test_form(job_requirement_id, aptitude_test_id):
                 "message": "Request must be JSON",
                 "error": "Invalid content type"
             }), 400
-        
+
         data = request.get_json()
         test_data = data.get('test_data', {})
         
@@ -551,7 +806,7 @@ def generate_test_form(job_requirement_id, aptitude_test_id):
             "message": f"Failed to generate aptitude test form: {str(e)}",
             "error": str(e)
         }), 500
-
+        
 
 # HTML Template for the login form
 LOGIN_FORM_TEMPLATE = """
@@ -664,7 +919,7 @@ LOGIN_FORM_TEMPLATE = """
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+                    e.preventDefault();
 
             const form = e.target;
             const submitButton = form.querySelector('button[type="submit"]');
@@ -769,10 +1024,10 @@ def generate_login_form(job_requirement_id, aptitude_test_id):
                 "message": "Request must be JSON",
                 "error": "Invalid content type"
             }), 400
-
+        
         data = request.get_json()
         login_data = data.get('login_data', {})
-
+        
         if not login_data:
             return jsonify({
                 "success": False,
@@ -803,14 +1058,14 @@ def generate_login_form(job_requirement_id, aptitude_test_id):
         # Save the HTML file to the tests directory
         with open(form_file_path, 'w', encoding='utf-8') as f:
             f.write(html_content)
-
+        
         # Generate the URL to access the form
         form_url = f"http://{SERVICE_HOST}:{SERVICE_PORT}/tests/{safe_filename}"
-
+        
         logger.info(f"Generated login form for test ID: {aptitude_test_id}")
         logger.info(f"Login form saved at: {form_file_path}")
         logger.info(f"Login form URL: {form_url}")
-
+        
         # Return JSON response with the form URL
         return jsonify({
             "success": True,
@@ -820,7 +1075,7 @@ def generate_login_form(job_requirement_id, aptitude_test_id):
             "form_url": form_url,
             "form_path": str(form_file_path)
         })
-
+        
     except Exception as e:
         logger.error(f"Error generating login form: {str(e)}")
         import traceback
@@ -961,7 +1216,7 @@ def index():
     """
     
     return render_template_string(html, 
-                                 tests_count=len(tests), 
+                                 tests_count=len(tests),
                                  tests_info=tests_info,
                                  tests_directory=str(TESTS_DIR))
 

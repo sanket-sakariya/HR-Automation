@@ -250,7 +250,8 @@ CRITICAL RULES:
         attempt_id: UUID,
         answers: Dict[int, str],
         time_taken_seconds: int,
-        tab_switches: int = 0
+        tab_switches: int = 0,
+        keyboard_violations: int = 0
     ) -> Dict[str, Any]:
         """Submit test answers and calculate score."""
         try:
@@ -285,7 +286,13 @@ CRITICAL RULES:
             test = await self.test_repo.get_test_by_id(attempt.aptitude_test_id)
             passed = score >= test.passing_score_percentage
 
-            # Update attempt
+            # Update attempt with proctoring data
+            proctoring_data = {
+                'tab_switches': tab_switches,
+                'keyboard_violations': keyboard_violations,
+                'total_violations': tab_switches + keyboard_violations
+            }
+
             await self.test_repo.update_attempt(attempt_id, {
                 'answers': answers,
                 'score': round(score, 2),
@@ -294,6 +301,7 @@ CRITICAL RULES:
                 'passed': passed,
                 'time_taken_seconds': time_taken_seconds,
                 'tab_switches': tab_switches,
+                'proctoring_violations': proctoring_data,
                 'status': 'completed',
                 'submitted_at': datetime.now().isoformat()
             })

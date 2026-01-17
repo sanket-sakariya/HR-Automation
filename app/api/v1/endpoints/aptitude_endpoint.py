@@ -489,7 +489,8 @@ async def submit_test(
             attempt_id=payload.attempt_id,
             answers=payload.answers,
             time_taken_seconds=payload.time_taken_seconds,
-            tab_switches=payload.tab_switches
+            tab_switches=payload.tab_switches,
+            keyboard_violations=payload.keyboard_violations
         )
 
         return ApiResponseSchema(
