@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Video Interview - Multilingual</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>AI Video Interview System</h1>
+        <div class="subtitle">Multilingual | Smooth Conversation Flow | Powered by Gemini</div>
+        
+        <!-- Language Selection -->
+        <div class="language-selector" id="languageSelector">
+            <h3>Select Your Interview Language:</h3>
+            <div class="language-options">
+                <div class="language-option selected" data-lang="english">English</div>
+                <div class="language-option" data-lang="hindi">Hindi (हिंदी)</div>
+                <div class="language-option" data-lang="gujarati">Gujarati (ગુજરાતી)</div>
+                <div class="language-option" data-lang="hinglish">Hindi + English</div>
+                <div class="language-option" data-lang="gujenglish">Gujarati + English</div>
+            </div>
+        </div>
+        
+        <div id="video-container">
+            <video id="video" autoplay playsinline muted></video>
+            <div class="camera-status" id="cameraStatus" onclick="showCameraSelector()" style="cursor: pointer;">Select Camera</div>
+            <div class="recording-indicator" id="recordingIndicator">REC</div>
+        </div>
+        
+        <div id="status" class="status ready">Select your language and click Start Interview</div>
+        
+        <div class="question-box">
+            <div class="question-label">AI Interviewer:</div>
+            <div class="question-text" id="question">Welcome! Select your preferred language and click Start Interview to begin.</div>
+        </div>
+        
+        <div class="controls">
+            <button class="start-btn" onclick="startInterview()" id="startBtn">Start Interview</button>
+            <button class="stop-btn" onclick="stopInterview()" id="stopBtn" disabled>End Interview</button>
+        </div>
+        
+        <div class="transcript">
+            <strong>Interview Transcript</strong>
+            <div id="transcript-content">Your conversation will appear here...</div>
+        </div>
+    </div>
+
+    <!-- Camera Selection Modal -->
+    <div id="cameraModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Select Your Camera</div>
+            <div id="cameraList"></div>
+            <button class="select-camera-btn" id="confirmCameraBtn" onclick="confirmCameraSelection()">Use Selected Camera</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/interview.js') }}"></script>
+</body>
+</html>
+
