@@ -11,9 +11,43 @@ import dotenv
 dotenv.load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash-exp')
 
 app = Flask(__name__)
+
+# Language configuration
+LANGUAGE_CONFIG = {
+    'english': {
+        'name': 'English',
+        'speech_code': 'en-IN',
+        'voice_lang': 'en-IN',
+        'prompt_instruction': 'Ask interview questions in English.'
+    },
+    'hindi': {
+        'name': 'Hindi (हिंदी)',
+        'speech_code': 'hi-IN',
+        'voice_lang': 'hi-IN',
+        'prompt_instruction': 'Ask interview questions in Hindi language only. Use Devanagari script.'
+    },
+    'gujarati': {
+        'name': 'Gujarati (ગુજરાતી)',
+        'speech_code': 'gu-IN',
+        'voice_lang': 'gu-IN',
+        'prompt_instruction': 'Ask interview questions in Gujarati language only. Use Gujarati script.'
+    },
+    'hinglish': {
+        'name': 'Hindi + English (Hinglish)',
+        'speech_code': 'hi-IN',
+        'voice_lang': 'hi-IN',
+        'prompt_instruction': 'Ask interview questions in a natural mix of Hindi and English (Hinglish). Use both languages fluidly.'
+    },
+    'gujenglish': {
+        'name': 'Gujarati + English',
+        'speech_code': 'gu-IN',
+        'voice_lang': 'en-IN',
+        'prompt_instruction': 'Ask interview questions in a natural mix of Gujarati and English. Use both languages fluidly.'
+    }
+}
 
 # Interview state
 interview_data = {
@@ -21,24 +55,53 @@ interview_data = {
     'answers': [],
     'current_question': '',
     'current_index': 0,
-    'is_listening': False,
-    'interview_active': False
+    'interview_active': False,
+    'selected_language': 'english',
+    'total_questions': 5
 }
 
-# Interview questions
-INTERVIEW_QUESTIONS = [
-    "Tell me about yourself and your background.",
-    "What are your greatest strengths?",
-    "Describe a challenging project you've worked on.",
-    "Where do you see yourself in 5 years?",
-    "Why are you interested in this position?"
-]
+def generate_interview_question(question_number, language_key):
+    """Generate interview question using Gemini based on language preference"""
+    lang_config = LANGUAGE_CONFIG[language_key]
+    
+    prompt = f"""You are conducting a professional job interview. {lang_config['prompt_instruction']}
+
+Generate interview question #{question_number} for a candidate. The question should be:
+- Professional and respectful
+- Clear and conversational
+- Appropriate for a general job interview
+
+Question types to rotate through:
+1. Background and experience
+2. Strengths and skills
+3. Problem-solving and challenges
+4. Career goals and aspirations
+5. Motivation and interest
+
+Return ONLY the question text, nothing else. Make it sound natural and conversational."""
+
+    try:
+        response = model.generate_content(prompt)
+        question = response.text.strip()
+        print(f"Generated Question {question_number}: {question}")
+        return question
+    except Exception as e:
+        print(f"Error generating question: {e}")
+        # Fallback questions in English
+        fallback = [
+            "Tell me about yourself and your background.",
+            "What are your greatest strengths?",
+            "Describe a challenging project you have worked on.",
+            "Where do you see yourself in 5 years?",
+            "Why are you interested in this position?"
+        ]
+        return fallback[min(question_number - 1, 4)]
 
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Video Interview</title>
+    <title>AI Video Interview - Multilingual</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -58,92 +121,53 @@ HTML_TEMPLATE = '''
         h1 {
             color: #333;
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             font-size: 32px;
         }
-        
-        /* Camera Selection Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.7);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 10% auto;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-        .modal-header {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #333;
+        .subtitle {
             text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
         }
-        .camera-option {
+        
+        /* Language Selection */
+        .language-selector {
             background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border: 2px solid #667eea;
+        }
+        .language-selector h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+        .language-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        .language-option {
+            background: white;
             padding: 15px;
-            margin: 10px 0;
             border-radius: 10px;
             cursor: pointer;
-            border: 2px solid transparent;
+            border: 2px solid #dee2e6;
             transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            text-align: center;
+            font-weight: 500;
         }
-        .camera-option:hover {
+        .language-option:hover {
             border-color: #667eea;
-            transform: translateX(5px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
-        .camera-option.selected {
+        .language-option.selected {
             border-color: #28a745;
             background: linear-gradient(135deg, #28a74515 0%, #20c99715 100%);
-        }
-        .camera-icon {
-            font-size: 24px;
-        }
-        .camera-info {
-            flex: 1;
-        }
-        .camera-name {
             font-weight: 600;
-            color: #333;
-            margin-bottom: 3px;
-        }
-        .camera-id {
-            font-size: 12px;
-            color: #666;
-        }
-        .select-camera-btn {
-            width: 100%;
-            padding: 12px;
-            margin-top: 20px;
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .select-camera-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(40,167,69,0.4);
-        }
-        .select-camera-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
         
         #video-container {
@@ -188,10 +212,6 @@ HTML_TEMPLATE = '''
             padding: 8px 15px;
             border-radius: 20px;
             font-size: 12px;
-            cursor: pointer;
-        }
-        .camera-status:hover {
-            background: rgba(0,0,0,0.9);
         }
         .status {
             text-align: center;
@@ -203,7 +223,15 @@ HTML_TEMPLATE = '''
             transition: all 0.3s;
         }
         .status.ready { background: #e3f2fd; color: #1976d2; }
-        .status.listening { background: #d4edda; color: #155724; }
+        .status.listening { 
+            background: #d4edda; 
+            color: #155724;
+            animation: listening-pulse 2s infinite;
+        }
+        @keyframes listening-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
         .status.speaking { background: #fff3cd; color: #856404; }
         .status.processing { background: #f8d7da; color: #721c24; }
         
@@ -213,7 +241,10 @@ HTML_TEMPLATE = '''
             border-radius: 15px;
             margin-bottom: 25px;
             border-left: 5px solid #667eea;
-            min-height: 80px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .question-label {
             font-size: 14px;
@@ -223,7 +254,7 @@ HTML_TEMPLATE = '''
             letter-spacing: 1px;
         }
         .question-text {
-            font-size: 20px;
+            font-size: 22px;
             color: #333;
             font-weight: 500;
             line-height: 1.6;
@@ -253,18 +284,12 @@ HTML_TEMPLATE = '''
         .start-btn {
             background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
+            font-size: 18px;
+            padding: 18px 45px;
         }
         .start-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(40,167,69,0.4);
-        }
-        .answer-btn {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
-        }
-        .answer-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,123,255,0.4);
         }
         .stop-btn {
             background: linear-gradient(135deg, #dc3545, #c82333);
@@ -279,7 +304,7 @@ HTML_TEMPLATE = '''
             padding: 20px;
             border-radius: 10px;
             margin-top: 30px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             border: 2px solid #dee2e6;
         }
@@ -289,90 +314,205 @@ HTML_TEMPLATE = '''
         }
         #transcript-content {
             margin-top: 15px;
-            white-space: pre-wrap;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.8;
         }
         .qa-pair {
             margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #dee2e6;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
         }
         .qa-question {
             color: #667eea;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            font-size: 15px;
         }
         .qa-answer {
             color: #333;
             padding-left: 15px;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        .hidden {
+            display: none;
+        }
+        
+        /* Camera Selection Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 8% auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+        .camera-option-item {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .camera-option-item:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+        .camera-option-item.selected {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #28a74515 0%, #20c99715 100%);
+        }
+        .camera-icon {
+            font-size: 24px;
+        }
+        .camera-info {
+            flex: 1;
+        }
+        .camera-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        .camera-id {
+            font-size: 12px;
+            color: #666;
+        }
+        .select-camera-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 20px;
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .select-camera-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40,167,69,0.4);
+        }
+        .select-camera-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎥 AI Video Interview System</h1>
+        <h1>AI Video Interview System</h1>
+        <div class="subtitle">Multilingual | Smooth Conversation Flow | Powered by Gemini</div>
+        
+        <!-- Language Selection -->
+        <div class="language-selector" id="languageSelector">
+            <h3>Select Your Interview Language:</h3>
+            <div class="language-options">
+                <div class="language-option selected" data-lang="english">English</div>
+                <div class="language-option" data-lang="hindi">Hindi (हिंदी)</div>
+                <div class="language-option" data-lang="gujarati">Gujarati (ગુજરાતી)</div>
+                <div class="language-option" data-lang="hinglish">Hindi + English</div>
+                <div class="language-option" data-lang="gujenglish">Gujarati + English</div>
+            </div>
+        </div>
         
         <div id="video-container">
             <video id="video" autoplay playsinline muted></video>
-            <div class="camera-status" id="cameraStatus" onclick="showCameraSelector()">🎥 Select Camera</div>
-            <div class="recording-indicator" id="recordingIndicator">● REC</div>
+            <div class="camera-status" id="cameraStatus" onclick="showCameraSelector()" style="cursor: pointer;">Select Camera</div>
+            <div class="recording-indicator" id="recordingIndicator">REC</div>
         </div>
         
-        <div id="status" class="status ready">Select your camera to begin</div>
+        <div id="status" class="status ready">Select your language and click Start Interview</div>
         
         <div class="question-box">
-            <div class="question-label">Current Question:</div>
-            <div class="question-text" id="question">Click "Start Interview" to begin the session</div>
+            <div class="question-label">AI Interviewer:</div>
+            <div class="question-text" id="question">Welcome! Select your preferred language and click Start Interview to begin.</div>
         </div>
         
         <div class="controls">
-            <button class="start-btn" id="startBtn">▶ Start Interview</button>
-            <button class="answer-btn" id="answerBtn" disabled>🎤 Answer Question</button>
-            <button class="stop-btn" id="stopBtn">⏹ End Interview</button>
+            <button class="start-btn" onclick="startInterview()" id="startBtn">Start Interview</button>
+            <button class="stop-btn" onclick="stopInterview()" id="stopBtn" disabled>End Interview</button>
         </div>
         
         <div class="transcript">
-            <strong>📝 Interview Transcript</strong>
-            <div id="transcript-content">No transcript yet. Start the interview to begin.</div>
+            <strong>Interview Transcript</strong>
+            <div id="transcript-content">Your conversation will appear here...</div>
         </div>
     </div>
 
     <!-- Camera Selection Modal -->
     <div id="cameraModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">📹 Select Your Camera</div>
+            <div class="modal-header">Select Your Camera</div>
             <div id="cameraList"></div>
             <button class="select-camera-btn" id="confirmCameraBtn" onclick="confirmCameraSelection()">Use Selected Camera</button>
         </div>
     </div>
 
     <script>
-        var video = document.getElementById('video');
-        var statusDiv = document.getElementById('status');
-        var questionDiv = document.getElementById('question');
-        var transcriptDiv = document.getElementById('transcript-content');
-        var answerBtn = document.getElementById('answerBtn');
-        var startBtn = document.getElementById('startBtn');
-        var stopBtn = document.getElementById('stopBtn');
-        var recordingIndicator = document.getElementById('recordingIndicator');
-        var cameraStatus = document.getElementById('cameraStatus');
-        var cameraModal = document.getElementById('cameraModal');
-        var cameraList = document.getElementById('cameraList');
-        var confirmCameraBtn = document.getElementById('confirmCameraBtn');
+        let video = document.getElementById('video');
+        let statusDiv = document.getElementById('status');
+        let questionDiv = document.getElementById('question');
+        let transcriptDiv = document.getElementById('transcript-content');
+        let startBtn = document.getElementById('startBtn');
+        let stopBtn = document.getElementById('stopBtn');
+        let recordingIndicator = document.getElementById('recordingIndicator');
+        let cameraStatus = document.getElementById('cameraStatus');
+        let cameraModal = document.getElementById('cameraModal');
+        let cameraList = document.getElementById('cameraList');
+        let confirmCameraBtn = document.getElementById('confirmCameraBtn');
         
-        var mediaStream = null;
-        var availableCameras = [];
-        var selectedDeviceId = null;
+        let mediaStream = null;
+        let selectedLanguage = 'english';
+        let isInterviewActive = false;
+        let isProcessing = false;
+        let availableCameras = [];
+        let selectedDeviceId = null;
 
-        function updateStatus(message, type) {
-            statusDiv.textContent = message;
-            statusDiv.className = 'status ' + type;
-        }
+        // Language selection
+        document.querySelectorAll('.language-option').forEach(option => {
+            option.addEventListener('click', function() {
+                if (isInterviewActive) {
+                    alert('Cannot change language during interview!');
+                    return;
+                }
+                document.querySelectorAll('.language-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                selectedLanguage = this.getAttribute('data-lang');
+                console.log('Selected language:', selectedLanguage);
+            });
+        });
 
+        // Detect all available cameras
         function detectCameras() {
             console.log('Detecting available cameras...');
+            updateStatus('Detecting cameras...', 'processing');
             
             navigator.mediaDevices.enumerateDevices()
                 .then(function(devices) {
@@ -387,8 +527,14 @@ HTML_TEMPLATE = '''
                     
                     if (availableCameras.length === 0) {
                         updateStatus('No cameras detected! Please connect a camera.', 'processing');
-                        alert('No cameras found. Please connect a USB camera or webcam and refresh the page.');
+                        alert('No cameras found. Please connect a webcam and refresh the page.');
+                    } else if (availableCameras.length === 1) {
+                        // Auto-select if only one camera
+                        selectedDeviceId = availableCameras[0].deviceId;
+                        initCamera(selectedDeviceId);
                     } else {
+                        // Show selection modal if multiple cameras
+                        updateStatus('Multiple cameras detected. Please select one.', 'ready');
                         showCameraSelector();
                     }
                 })
@@ -398,6 +544,7 @@ HTML_TEMPLATE = '''
                 });
         }
 
+        // Show camera selection modal
         function showCameraSelector() {
             if (availableCameras.length === 0) {
                 detectCameras();
@@ -407,14 +554,14 @@ HTML_TEMPLATE = '''
             cameraList.innerHTML = '';
             
             availableCameras.forEach(function(camera, index) {
-                var option = document.createElement('div');
-                option.className = 'camera-option';
+                let option = document.createElement('div');
+                option.className = 'camera-option-item';
                 option.setAttribute('data-device-id', camera.deviceId);
                 
-                var label = camera.label || 'Camera ' + (index + 1);
+                let label = camera.label || 'Camera ' + (index + 1);
                 
                 // Identify camera types
-                var icon = '📹';
+                let icon = '📹';
                 if (label.toLowerCase().includes('usb')) {
                     icon = '🔌';
                 } else if (label.toLowerCase().includes('integrated') || label.toLowerCase().includes('built-in')) {
@@ -430,7 +577,7 @@ HTML_TEMPLATE = '''
                     '</div>';
                 
                 option.onclick = function() {
-                    document.querySelectorAll('.camera-option').forEach(function(opt) {
+                    document.querySelectorAll('.camera-option-item').forEach(function(opt) {
                         opt.classList.remove('selected');
                     });
                     option.classList.add('selected');
@@ -445,6 +592,7 @@ HTML_TEMPLATE = '''
             confirmCameraBtn.disabled = true;
         }
 
+        // Confirm camera selection
         function confirmCameraSelection() {
             if (!selectedDeviceId) {
                 alert('Please select a camera first!');
@@ -455,6 +603,7 @@ HTML_TEMPLATE = '''
             initCamera(selectedDeviceId);
         }
 
+        // Initialize selected camera
         function initCamera(deviceId) {
             console.log('Initializing camera with device ID:', deviceId);
             updateStatus('Connecting to camera...', 'processing');
@@ -466,7 +615,7 @@ HTML_TEMPLATE = '''
                 });
             }
             
-            var constraints = {
+            let constraints = {
                 video: {
                     deviceId: deviceId ? { exact: deviceId } : undefined,
                     width: { ideal: 1280 },
@@ -480,155 +629,238 @@ HTML_TEMPLATE = '''
                     video.srcObject = stream;
                     mediaStream = stream;
                     
-                    var cameraLabel = availableCameras.find(function(cam) {
+                    let cameraLabel = availableCameras.find(function(cam) {
                         return cam.deviceId === deviceId;
                     });
                     
-                    var displayName = cameraLabel ? cameraLabel.label : 'Camera';
-                    cameraStatus.textContent = '✓ ' + displayName;
+                    let displayName = cameraLabel ? cameraLabel.label : 'Camera';
+                    cameraStatus.textContent = displayName;
                     cameraStatus.style.background = 'rgba(40, 167, 69, 0.8)';
                     
                     console.log('Camera connected successfully:', displayName);
-                    updateStatus('Camera ready! Click "Start Interview" to begin.', 'ready');
+                    updateStatus('Camera ready! Select language and click Start Interview.', 'ready');
                 })
                 .catch(function(err) {
                     console.error("Camera connection error:", err);
-                    cameraStatus.textContent = '✗ Camera Error';
+                    cameraStatus.textContent = 'Camera Error - Click to retry';
                     cameraStatus.style.background = 'rgba(220, 53, 69, 0.8)';
-                    updateStatus('Failed to connect to camera. Try another camera.', 'processing');
-                    alert('Camera Error: ' + err.message + '\\n\\nPlease try selecting a different camera.');
-                    showCameraSelector();
+                    
+                    let errorMessage = 'Failed to connect to camera.\\n\\n';
+                    if (err.name === 'NotAllowedError') {
+                        errorMessage += 'Permission DENIED! Please allow camera and microphone access.';
+                    } else if (err.name === 'NotFoundError') {
+                        errorMessage += 'Camera not found! Try another camera.';
+                    } else if (err.name === 'NotReadableError') {
+                        errorMessage += 'Camera is already in use! Close other apps.';
+                    } else {
+                        errorMessage += 'Error: ' + err.message;
+                    }
+                    
+                    updateStatus('Failed to connect. Click camera status to retry.', 'processing');
+                    alert(errorMessage + '\\n\\nPlease try selecting a different camera.');
+                    
+                    if (availableCameras.length > 1) {
+                        showCameraSelector();
+                    }
                 });
         }
 
-        function startInterview() {
+        function updateStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+        }
+
+        async function startInterview() {
             if (!mediaStream) {
                 alert('Please select and connect a camera first!');
                 showCameraSelector();
                 return;
             }
             
-            console.log('Starting interview...');
+            console.log('Starting interview in language:', selectedLanguage);
             startBtn.disabled = true;
+            stopBtn.disabled = false;
+            isInterviewActive = true;
             updateStatus('Starting interview...', 'processing');
+            recordingIndicator.style.display = 'block';
             
-            fetch('/start_interview')
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    if (data.error) {
-                        updateStatus('Error: ' + data.error, 'processing');
-                        startBtn.disabled = false;
-                        return;
-                    }
-                    questionDiv.textContent = data.question;
-                    updateStatus('🔊 Listen to the question...', 'speaking');
-                    recordingIndicator.style.display = 'block';
-                    
-                    speak(data.question, function() {
-                        answerBtn.disabled = false;
-                        updateStatus('Ready! Click "Answer Question" to respond.', 'ready');
-                    });
-                })
-                .catch(function(err) {
-                    console.error('Error starting interview:', err);
-                    updateStatus('Connection error. Please try again.', 'processing');
-                    startBtn.disabled = false;
+            try {
+                const response = await fetch('/start_interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language: selectedLanguage })
                 });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    updateStatus('Error: ' + data.error, 'processing');
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    isInterviewActive = false;
+                    return;
+                }
+                
+                // Hide language selector during interview
+                document.getElementById('languageSelector').style.opacity = '0.5';
+                document.getElementById('languageSelector').style.pointerEvents = 'none';
+                
+                askQuestion(data.question);
+                
+            } catch (err) {
+                console.error('Error:', err);
+                updateStatus('Connection error. Please try again.', 'processing');
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                isInterviewActive = false;
+            }
         }
 
-        function answerQuestion() {
-            answerBtn.disabled = true;
-            updateStatus('🎤 LISTENING... Please speak your answer now.', 'listening');
+        function askQuestion(questionText) {
+            questionDiv.textContent = questionText;
+            updateStatus('AI is speaking... Please listen.', 'speaking');
+            
+            speak(questionText, selectedLanguage, () => {
+                // Automatically start listening after question is spoken
+                setTimeout(() => {
+                    if (isInterviewActive) {
+                        listenForAnswer(questionText);
+                    }
+                }, 500);
+            });
+        }
+
+        async function listenForAnswer(currentQuestion) {
+            if (isProcessing || !isInterviewActive) return;
+            
+            isProcessing = true;
+            updateStatus('LISTENING... Please speak your answer now', 'listening');
             console.log('Listening for answer...');
             
-            fetch('/listen_answer')
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    console.log('Response received:', data);
-                    
-                    if (data.error) {
-                        updateStatus('Error: ' + data.error + ' - Try again.', 'processing');
-                        answerBtn.disabled = false;
-                        return;
-                    }
-                    
-                    if (data.answer) {
-                        var qaHTML = '<div class="qa-pair">' +
-                            '<div class="qa-question">Q: ' + data.question + '</div>' +
-                            '<div class="qa-answer">A: ' + data.answer + '</div>' +
-                            '</div>';
-                        
-                        transcriptDiv.innerHTML += qaHTML;
-                        transcriptDiv.parentElement.scrollTop = transcriptDiv.parentElement.scrollHeight;
-                        
-                        if (data.next_question) {
-                            questionDiv.textContent = data.next_question;
-                            updateStatus('🔊 Next question...', 'speaking');
-                            
-                            speak(data.next_question, function() {
-                                answerBtn.disabled = false;
-                                updateStatus('Ready for your next answer!', 'ready');
-                            });
-                        } else {
-                            updateStatus('✅ Interview completed! Thank you.', 'ready');
-                            recordingIndicator.style.display = 'none';
-                            answerBtn.disabled = true;
-                            startBtn.disabled = true;
-                            questionDiv.textContent = 'Interview completed. Check transcript below.';
+            try {
+                const response = await fetch('/listen_answer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language: selectedLanguage })
+                });
+                
+                const data = await response.json();
+                isProcessing = false;
+                
+                if (data.error) {
+                    updateStatus('Could not hear clearly. Listening again...', 'processing');
+                    // Auto-retry listening
+                    setTimeout(() => {
+                        if (isInterviewActive) {
+                            listenForAnswer(currentQuestion);
                         }
-                    } else {
-                        updateStatus('Could not hear clearly. Try again.', 'processing');
-                        answerBtn.disabled = false;
-                    }
-                })
-                .catch(function(err) {
-                    console.error('Error during answer:', err);
-                    updateStatus('Connection error. Try again.', 'processing');
-                    answerBtn.disabled = false;
-                });
-        }
-
-        function stopInterview() {
-            updateStatus('Ending interview...', 'processing');
-            
-            fetch('/stop_interview')
-                .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    updateStatus('Interview ended.', 'ready');
-                    recordingIndicator.style.display = 'none';
-                    answerBtn.disabled = true;
-                    startBtn.disabled = true;
-                    questionDiv.textContent = 'Interview session ended.';
+                    }, 1000);
+                    return;
+                }
+                
+                if (data.answer) {
+                    // Add to transcript
+                    const qaHTML = '<div class="qa-pair">' +
+                        '<div class="qa-question">Q: ' + currentQuestion + '</div>' +
+                        '<div class="qa-answer">A: ' + data.answer + '</div>' +
+                        '</div>';
                     
-                    if (data.summary) {
-                        alert('Interview Summary:\\n\\n' + data.summary);
+                    transcriptDiv.innerHTML += qaHTML;
+                    transcriptDiv.parentElement.scrollTop = transcriptDiv.parentElement.scrollHeight;
+                    
+                    if (data.next_question) {
+                        // Automatically move to next question
+                        updateStatus('Processing... Next question coming', 'processing');
+                        setTimeout(() => {
+                            if (isInterviewActive) {
+                                askQuestion(data.next_question);
+                            }
+                        }, 1500);
+                    } else {
+                        // Interview complete
+                        completeInterview();
                     }
-                });
+                }
+                
+            } catch (err) {
+                console.error('Error:', err);
+                isProcessing = false;
+                updateStatus('Connection error. Retrying...', 'processing');
+                setTimeout(() => {
+                    if (isInterviewActive) {
+                        listenForAnswer(currentQuestion);
+                    }
+                }, 2000);
+            }
         }
 
-        function speak(text, callback) {
-            var utterance = new SpeechSynthesisUtterance(text);
+        async function completeInterview() {
+            isInterviewActive = false;
+            updateStatus('Interview completed! Generating summary...', 'processing');
+            recordingIndicator.style.display = 'none';
+            questionDiv.textContent = 'Thank you for completing the interview!';
+            
+            try {
+                const response = await fetch('/stop_interview');
+                const data = await response.json();
+                
+                if (data.summary) {
+                    updateStatus('Interview completed successfully!', 'ready');
+                    
+                    // Add summary to transcript
+                    const summaryHTML = '<div class="qa-pair" style="border-left-color: #28a745;">' +
+                        '<div class="qa-question" style="color: #28a745;">INTERVIEW SUMMARY:</div>' +
+                        '<div class="qa-answer">' + data.summary + '</div>' +
+                        '</div>';
+                    
+                    transcriptDiv.innerHTML += summaryHTML;
+                    transcriptDiv.parentElement.scrollTop = transcriptDiv.parentElement.scrollHeight;
+                }
+            } catch (err) {
+                console.error('Error generating summary:', err);
+            }
+            
+            startBtn.disabled = true;
+            stopBtn.disabled = true;
+        }
+
+        async function stopInterview() {
+            if (!confirm('Are you sure you want to end the interview?')) {
+                return;
+            }
+            isInterviewActive = false;
+            isProcessing = false;
+            completeInterview();
+        }
+
+        function speak(text, language, callback) {
+            const utterance = new SpeechSynthesisUtterance(text);
             utterance.rate = 0.85;
             utterance.pitch = 1.0;
             utterance.volume = 1.0;
             
-            utterance.onend = function() {
+            // Set language for speech
+            const langMap = {
+                'english': 'en-IN',
+                'hindi': 'hi-IN',
+                'gujarati': 'gu-IN',
+                'hinglish': 'hi-IN',
+                'gujenglish': 'en-IN'
+            };
+            utterance.lang = langMap[language] || 'en-IN';
+            
+            utterance.onend = () => {
                 console.log('Finished speaking');
                 if (callback) callback();
             };
             
-            utterance.onerror = function(event) {
+            utterance.onerror = (event) => {
                 console.error('Speech error:', event);
                 if (callback) callback();
             };
             
             window.speechSynthesis.speak(utterance);
         }
-
-        // Add event listeners
-        startBtn.addEventListener('click', startInterview);
-        answerBtn.addEventListener('click', answerQuestion);
-        stopBtn.addEventListener('click', stopInterview);
 
         // Close modal when clicking outside
         window.onclick = function(event) {
@@ -637,24 +869,26 @@ HTML_TEMPLATE = '''
             }
         };
 
-        // Initialize - detect cameras when page loads
+        // Initialize on page load
         window.addEventListener('load', function() {
-            console.log('Page loaded, detecting cameras...');
+            console.log('Page loaded, requesting permissions and detecting cameras...');
             
-            // Request permissions first
+            // Request permissions first, then detect all cameras
             navigator.mediaDevices.getUserMedia({ video: true, audio: true })
                 .then(function(stream) {
                     // Stop the temporary stream
                     stream.getTracks().forEach(function(track) {
                         track.stop();
                     });
-                    // Now detect all cameras
+                    // Now detect all available cameras
                     detectCameras();
                 })
                 .catch(function(err) {
                     console.error('Permission denied:', err);
+                    cameraStatus.textContent = 'Permission Denied';
+                    cameraStatus.style.background = 'rgba(220, 53, 69, 0.8)';
                     updateStatus('Camera/microphone permission denied. Please allow access.', 'processing');
-                    alert('Please allow camera and microphone access to use this application.');
+                    alert('Please allow camera and microphone access to use this application.\\n\\nClick the camera icon in the address bar to manage permissions.');
                 });
         });
     </script>
@@ -666,42 +900,54 @@ HTML_TEMPLATE = '''
 def index():
     return render_template_string(HTML_TEMPLATE)
 
-@app.route('/start_interview')
+@app.route('/start_interview', methods=['POST'])
 def start_interview():
     try:
+        data = request.get_json()
+        language = data.get('language', 'english')
+        
         interview_data['interview_active'] = True
         interview_data['current_index'] = 0
-        interview_data['current_question'] = INTERVIEW_QUESTIONS[0]
         interview_data['questions'] = []
         interview_data['answers'] = []
+        interview_data['selected_language'] = language
+        
+        # Generate first question using Gemini
+        first_question = generate_interview_question(1, language)
+        interview_data['current_question'] = first_question
         
         print(f"\n{'='*50}")
-        print("INTERVIEW STARTED")
+        print(f"INTERVIEW STARTED - Language: {LANGUAGE_CONFIG[language]['name']}")
         print(f"{'='*50}")
-        print(f"Question 1: {interview_data['current_question']}")
+        print(f"Question 1: {first_question}")
         
         return jsonify({
             'status': 'success',
-            'question': interview_data['current_question']
+            'question': first_question
         })
     except Exception as e:
         print(f"Error starting interview: {e}")
         return jsonify({'error': str(e)})
 
-@app.route('/listen_answer')
+@app.route('/listen_answer', methods=['POST'])
 def listen_answer():
     recognizer = sr.Recognizer()
     answer_text = ""
     
     try:
-        print("\nListening for answer...")
+        data = request.get_json()
+        language = data.get('language', 'english')
+        lang_config = LANGUAGE_CONFIG[language]
+        
+        print(f"\nListening for answer in {lang_config['name']}...")
         with sr.Microphone() as source:
             recognizer.adjust_for_ambient_noise(source, duration=0.5)
             print("Speak now...")
-            audio = recognizer.listen(source, timeout=10, phrase_time_limit=45)
+            audio = recognizer.listen(source, timeout=15, phrase_time_limit=60)
             
         print("Processing speech...")
-        answer_text = recognizer.recognize_google(audio)
+        # Use appropriate language code for speech recognition
+        answer_text = recognizer.recognize_google(audio, language=lang_config['speech_code'])
         print(f"Transcribed answer: {answer_text}")
         
         interview_data['answers'].append(answer_text)
@@ -711,8 +957,12 @@ def listen_answer():
         # Move to next question
         interview_data['current_index'] += 1
         
-        if interview_data['current_index'] < len(INTERVIEW_QUESTIONS):
-            next_question = INTERVIEW_QUESTIONS[interview_data['current_index']]
+        if interview_data['current_index'] < interview_data['total_questions']:
+            # Generate next question using Gemini
+            next_question = generate_interview_question(
+                interview_data['current_index'] + 1,
+                language
+            )
             interview_data['current_question'] = next_question
             
             print(f"\nQuestion {interview_data['current_index'] + 1}: {next_question}")
@@ -736,16 +986,16 @@ def listen_answer():
             
     except sr.WaitTimeoutError:
         print("Timeout - no speech detected")
-        return jsonify({'error': 'No speech detected. Please try again.'})
+        return jsonify({'error': 'No speech detected'})
     except sr.UnknownValueError:
         print("Could not understand audio")
-        return jsonify({'error': 'Could not understand. Please speak clearly.'})
+        return jsonify({'error': 'Could not understand'})
     except sr.RequestError as e:
-        print(f"Speech recognition service error: {e}")
-        return jsonify({'error': 'Speech recognition service unavailable.'})
+        print(f"Speech recognition error: {e}")
+        return jsonify({'error': 'Recognition service error'})
     except Exception as e:
         print(f"Error: {e}")
-        return jsonify({'error': f'An error occurred: {str(e)}'})
+        return jsonify({'error': str(e)})
 
 @app.route('/stop_interview')
 def stop_interview():
@@ -754,23 +1004,28 @@ def stop_interview():
     
     try:
         if len(interview_data['answers']) > 0:
-            # Generate interview summary using Gemini
+            # Generate summary using Gemini
             qa_pairs = "\n\n".join([
                 f"Q{i+1}: {q}\nA{i+1}: {a}" 
                 for i, (q, a) in enumerate(zip(interview_data['questions'], interview_data['answers']))
             ])
             
+            language = interview_data['selected_language']
+            lang_config = LANGUAGE_CONFIG[language]
+            
             summary_prompt = f"""You are an expert interviewer. Based on this interview, provide a brief professional assessment of the candidate.
 
+Interview Language: {lang_config['name']}
 Interview Transcript:
 {qa_pairs}
 
-Provide a concise 3-4 sentence assessment covering:
+Provide a concise 4-5 sentence assessment in {lang_config['name']} covering:
 1. Communication skills
 2. Key strengths demonstrated
 3. Overall impression
+4. Recommendation
 
-Keep it professional and constructive."""
+Be professional and constructive. {lang_config['prompt_instruction']}"""
             
             print("\nGenerating interview summary...")
             response = model.generate_content(summary_prompt)
@@ -784,19 +1039,11 @@ Keep it professional and constructive."""
         
     except Exception as e:
         print(f"Error generating summary: {e}")
-        summary = "Could not generate summary due to an error."
+        summary = "Could not generate summary."
     
     return jsonify({
         'status': 'Interview ended',
         'summary': summary
-    })
-
-@app.route('/get_status')
-def get_status():
-    return jsonify({
-        'active': interview_data['interview_active'],
-        'current_index': interview_data['current_index'],
-        'total_questions': len(INTERVIEW_QUESTIONS)
     })
 
 def open_browser():
@@ -804,14 +1051,16 @@ def open_browser():
     webbrowser.open('http://127.0.0.1:5000')
 
 if __name__ == '__main__':
-    print(f"\n{'='*60}")
-    print("AI VIDEO INTERVIEW SYSTEM - POWERED BY GEMINI 2.0 FLASH")
-    print(f"{'='*60}")
-    print("🚀 Starting Flask server...")
-    print("🌐 Opening browser automatically...")
-    print("📹 You will be able to SELECT your camera (USB/Built-in)")
-    print("🎤 Please ALLOW camera and microphone access when prompted!")
-    print(f"{'='*60}\n")
+    print(f"\n{'='*70}")
+    print("AI MULTILINGUAL VIDEO INTERVIEW - POWERED BY GEMINI")
+    print(f"{'='*70}")
+    print("Languages: English | Hindi | Gujarati | Hinglish | Gujarati+English")
+    print("Features: Smooth Auto-Conversation | No Manual Buttons | AI-Generated Questions")
+    print(f"{'='*70}")
+    print("Starting Flask server...")
+    print("Opening browser automatically...")
+    print("Please ALLOW camera and microphone access!")
+    print(f"{'='*70}\n")
     
     threading.Thread(target=open_browser, daemon=True).start()
     app.run(debug=False, port=5000, threaded=True)
