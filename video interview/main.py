@@ -97,6 +97,46 @@ Return ONLY the question text, nothing else. Make it sound natural and conversat
         ]
         return fallback[min(question_number - 1, 4)]
 
+def generate_ai_response(candidate_answer, question_asked, language_key):
+    """Generate AI conversational response after candidate answers"""
+    lang_config = LANGUAGE_CONFIG[language_key]
+    
+    prompt = f"""You are a professional and friendly AI interviewer. {lang_config['prompt_instruction']}
+
+The candidate was asked: "{question_asked}"
+The candidate answered: "{candidate_answer}"
+
+Generate a brief, natural conversational response (1-2 sentences) that:
+- Acknowledges their answer positively
+- Shows you're listening and engaged
+- Sounds warm and encouraging
+- Transitions smoothly to the next part of the interview
+
+Examples of good responses:
+- "That's great to hear! Your experience sounds really valuable."
+- "Thank you for sharing that. I appreciate your detailed answer."
+- "Interesting perspective! That shows good problem-solving skills."
+- "I can see you have strong experience in that area."
+
+Return ONLY the response text in {lang_config['name']}, nothing else. Keep it brief and natural."""
+
+    try:
+        response = model.generate_content(prompt)
+        ai_response = response.text.strip()
+        print(f"AI Response: {ai_response}")
+        return ai_response
+    except Exception as e:
+        print(f"Error generating AI response: {e}")
+        # Fallback responses
+        fallback_responses = {
+            'english': "Thank you for sharing that. Let's continue.",
+            'hindi': "धन्यवाद। चलिए आगे बढ़ते हैं।",
+            'gujarati': "આભાર. ચાલો આગળ વધીએ.",
+            'hinglish': "Thank you. Chalo next question par chalte hain.",
+            'gujenglish': "Thank you. Chalo continue kariye."
+        }
+        return fallback_responses.get(language_key, "Thank you. Let's continue.")
+
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html>
@@ -705,7 +745,29 @@ HTML_TEMPLATE = '''
                 document.getElementById('languageSelector').style.opacity = '0.5';
                 document.getElementById('languageSelector').style.pointerEvents = 'none';
                 
-                askQuestion(data.question);
+                // Speak greeting first, then ask first question
+                if (data.greeting) {
+                    questionDiv.textContent = data.greeting;
+                    updateStatus('AI is greeting you...', 'speaking');
+                    
+                    // Add greeting to transcript
+                    const greetingHTML = '<div class="qa-pair" style="border-left-color: #667eea;">' +
+                        '<div class="qa-question" style="color: #667eea;">AI: ' + data.greeting + '</div>' +
+                        '</div>';
+                    transcriptDiv.innerHTML = greetingHTML;
+                    
+                    speak(data.greeting, selectedLanguage, () => {
+                        // After greeting, show and ask the first question
+                        setTimeout(() => {
+                            if (isInterviewActive) {
+                                askQuestion(data.question);
+                            }
+                        }, 800);
+                    });
+                } else {
+                    // No greeting, ask question directly
+                    askQuestion(data.question);
+                }
                 
             } catch (err) {
                 console.error('Error:', err);
@@ -759,7 +821,7 @@ HTML_TEMPLATE = '''
                 }
                 
                 if (data.answer) {
-                    // Add to transcript
+                    // Add Q&A to transcript
                     const qaHTML = '<div class="qa-pair">' +
                         '<div class="qa-question">Q: ' + currentQuestion + '</div>' +
                         '<div class="qa-answer">A: ' + data.answer + '</div>' +
@@ -768,17 +830,44 @@ HTML_TEMPLATE = '''
                     transcriptDiv.innerHTML += qaHTML;
                     transcriptDiv.parentElement.scrollTop = transcriptDiv.parentElement.scrollHeight;
                     
-                    if (data.next_question) {
-                        // Automatically move to next question
-                        updateStatus('Processing... Next question coming', 'processing');
-                        setTimeout(() => {
-                            if (isInterviewActive) {
-                                askQuestion(data.next_question);
+                    // AI responds to the answer
+                    if (data.ai_response) {
+                        questionDiv.textContent = data.ai_response;
+                        updateStatus('AI is responding...', 'speaking');
+                        
+                        // Speak AI's response
+                        speak(data.ai_response, selectedLanguage, () => {
+                            // Add AI response to transcript
+                            const aiResponseHTML = '<div class="qa-pair" style="border-left-color: #28a745;">' +
+                                '<div class="qa-question" style="color: #28a745;">AI: ' + data.ai_response + '</div>' +
+                                '</div>';
+                            transcriptDiv.innerHTML += aiResponseHTML;
+                            transcriptDiv.parentElement.scrollTop = transcriptDiv.parentElement.scrollHeight;
+                            
+                            if (data.next_question) {
+                                // Move to next question after AI responds
+                                updateStatus('Processing... Next question coming', 'processing');
+                                setTimeout(() => {
+                                    if (isInterviewActive) {
+                                        askQuestion(data.next_question);
+                                    }
+                                }, 1000);
+                            } else {
+                                // Interview complete
+                                completeInterview();
                             }
-                        }, 1500);
+                        });
                     } else {
-                        // Interview complete
-                        completeInterview();
+                        // No AI response, move directly to next question
+                        if (data.next_question) {
+                            setTimeout(() => {
+                                if (isInterviewActive) {
+                                    askQuestion(data.next_question);
+                                }
+                            }, 1500);
+                        } else {
+                            completeInterview();
+                        }
                     }
                 }
                 
@@ -834,12 +923,12 @@ HTML_TEMPLATE = '''
         }
 
         function speak(text, language, callback) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 0.85;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
             
-            // Set language for speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Set language-specific parameters
             const langMap = {
                 'english': 'en-IN',
                 'hindi': 'hi-IN',
@@ -849,8 +938,28 @@ HTML_TEMPLATE = '''
             };
             utterance.lang = langMap[language] || 'en-IN';
             
+            // Adjust speech rate based on language
+            if (language === 'hindi' || language === 'gujarati') {
+                utterance.rate = 0.8; // Slower for Indian languages
+            } else {
+                utterance.rate = 0.85;
+            }
+            
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // Try to select appropriate voice
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoice = voices.find(voice => 
+                voice.lang.startsWith(utterance.lang.split('-')[0])
+            );
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+                console.log('Using voice:', preferredVoice.name);
+            }
+            
             utterance.onend = () => {
-                console.log('Finished speaking');
+                console.log('Finished speaking:', text.substring(0, 50) + '...');
                 if (callback) callback();
             };
             
@@ -859,8 +968,20 @@ HTML_TEMPLATE = '''
                 if (callback) callback();
             };
             
-            window.speechSynthesis.speak(utterance);
+            // Small delay to ensure previous speech is cancelled
+            setTimeout(() => {
+                window.speechSynthesis.speak(utterance);
+            }, 100);
         }
+        
+        // Load voices when available
+        window.speechSynthesis.onvoiceschanged = () => {
+            const voices = window.speechSynthesis.getVoices();
+            console.log('Available voices:', voices.length);
+            voices.forEach(voice => {
+                console.log('- ' + voice.name + ' (' + voice.lang + ')');
+            });
+        };
 
         // Close modal when clicking outside
         window.onclick = function(event) {
@@ -912,6 +1033,31 @@ def start_interview():
         interview_data['answers'] = []
         interview_data['selected_language'] = language
         
+        lang_config = LANGUAGE_CONFIG[language]
+        
+        # Generate welcoming greeting
+        greeting_prompt = f"""You are a professional and friendly AI interviewer. {lang_config['prompt_instruction']}
+
+Generate a brief, warm welcome greeting (1-2 sentences) to start the interview that:
+- Welcomes the candidate
+- Makes them feel comfortable
+- Briefly mentions you'll ask them some questions
+
+Return ONLY the greeting in {lang_config['name']}, nothing else. Keep it natural and warm."""
+
+        try:
+            greeting_response = model.generate_content(greeting_prompt)
+            greeting = greeting_response.text.strip()
+        except:
+            greeting_map = {
+                'english': "Welcome! Thank you for joining today. Let's get started with a few questions.",
+                'hindi': "स्वागत है! आज आने के लिए धन्यवाद। चलिए कुछ सवालों के साथ शुरू करते हैं।",
+                'gujarati': "સ્વાગત છે! આજે જોડાવા બદલ આભાર. ચાલો કેટલાક પ્રશ્નો સાથે શરૂઆત કરીએ.",
+                'hinglish': "Welcome! Aane ke liye thank you. Let's start with some questions.",
+                'gujenglish': "Welcome! Aavva badal thank you. Chalo start kariye with some questions."
+            }
+            greeting = greeting_map.get(language, "Welcome! Let's begin the interview.")
+        
         # Generate first question using Gemini
         first_question = generate_interview_question(1, language)
         interview_data['current_question'] = first_question
@@ -919,10 +1065,12 @@ def start_interview():
         print(f"\n{'='*50}")
         print(f"INTERVIEW STARTED - Language: {LANGUAGE_CONFIG[language]['name']}")
         print(f"{'='*50}")
+        print(f"Greeting: {greeting}")
         print(f"Question 1: {first_question}")
         
         return jsonify({
             'status': 'success',
+            'greeting': greeting,
             'question': first_question
         })
     except Exception as e:
@@ -954,6 +1102,9 @@ def listen_answer():
         current_question = interview_data['current_question']
         interview_data['questions'].append(current_question)
         
+        # Generate AI conversational response to the answer
+        ai_response = generate_ai_response(answer_text, current_question, language)
+        
         # Move to next question
         interview_data['current_index'] += 1
         
@@ -971,16 +1122,42 @@ def listen_answer():
                 'status': 'success',
                 'answer': answer_text,
                 'question': current_question,
+                'ai_response': ai_response,
                 'next_question': next_question
             })
         else:
             # Interview complete
             print("\nAll questions completed!")
             interview_data['interview_active'] = False
+            
+            # Generate final closing response
+            closing_prompt = f"""You are a professional interviewer. {LANGUAGE_CONFIG[language]['prompt_instruction']}
+
+The interview is now complete. Generate a brief, warm closing statement (2-3 sentences) that:
+- Thanks the candidate for their time
+- Acknowledges their effort
+- Ends on a positive note
+
+Return ONLY the closing statement in {LANGUAGE_CONFIG[language]['name']}, nothing else."""
+            
+            try:
+                closing_response = model.generate_content(closing_prompt)
+                ai_closing = closing_response.text.strip()
+            except:
+                closing_map = {
+                    'english': "Thank you so much for your time today. You've shared great insights. We'll be in touch soon!",
+                    'hindi': "आज अपना समय देने के लिए बहुत-बहुत धन्यवाद। आपने बहुत अच्छी जानकारी साझा की। हम जल्द ही संपर्क करेंगे!",
+                    'gujarati': "આજે તમારો સમય આપવા બદલ ખૂબ ખૂબ આભાર. તમે સારી માહિતી શેર કરી. અમે ટૂંક સમયમાં સંપર્ક કરીશું!",
+                    'hinglish': "Thank you bahut bahut aaj ke liye. Aapne bahut acchi information share ki. We'll be in touch soon!",
+                    'gujenglish': "Thank you khub khub for your time. Tame saru share karyu. We'll contact you soon!"
+                }
+                ai_closing = closing_map.get(language, "Thank you for your time today!")
+            
             return jsonify({
                 'status': 'complete',
                 'answer': answer_text,
                 'question': current_question,
+                'ai_response': ai_closing,
                 'next_question': None
             })
             
@@ -1052,14 +1229,19 @@ def open_browser():
 
 if __name__ == '__main__':
     print(f"\n{'='*70}")
-    print("AI MULTILINGUAL VIDEO INTERVIEW - POWERED BY GEMINI")
+    print("AI MULTILINGUAL VIDEO INTERVIEW - POWERED BY GEMINI 2.0 FLASH")
     print(f"{'='*70}")
-    print("Languages: English | Hindi | Gujarati | Hinglish | Gujarati+English")
-    print("Features: Smooth Auto-Conversation | No Manual Buttons | AI-Generated Questions")
+    print("🌍 Languages: English | Hindi | Gujarati | Hinglish | Gujarati+English")
+    print("🤖 AI Features: ")
+    print("   - AI speaks and responds in your selected language")
+    print("   - Smooth auto-conversation flow (no manual buttons)")
+    print("   - Dynamic AI-generated questions & responses")
+    print("   - Natural two-way conversation")
+    print("📹 Camera: Auto-detection with selection support")
     print(f"{'='*70}")
-    print("Starting Flask server...")
-    print("Opening browser automatically...")
-    print("Please ALLOW camera and microphone access!")
+    print("🚀 Starting Flask server...")
+    print("🌐 Opening browser automatically...")
+    print("⚠️  Please ALLOW camera and microphone access!")
     print(f"{'='*70}\n")
     
     threading.Thread(target=open_browser, daemon=True).start()
