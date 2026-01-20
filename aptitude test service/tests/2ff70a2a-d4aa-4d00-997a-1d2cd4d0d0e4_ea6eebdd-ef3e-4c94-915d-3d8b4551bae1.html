@@ -2545,25 +2545,16 @@
                 if (response.ok) {
                     const responseData = await response.json();
                     console.log('Success response:', responseData);
-                    document.getElementById('successMessage').style.display = 'block';
-                    form.reset();
-                    form.style.display = 'none';
-                    const timerEl = document.getElementById('timer');
-                    if (timerEl) {
-                        timerEl.style.display = 'none';
-                    }
-                    const progressEl = document.querySelector('.progress-indicator');
-                    if (progressEl) {
-                        progressEl.style.display = 'none';
-                    }
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-
+                    
                     // Clear session tokens and saved answers
                     const sessionKey = `test_session_2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4_ea6eebdd-ef3e-4c94-915d-3d8b4551bae1`;
                     const attemptKey = `test_attempt_2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4_ea6eebdd-ef3e-4c94-915d-3d8b4551bae1`;
                     sessionStorage.removeItem(sessionKey);
                     sessionStorage.removeItem(attemptKey);
                     localStorage.removeItem(answersStorageKey);
+                    
+                    // Close the tab/window immediately after successful submission
+                    window.close();
                 } else {
                     const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
                     console.log('Error response:', errorData);

@@ -513,25 +513,16 @@ APTITUDE_TEST_TEMPLATE = """
                 if (response.ok) {
                     const responseData = await response.json();
                     console.log('Success response:', responseData);
-                    document.getElementById('successMessage').style.display = 'block';
-                    form.reset();
-                    form.style.display = 'none';
-                    const timerEl = document.getElementById('timer');
-                    if (timerEl) {
-                        timerEl.style.display = 'none';
-                    }
-                    const progressEl = document.querySelector('.progress-indicator');
-                    if (progressEl) {
-                        progressEl.style.display = 'none';
-                    }
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-
+                    
                     // Clear session tokens and saved answers
                     const sessionKey = `test_session_{{ job_requirement_id }}_{{ aptitude_test_id }}`;
                     const attemptKey = `test_attempt_{{ job_requirement_id }}_{{ aptitude_test_id }}`;
                     sessionStorage.removeItem(sessionKey);
                     sessionStorage.removeItem(attemptKey);
                     localStorage.removeItem(answersStorageKey);
+                    
+                    // Close the tab/window immediately after successful submission
+                    window.close();
                 } else {
                     const errorData = await response.json().catch(() => ({ detail: 'Unknown error occurred' }));
                     console.log('Error response:', errorData);
