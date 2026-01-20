@@ -1,12 +1,14 @@
 """
-Real-time AI Interviewer Platform
-Using FastAPI + Gemini 2.0 Flash Multimodal Live API (WebSockets)
+Real-time Multilingual AI Interviewer Platform
+Using FastAPI + Gemini 2.5 Flash Multimodal Live API (WebSockets)
 
 Features:
 - Real-time bidirectional audio streaming
+- Multilingual support: English, Hindi, Gujarati (auto-detect & switch)
 - WebSocket proxy to Gemini API
 - Barge-in/interruption support
-- Senior Technical Interviewer persona
+- Senior Technical Recruiter persona
+- AudioWorklet-based smooth playback (16kHz input / 24kHz output)
 """
 
 import os
@@ -28,49 +30,66 @@ dotenv.load_dotenv(env_file)
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
 
 if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY not found in environment variables!")
+    raise ValueError("GEMINI_API_KEY not found! Please set it in .env.dev file")
 
 print(f"✅ API Key loaded (ends with: ...{GEMINI_API_KEY[-8:]})")
 
 # Gemini Multimodal Live API Configuration
-GEMINI_MODEL = "models/gemini-2.0-flash-exp"
+GEMINI_MODEL = "models/gemini-2.5-flash-native-audio-preview-12-2025"
 GEMINI_WS_URL = f"wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key={GEMINI_API_KEY}"
 
-# System prompt for the AI Interviewer
-SYSTEM_INSTRUCTION = """You are a Senior Technical Interviewer at a leading technology company. Your role is to conduct professional, engaging technical interviews.
+# Multilingual System Instruction for Senior Technical Recruiter
+SYSTEM_INSTRUCTION = """You are a Senior Technical Recruiter conducting a real-time voice interview. You are based in India and are fluent in English, Hindi, and Gujarati.
+
+LANGUAGE BEHAVIOR:
+- Start the interview in English with a warm greeting
+- If the candidate speaks in Hindi, seamlessly switch to Hindi and continue in Hindi
+- If the candidate speaks in Gujarati, seamlessly switch to Gujarati and continue in Gujarati
+- You can mix languages naturally (Hinglish or Gujarati-English) if the candidate does so
+- If the candidate says "please speak in Hindi" or "Hindi mein bolo" or "Gujarati ma bolo", switch immediately
+- Always match the language preference of the candidate
+
+GUJARATI RESPONSES:
+- When speaking Gujarati, use natural Rajkot/Saurashtra dialect if appropriate
+- Be warm and encouraging: "ઘણું સરસ!" (Very nice!), "બહુ સારું!" (Very good!)
+- Ask questions clearly: "તમે તમારા અનુભવ વિશે જણાવો" (Tell me about your experience)
+
+HINDI RESPONSES:
+- Use conversational Hindi, not formal/literary Hindi
+- Be encouraging: "बहुत अच्छा!", "बिल्कुल सही!"
+- Ask questions naturally: "अपने experience के बारे में बताइए"
 
 INTERVIEW GUIDELINES:
-1. Ask ONE question at a time and wait for the candidate's complete response
-2. Start with a warm, professional greeting and introduce yourself
-3. Begin with easier questions and gradually increase difficulty
-4. Listen actively and ask relevant follow-up questions based on responses
-5. Be encouraging but maintain professional standards
-6. Provide brief acknowledgments after each answer before moving to the next question
+1. Ask ONE question at a time and wait for complete response
+2. Start with a warm, professional greeting
+3. If candidate seems nervous or struggles with English, gently offer to switch to Hindi or Gujarati
+4. Begin with easier questions, gradually increase difficulty
+5. Listen actively and ask relevant follow-ups
+6. Be encouraging and supportive, especially with regional language speakers
 
 QUESTION FLOW:
-1. Introduction and ice-breaker
-2. Background and experience questions
-3. Technical knowledge questions
+1. Introduction - "Tell me about yourself" / "અમને તમારા વિશે જણાવો" / "अपने बारे में बताइए"
+2. Experience and background
+3. Technical skills relevant to the role
 4. Problem-solving scenarios
-5. Behavioral questions (STAR method)
-6. Questions about the candidate's goals and interests
+5. Career goals and motivation
 
 COMMUNICATION STYLE:
-- Speak clearly and at a moderate pace
-- Be warm, professional, and encouraging
-- Give the candidate time to think
-- Acknowledge good answers positively
-- If an answer is unclear, politely ask for clarification
+- Speak clearly at moderate pace
+- Be warm, professional, and culturally sensitive
+- Give candidate time to think
+- Acknowledge answers positively in the same language
+- If answer is unclear, politely ask for clarification in their preferred language
 
-Remember: You are having a real-time voice conversation. Keep responses concise and conversational. Do not use markdown, bullet points, or any text formatting - speak naturally as in a real interview."""
+Remember: This is a VOICE conversation. Keep responses concise and natural. No markdown, bullet points, or text formatting - speak as you would in a real interview. Sound human, not robotic."""
 
-# Generation config for audio
+# Generation config for audio output
 GENERATION_CONFIG = {
     "response_modalities": ["AUDIO"],
     "speech_config": {
         "voice_config": {
             "prebuilt_voice_config": {
-                "voice_name": "Aoede"  # Professional sounding voice
+                "voice_name": "Kore"  # Good for multilingual, natural sounding
             }
         }
     }
@@ -80,29 +99,37 @@ GENERATION_CONFIG = {
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
-    print("\n" + "=" * 70)
-    print("🎤 REAL-TIME AI INTERVIEWER - Powered by Gemini 2.0 Flash")
-    print("=" * 70)
-    print("🚀 Server starting...")
-    print("🌐 Open http://localhost:8000 in your browser")
+    print("\n" + "=" * 75)
+    print("🎤 MULTILINGUAL AI INTERVIEWER - Powered by Gemini 2.5 Flash")
+    print("=" * 75)
+    print("🌍 LANGUAGES: English | हिंदी (Hindi) | ગુજરાતી (Gujarati)")
+    print("🔄 AUTO-DETECT: Just speak in any language - AI will adapt!")
+    print("🎯 PERSONA: Senior Technical Recruiter")
+    print("=" * 75)
+    print("🚀 Server starting at http://localhost:8000")
     print("⚠️  Allow microphone permissions when prompted!")
-    print("=" * 70 + "\n")
+    print("💡 TIP: Say 'Gujarati ma bolo' or 'Hindi mein bolo' to switch languages")
+    print("=" * 75 + "\n")
     yield
     print("\n👋 Server shutting down...")
 
 
-app = FastAPI(title="Real-time AI Interviewer", lifespan=lifespan)
+app = FastAPI(title="Multilingual AI Interviewer", lifespan=lifespan)
+
+# Ensure directories exist
+templates_dir = Path(__file__).parent / "templates"
+static_dir = Path(__file__).parent / "static"
+templates_dir.mkdir(exist_ok=True)
+static_dir.mkdir(exist_ok=True)
 
 # Mount static files
-static_dir = Path(__file__).parent / "static"
-static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def get_index():
     """Serve the main HTML page"""
-    html_path = Path(__file__).parent / "templates" / "index.html"
+    html_path = templates_dir / "index.html"
     return FileResponse(html_path)
 
 
@@ -114,8 +141,8 @@ async def websocket_endpoint(websocket: WebSocket):
     Flow:
     1. Accept frontend connection
     2. Connect to Gemini WebSocket
-    3. Send setup message with system instruction
-    4. Proxy audio bidirectionally
+    3. Send BidiGenerateContentSetup with multilingual system instruction
+    4. Proxy audio bidirectionally with interrupt support
     """
     await websocket.accept()
     print("✅ Frontend WebSocket connected")
@@ -128,17 +155,18 @@ async def websocket_endpoint(websocket: WebSocket):
         # Connect to Gemini WebSocket
         import websockets
         
-        print("🔗 Connecting to Gemini Multimodal Live API...")
+        print("🔗 Connecting to Gemini 2.5 Flash Multimodal Live API...")
         gemini_ws = await websockets.connect(
             GEMINI_WS_URL,
             additional_headers={"Content-Type": "application/json"},
             ping_interval=30,
             ping_timeout=10,
-            close_timeout=5
+            close_timeout=5,
+            max_size=10 * 1024 * 1024  # 10MB max message size
         )
         print("✅ Connected to Gemini API")
         
-        # Send setup message (BidiGenerateContent handshake)
+        # Send BidiGenerateContentSetup message
         setup_message = {
             "setup": {
                 "model": GEMINI_MODEL,
@@ -150,38 +178,61 @@ async def websocket_endpoint(websocket: WebSocket):
         }
         
         await gemini_ws.send(json.dumps(setup_message))
-        print("📤 Sent setup message to Gemini")
+        print("📤 Sent BidiGenerateContentSetup to Gemini")
         
         # Wait for setup complete response
-        setup_response = await gemini_ws.recv()
+        setup_response = await asyncio.wait_for(gemini_ws.recv(), timeout=30)
         setup_data = json.loads(setup_response)
         
         if "setupComplete" in setup_data:
-            print("✅ Gemini setup complete")
-            await websocket.send_json({"type": "setup_complete"})
+            print("✅ Gemini setup complete - Ready for multilingual interview!")
+            await websocket.send_json({
+                "type": "setup_complete",
+                "message": "Connected! Start speaking in English, Hindi, or Gujarati."
+            })
+            
+            # Send initial prompt to trigger AI greeting
+            initial_prompt = {
+                "clientContent": {
+                    "turns": [{
+                        "role": "user",
+                        "parts": [{"text": "Please start the interview with a warm greeting and introduce yourself."}]
+                    }],
+                    "turnComplete": True
+                }
+            }
+            await gemini_ws.send(json.dumps(initial_prompt))
+            print("📤 Sent initial prompt to trigger AI greeting")
+            
         else:
             print(f"⚠️ Unexpected setup response: {setup_data}")
+            await websocket.send_json({"type": "error", "message": "Setup failed"})
+            return
         
         # Create tasks for bidirectional communication
         async def receive_from_gemini():
-            """Receive audio/text from Gemini and forward to frontend"""
+            """Receive audio/events from Gemini and forward to frontend"""
             try:
                 async for message in gemini_ws:
                     data = json.loads(message)
+                    
+                    # Log all message types for debugging
+                    msg_keys = list(data.keys())
+                    print(f"📥 Gemini message keys: {msg_keys}")
                     
                     # Handle server content (audio response)
                     if "serverContent" in data:
                         server_content = data["serverContent"]
                         
-                        # Check for interruption
+                        # Handle interruption (barge-in detected by Gemini)
                         if server_content.get("interrupted"):
-                            print("🛑 Gemini interrupted")
+                            print("🛑 Gemini detected interruption")
                             await websocket.send_json({"type": "interrupted"})
                             continue
                         
                         # Check for turn complete
                         if server_content.get("turnComplete"):
-                            print("✅ Gemini turn complete")
+                            print("✅ AI turn complete - waiting for user")
                             await websocket.send_json({"type": "turn_complete"})
                             continue
                         
@@ -193,41 +244,49 @@ async def websocket_endpoint(websocket: WebSocket):
                             # Handle audio data
                             if "inlineData" in part:
                                 inline_data = part["inlineData"]
-                                if inline_data.get("mimeType", "").startswith("audio/"):
+                                mime_type = inline_data.get("mimeType", "")
+                                
+                                if mime_type.startswith("audio/"):
                                     audio_b64 = inline_data.get("data", "")
                                     if audio_b64:
+                                        audio_bytes = len(audio_b64) * 3 // 4  # Approximate decoded size
+                                        print(f"🔊 Audio chunk: {audio_bytes} bytes, mime: {mime_type}")
+                                        # Send audio chunk to frontend
                                         await websocket.send_json({
                                             "type": "audio",
-                                            "data": audio_b64
+                                            "data": audio_b64,
+                                            "mimeType": mime_type
                                         })
                             
-                            # Handle text (for debugging/display)
+                            # Handle text (for transcript display)
                             if "text" in part:
                                 text = part["text"]
-                                print(f"📝 Gemini text: {text[:100]}...")
+                                print(f"📝 AI: {text[:80]}...")
                                 await websocket.send_json({
-                                    "type": "text",
-                                    "data": text
+                                    "type": "transcript",
+                                    "text": text,
+                                    "speaker": "ai"
                                 })
                     
-                    # Handle tool calls if any (for future extension)
+                    # Handle tool calls (future extension)
                     elif "toolCall" in data:
-                        print(f"🔧 Tool call received: {data['toolCall']}")
+                        print(f"🔧 Tool call: {data['toolCall']}")
                         
-            except websockets.exceptions.ConnectionClosed:
-                print("🔌 Gemini WebSocket closed")
+            except websockets.exceptions.ConnectionClosed as e:
+                print(f"🔌 Gemini connection closed: {e}")
             except Exception as e:
                 print(f"❌ Error receiving from Gemini: {e}")
         
         async def send_to_gemini():
-            """Receive audio from frontend and forward to Gemini"""
+            """Receive audio/commands from frontend and forward to Gemini"""
             try:
                 while True:
                     # Receive from frontend
                     data = await websocket.receive_json()
+                    msg_type = data.get("type")
                     
-                    if data.get("type") == "audio":
-                        # Forward audio to Gemini
+                    if msg_type == "audio":
+                        # Forward audio chunk to Gemini
                         audio_b64 = data.get("data", "")
                         
                         realtime_input = {
@@ -241,13 +300,18 @@ async def websocket_endpoint(websocket: WebSocket):
                         
                         await gemini_ws.send(json.dumps(realtime_input))
                     
-                    elif data.get("type") == "end_turn":
-                        # Signal end of user turn
-                        print("📤 User ended turn")
-                        # Gemini auto-detects end of speech, but we can send explicit signal
+                    elif msg_type == "interrupt":
+                        # User wants to interrupt AI (barge-in)
+                        print("🛑 User requested interrupt")
+                        # Gemini handles this automatically via voice activity detection
                         
-                    elif data.get("type") == "stop":
-                        print("🛑 Stop signal received")
+                    elif msg_type == "language_switch":
+                        # User explicitly requested language switch
+                        lang = data.get("language", "english")
+                        print(f"🌍 User requested language switch to: {lang}")
+                        
+                    elif msg_type == "stop":
+                        print("🛑 Stop signal received from frontend")
                         break
                         
             except WebSocketDisconnect:
@@ -299,7 +363,14 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "realtime-ai-interviewer",
-        "model": GEMINI_MODEL
+        "model": GEMINI_MODEL,
+        "features": {
+            "languages": ["English", "Hindi (हिंदी)", "Gujarati (ગુજરાતી)"],
+            "audio_input": "16kHz PCM mono",
+            "audio_output": "24kHz PCM mono",
+            "barge_in": True,
+            "auto_language_detection": True
+        }
     }
 
 

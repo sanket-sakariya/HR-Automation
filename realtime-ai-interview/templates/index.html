@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Technical Interview</title>
+    <title>AI Technical Interview | Multilingual</title>
     <style>
         * {
             margin: 0;
@@ -22,17 +22,17 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             width: 100%;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 30px;
         }
 
         .header h1 {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             color: #000;
             margin-bottom: 10px;
             font-weight: 600;
@@ -40,28 +40,67 @@
 
         .header p {
             color: #666;
-            font-size: 1.1rem;
+            font-size: 1rem;
+        }
+
+        /* Language badges */
+        .language-badges {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .lang-badge {
+            padding: 8px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #666;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .lang-badge.active {
+            border-color: #000;
+            background: #000;
+            color: white;
+        }
+
+        .lang-badge .lang-native {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-left: 4px;
         }
 
         .interview-card {
             background: white;
             border: 2px solid #000;
             border-radius: 16px;
-            padding: 40px;
-            margin-bottom: 30px;
+            padding: 35px;
+            margin-bottom: 25px;
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .status-section {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 12px;
         }
 
         .status-indicator {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
             background: #ccc;
             transition: background 0.3s ease;
@@ -71,73 +110,132 @@
             background: #000;
         }
 
-        .status-indicator.speaking {
+        .status-indicator.ai-speaking {
             background: #000;
             animation: pulse 1s infinite;
         }
 
-        .status-indicator.listening {
-            background: #666;
-            animation: pulse 0.5s infinite;
+        .status-indicator.user-speaking {
+            background: #333;
+            animation: fastPulse 0.4s infinite;
         }
 
         @keyframes pulse {
             0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.7; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+        }
+
+        @keyframes fastPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
         }
 
         .status-text {
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: #333;
             font-weight: 500;
+        }
+
+        .detected-language {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: #f5f5f5;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .detected-language.active {
+            background: #000;
+            color: white;
+        }
+
+        .detected-language .lang-icon {
+            font-size: 1rem;
         }
 
         .visualizer-container {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 120px;
-            margin-bottom: 30px;
+            height: 100px;
+            margin-bottom: 25px;
             background: #fafafa;
             border-radius: 12px;
             border: 1px solid #e0e0e0;
+            position: relative;
         }
 
         .audio-visualizer {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
-            height: 80px;
+            gap: 3px;
+            height: 70px;
         }
 
         .visualizer-bar {
-            width: 6px;
+            width: 5px;
             background: #000;
             border-radius: 3px;
-            transition: height 0.1s ease;
+            transition: height 0.05s ease;
+        }
+
+        .visualizer-label {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 0.75rem;
+            color: #999;
         }
 
         .transcript-section {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+        }
+
+        .transcript-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
 
         .transcript-label {
             font-size: 0.9rem;
             color: #666;
-            margin-bottom: 10px;
             font-weight: 500;
+        }
+
+        .transcript-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .transcript-btn {
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            background: transparent;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .transcript-btn:hover {
+            background: #f5f5f5;
         }
 
         .transcript-box {
             background: #fafafa;
             border: 1px solid #e0e0e0;
             border-radius: 12px;
-            padding: 20px;
-            min-height: 100px;
+            padding: 16px;
+            min-height: 120px;
             max-height: 200px;
             overflow-y: auto;
-            font-size: 1rem;
+            font-size: 0.95rem;
             line-height: 1.6;
             color: #333;
         }
@@ -147,15 +245,39 @@
             color: #999;
         }
 
+        .transcript-entry {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .transcript-entry.ai {
+            background: #f0f0f0;
+            margin-right: 20px;
+        }
+
+        .transcript-entry.user {
+            background: #e8e8e8;
+            margin-left: 20px;
+        }
+
+        .transcript-entry .speaker {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
         .controls {
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
         }
 
         .btn {
-            padding: 16px 48px;
-            font-size: 1.1rem;
+            padding: 14px 40px;
+            font-size: 1rem;
             font-weight: 600;
             border-radius: 50px;
             cursor: pointer;
@@ -184,8 +306,18 @@
             transform: translateY(-2px);
         }
 
+        .btn-interrupt {
+            background: white;
+            color: #000;
+            padding: 14px 30px;
+        }
+
+        .btn-interrupt:hover:not(:disabled) {
+            background: #f5f5f5;
+        }
+
         .btn:disabled {
-            opacity: 0.5;
+            opacity: 0.4;
             cursor: not-allowed;
             transform: none;
         }
@@ -194,7 +326,7 @@
             background: #fafafa;
             border: 1px solid #e0e0e0;
             border-radius: 12px;
-            padding: 24px;
+            padding: 20px;
         }
 
         .info-section h3 {
@@ -207,7 +339,7 @@
         .info-section ul {
             list-style: none;
             color: #666;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             line-height: 1.8;
         }
 
@@ -217,11 +349,21 @@
             color: #000;
         }
 
+        .feature-highlight {
+            display: inline-block;
+            background: #000;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+
         .error-message {
             background: white;
             border: 2px solid #000;
             color: #000;
-            padding: 16px 24px;
+            padding: 14px 20px;
             border-radius: 12px;
             margin-bottom: 20px;
             display: none;
@@ -233,8 +375,8 @@
         }
 
         .loading-dots span {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             background: #000;
             border-radius: 50%;
             animation: loadingDot 1.4s infinite ease-in-out both;
@@ -248,37 +390,117 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
+
+        /* Audio meter for input level */
+        .audio-meter {
+            position: absolute;
+            left: 12px;
+            bottom: 8px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 20px;
+        }
+
+        .meter-bar {
+            width: 3px;
+            background: #ccc;
+            border-radius: 1px;
+            transition: height 0.1s, background 0.1s;
+        }
+
+        .meter-bar.active {
+            background: #000;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.6rem;
+            }
+            
+            .interview-card {
+                padding: 20px;
+            }
+            
+            .btn {
+                padding: 12px 24px;
+                font-size: 0.9rem;
+            }
+
+            .status-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>🎤 AI Technical Interview</h1>
-            <p>Real-time voice interview powered by Gemini 2.0</p>
+            <p>Real-time multilingual voice interview powered by Gemini 2.5 Flash</p>
+        </div>
+
+        <!-- Language Support Badges -->
+        <div class="language-badges">
+            <div class="lang-badge active" data-lang="en">
+                English
+            </div>
+            <div class="lang-badge" data-lang="hi">
+                Hindi <span class="lang-native">हिंदी</span>
+            </div>
+            <div class="lang-badge" data-lang="gu">
+                Gujarati <span class="lang-native">ગુજરાતી</span>
+            </div>
         </div>
 
         <div id="errorMessage" class="error-message"></div>
 
         <div class="interview-card">
-            <div class="status-section">
-                <div id="statusIndicator" class="status-indicator"></div>
-                <span id="statusText" class="status-text">Ready to start</span>
-            </div>
-
-            <div class="visualizer-container">
-                <div id="audioVisualizer" class="audio-visualizer">
-                    <!-- Visualizer bars will be created by JS -->
+            <div class="status-row">
+                <div class="status-section">
+                    <div id="statusIndicator" class="status-indicator"></div>
+                    <span id="statusText" class="status-text">Ready to start</span>
+                </div>
+                <div id="detectedLanguage" class="detected-language" style="display: none;">
+                    <span class="lang-icon">🌍</span>
+                    <span id="langName">Detecting...</span>
                 </div>
             </div>
 
+            <div class="visualizer-container">
+                <!-- Audio level meter -->
+                <div class="audio-meter" id="audioMeter">
+                    <div class="meter-bar" style="height: 4px;"></div>
+                    <div class="meter-bar" style="height: 4px;"></div>
+                    <div class="meter-bar" style="height: 4px;"></div>
+                    <div class="meter-bar" style="height: 4px;"></div>
+                    <div class="meter-bar" style="height: 4px;"></div>
+                </div>
+                
+                <div id="audioVisualizer" class="audio-visualizer">
+                    <!-- Visualizer bars will be created by JS -->
+                </div>
+                
+                <div class="visualizer-label" id="visualizerLabel">AI Audio</div>
+            </div>
+
             <div class="transcript-section">
-                <div class="transcript-label">Live Transcript</div>
+                <div class="transcript-header">
+                    <div class="transcript-label">Live Transcript</div>
+                    <div class="transcript-actions">
+                        <button class="transcript-btn" onclick="clearTranscript()">Clear</button>
+                    </div>
+                </div>
                 <div id="transcript" class="transcript-box"></div>
             </div>
 
             <div class="controls">
                 <button id="startBtn" class="btn btn-start" onclick="startInterview()">
                     Start Interview
+                </button>
+                <button id="interruptBtn" class="btn btn-interrupt" onclick="interruptAI()" disabled>
+                    ✋ Interrupt
                 </button>
                 <button id="stopBtn" class="btn btn-stop" onclick="stopInterview()" disabled>
                     End Interview
@@ -290,9 +512,10 @@
             <h3>Instructions</h3>
             <ul>
                 <li>Click "Start Interview" and allow microphone access</li>
+                <li>Speak in <strong>English</strong>, <strong>Hindi</strong>, or <strong>Gujarati</strong> — the AI adapts automatically! <span class="feature-highlight">Multilingual</span></li>
                 <li>The AI interviewer will greet you and begin asking questions</li>
-                <li>Speak naturally - the AI will listen and respond in real-time</li>
-                <li>You can interrupt the AI at any time (barge-in supported)</li>
+                <li>Speak naturally — you can interrupt anytime <span class="feature-highlight">Barge-in</span></li>
+                <li>The AI will detect and match your language in real-time</li>
                 <li>Click "End Interview" when finished</li>
             </ul>
         </div>
