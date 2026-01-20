@@ -52,7 +52,7 @@ FORM_TEMPLATE = """
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
             padding: 40px 0;
         }
@@ -66,15 +66,15 @@ FORM_TEMPLATE = """
             overflow: hidden;
         }
         .job-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #1a1a1a;
             color: white;
             padding: 30px;
             text-align: center;
         }
         .job-details-section {
-            background: #f8f9fa;
+            background: #fafafa;
             padding: 25px;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid #333;
         }
         .job-detail-item {
             margin-bottom: 15px;
@@ -95,7 +95,7 @@ FORM_TEMPLATE = """
         }
         .skill-badge {
             display: inline-block;
-            background: #667eea;
+            background: #1a1a1a;
             color: white;
             padding: 4px 12px;
             border-radius: 15px;
@@ -103,14 +103,14 @@ FORM_TEMPLATE = """
             margin-right: 8px;
         }
         .skill-badge.required {
-            background: #dc3545;
+            background: #333;
         }
         .skill-badge.advanced {
-            background: #28a745;
+            background: #4a4a4a;
         }
         .skill-badge.intermediate {
-            background: #ffc107;
-            color: #333;
+            background: #6b6b6b;
+            color: white;
         }
         .form-section {
             padding: 30px;
@@ -124,34 +124,35 @@ FORM_TEMPLATE = """
             color: #dc3545;
         }
         .btn-submit {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #1a1a1a;
             border: none;
             padding: 12px 40px;
             font-weight: 600;
             transition: transform 0.2s;
         }
         .btn-submit:hover {
+            background: #333;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         .form-control:focus, .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border-color: #333;
+            box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.15);
         }
         .success-message {
             display: none;
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+            background: #f0f0f0;
+            border: 2px solid #333;
+            color: #1a1a1a;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
         }
         .error-message {
             display: none;
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+            background: #fff;
+            border: 2px solid #1a1a1a;
+            color: #1a1a1a;
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
@@ -171,7 +172,7 @@ FORM_TEMPLATE = """
             <!-- Job Details Section -->
             {% if has_job_details %}
             <div class="job-details-section">
-                <h4 class="mb-3" style="color: #667eea;">📋 Job Details</h4>
+                <h4 class="mb-3" style="color: #1a1a1a;">📋 Job Details</h4>
                 
                 <div class="job-detail-item">
                     <span class="job-detail-label">Description:</span>

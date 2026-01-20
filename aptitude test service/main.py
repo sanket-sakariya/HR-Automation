@@ -40,7 +40,7 @@ APTITUDE_TEST_TEMPLATE = """
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f5f5;
             min-height: 100vh;
             padding: 40px 0;
         }
@@ -54,15 +54,15 @@ APTITUDE_TEST_TEMPLATE = """
             overflow: hidden;
         }
         .test-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #1a1a1a;
             color: white;
             padding: 30px;
             text-align: center;
         }
         .test-info {
-            background: #f8f9fa;
+            background: white;
             padding: 20px;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 3px solid #000;
         }
         .test-info-item {
             display: inline-block;
@@ -72,14 +72,15 @@ APTITUDE_TEST_TEMPLATE = """
             padding: 30px;
         }
         .question-card {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
+            background: white;
+            border-left: 4px solid #000;
             padding: 20px;
             margin-bottom: 25px;
             border-radius: 8px;
+            border: 1px solid #000;
         }
         .question-number {
-            background: #667eea;
+            background: #000;
             color: white;
             padding: 5px 12px;
             border-radius: 20px;
@@ -90,7 +91,7 @@ APTITUDE_TEST_TEMPLATE = """
         .question-text {
             font-size: 1.1rem;
             font-weight: 500;
-            color: #333;
+            color: #000;
             margin: 15px 0;
         }
         .difficulty-badge {
@@ -100,19 +101,19 @@ APTITUDE_TEST_TEMPLATE = """
             margin-left: 10px;
         }
         .difficulty-simple {
-            background: #28a745;
+            background: #000;
             color: white;
         }
         .difficulty-medium {
-            background: #ffc107;
-            color: #333;
+            background: #000;
+            color: white;
         }
         .difficulty-hard {
-            background: #dc3545;
+            background: #000;
             color: white;
         }
         .category-badge {
-            background: #6c757d;
+            background: #000;
             color: white;
             padding: 4px 10px;
             border-radius: 12px;
@@ -122,14 +123,14 @@ APTITUDE_TEST_TEMPLATE = """
         .option-label {
             cursor: pointer;
             padding: 12px;
-            border: 2px solid #e9ecef;
+            border: 2px solid #000;
             border-radius: 8px;
             margin: 8px 0;
             transition: all 0.2s;
         }
         .option-label:hover {
-            background: #f8f9fa;
-            border-color: #667eea;
+            background: #f0f0f0;
+            border-color: #000;
         }
         .option-label input[type="radio"]:checked + .option-text {
             font-weight: 600;
@@ -147,15 +148,18 @@ APTITUDE_TEST_TEMPLATE = """
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
             font-size: 1.2rem;
             font-weight: 600;
-            color: #667eea;
+            color: #000;
+            border: 2px solid #000;
         }
         .timer.warning {
-            background: #fff3cd;
-            color: #856404;
+            background: white;
+            color: #000;
+            border-color: #000;
         }
         .timer.danger {
-            background: #f8d7da;
-            color: #721c24;
+            background: #000;
+            color: white;
+            border-color: #000;
             animation: pulse 1s infinite;
         }
         @keyframes pulse {
@@ -163,15 +167,16 @@ APTITUDE_TEST_TEMPLATE = """
             50% { transform: scale(1.05); }
         }
         .btn-submit {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000;
             border: none;
             padding: 12px 40px;
             font-weight: 600;
             transition: transform 0.2s;
         }
         .btn-submit:hover {
+            background: #333;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         .progress-indicator {
             padding: 15px 30px;
@@ -180,6 +185,9 @@ APTITUDE_TEST_TEMPLATE = """
             margin-bottom: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+        .progress-bar {
+            background: #000;
+        }
         .success-message, .error-message {
             display: none;
             padding: 15px;
@@ -187,14 +195,14 @@ APTITUDE_TEST_TEMPLATE = """
             margin-bottom: 20px;
         }
         .success-message {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+            background: #f0f0f0;
+            border: 2px solid #333;
+            color: #1a1a1a;
         }
         .error-message {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+            background: #fff;
+            border: 2px solid #1a1a1a;
+            color: #1a1a1a;
         }
         /* Fullscreen mode styles */
         body.fullscreen-active {
@@ -226,7 +234,7 @@ APTITUDE_TEST_TEMPLATE = """
             top: 0;
             left: 0;
             width: 100%;
-            background: #dc3545;
+            background: #000;
             color: white;
             text-align: center;
             padding: 10px;
@@ -259,11 +267,11 @@ APTITUDE_TEST_TEMPLATE = """
     </script>
 
     <!-- Fullscreen Entry Screen -->
-    <div id="fullscreenEntry" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); z-index: 99999; display: flex; align-items: center; justify-content: center;">
+    <div id="fullscreenEntry" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 99999; display: flex; align-items: center; justify-content: center;">
         <div style="text-align: center; color: white;">
             <h1 style="font-size: 3rem; margin-bottom: 30px;">🧠 Aptitude Test</h1>
             <p style="font-size: 1.5rem; margin-bottom: 40px;">{{ test_title }}</p>
-            <button onclick="startTest()" style="background: white; color: #667eea; border: none; padding: 20px 60px; font-size: 1.5rem; font-weight: 600; border-radius: 50px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.2s;">
+            <button onclick="startTest()" style="background: white; color: #000; border: none; padding: 20px 60px; font-size: 1.5rem; font-weight: 600; border-radius: 50px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.2s;">
                 🚀 Start Test in Fullscreen
             </button>
             <p style="margin-top: 30px; font-size: 1rem; opacity: 0.9;">⚠️ The test will open in fullscreen mode. Do not exit fullscreen during the test.</p>
@@ -819,7 +827,7 @@ LOGIN_FORM_TEMPLATE = """
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: white;
             min-height: 100vh;
             padding: 40px 0;
         }
@@ -832,7 +840,7 @@ LOGIN_FORM_TEMPLATE = """
             margin: 0 auto;
         }
         .login-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000;
             color: white;
             padding: 20px;
             border-radius: 10px;
@@ -840,19 +848,20 @@ LOGIN_FORM_TEMPLATE = """
             margin-bottom: 30px;
         }
         .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border-color: #000;
+            box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.15);
         }
         .btn-login {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000;
             border: none;
             padding: 12px 30px;
             font-weight: 600;
             transition: transform 0.2s;
         }
         .btn-login:hover {
+            background: #333;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         .success-message, .error-message {
             display: none;
@@ -861,14 +870,14 @@ LOGIN_FORM_TEMPLATE = """
             margin-bottom: 20px;
         }
         .success-message {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
+            background: #f0f0f0;
+            border: 2px solid #333;
+            color: #1a1a1a;
         }
         .error-message {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
+            background: #fff;
+            border: 2px solid #1a1a1a;
+            color: #1a1a1a;
         }
     </style>
 </head>
@@ -1130,7 +1139,7 @@ def index():
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <style>
             body {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: white;
                 min-height: 100vh;
                 padding: 40px 0;
             }
@@ -1141,19 +1150,19 @@ def index():
                 box-shadow: 0 10px 40px rgba(0,0,0,0.1);
             }
             .service-title {
-                color: #667eea;
+                color: #000;
                 margin-bottom: 20px;
             }
             .code-block {
-                background: #f8f9fa;
-                border-left: 4px solid #667eea;
+                background: #fafafa;
+                border-left: 4px solid #000;
                 padding: 15px;
                 margin: 15px 0;
                 border-radius: 5px;
                 overflow-x: auto;
             }
             .badge-custom {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: #000;
             }
         </style>
     </head>
