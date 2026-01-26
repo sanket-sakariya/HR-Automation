@@ -1032,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     console.log('🚀 Multilingual AI Interviewer - Professional Grade Audio');
     console.log('📝 Supported languages: English, Hindi (हिंदी), Gujarati (ગુજરાతી)');
-    console.log('Features: Rate-limited Input (100ms), Initial Buffering (3 chunks), Jitter Buffer (100ms), Barge-in');
+    console.log('Features: VAD Silence Detection, Rate-limited Input (50ms), Initial Buffering (2 chunks), Jitter Buffer (50ms), Barge-in');
 });
 
 // Handle page unload
@@ -1041,3 +1041,4 @@ window.addEventListener('beforeunload', () => {
         stopInterview();
     }
 });
+

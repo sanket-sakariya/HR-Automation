@@ -92,12 +92,13 @@ COMMUNICATION STYLE:
 Remember: This is a VOICE conversation. Keep responses concise and natural. No markdown, bullet points, or text formatting - speak as you would in a real interview. Sound human, not robotic. Most importantly, SPEAK CLEARLY AND AT A COMFORTABLE PACE."""
 
 # Generation config for audio output
+# Available voices: Puck, Charon, Kore, Fenrir, Aoede, Leda, Orus, Zephyr
 GENERATION_CONFIG = {
     "response_modalities": ["AUDIO"],
     "speech_config": {
         "voice_config": {
             "prebuilt_voice_config": {
-                "voice_name": "Kore"  # Good for multilingual, natural sounding
+                "voice_name": "Aoede"  # Soft, warm voice - change to any: Puck, Charon, Kore, Fenrir, Aoede, Leda, Orus, Zephyr
             }
         }
     }
