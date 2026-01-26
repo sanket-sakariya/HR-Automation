@@ -160,6 +160,14 @@ async def websocket_endpoint(websocket: WebSocket):
     receive_task = None
     send_task = None
     
+    # Token usage counters
+    token_usage = {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "audio_input_seconds": 0.0,
+        "audio_output_seconds": 0.0
+    }
+    
     try:
         # Connect to Gemini WebSocket
         import websockets
@@ -189,6 +197,9 @@ async def websocket_endpoint(websocket: WebSocket):
         await gemini_ws.send(json.dumps(setup_message))
         print("📤 Sent BidiGenerateContentSetup to Gemini")
         
+        # Count system instruction tokens (approximate: ~4 chars per token)
+        token_usage["input_tokens"] += len(SYSTEM_INSTRUCTION) // 4
+        
         # Wait for setup complete response
         setup_response = await asyncio.wait_for(gemini_ws.recv(), timeout=30)
         setup_data = json.loads(setup_response)
@@ -213,6 +224,9 @@ async def websocket_endpoint(websocket: WebSocket):
             await gemini_ws.send(json.dumps(initial_prompt))
             print("📤 Sent initial prompt to trigger AI greeting")
             
+            # Count initial prompt tokens
+            token_usage["input_tokens"] += len("Please start the interview with a warm greeting and introduce yourself.") // 4
+            
         else:
             print(f"⚠️ Unexpected setup response: {setup_data}")
             await websocket.send_json({"type": "error", "message": "Setup failed"})
@@ -221,6 +235,7 @@ async def websocket_endpoint(websocket: WebSocket):
         # Create tasks for bidirectional communication
         async def receive_from_gemini():
             """Receive audio/events from Gemini and forward to frontend"""
+            nonlocal token_usage
             try:
                 async for message in gemini_ws:
                     data = json.loads(message)
@@ -259,6 +274,11 @@ async def websocket_endpoint(websocket: WebSocket):
                                     audio_b64 = inline_data.get("data", "")
                                     if audio_b64:
                                         audio_bytes = len(audio_b64) * 3 // 4  # Approximate decoded size
+                                        # Estimate audio duration (24kHz, 16-bit mono = 48000 bytes/sec)
+                                        audio_duration = audio_bytes / 48000
+                                        token_usage["audio_output_seconds"] += audio_duration
+                                        # Approximate output tokens (Gemini uses ~25 tokens per second of audio)
+                                        token_usage["output_tokens"] += int(audio_duration * 25)
                                         print(f"🔊 Audio chunk: {audio_bytes} bytes, mime: {mime_type}")
                                         # Send audio chunk to frontend
                                         await websocket.send_json({
@@ -270,6 +290,8 @@ async def websocket_endpoint(websocket: WebSocket):
                             # Handle text (for transcript display)
                             if "text" in part:
                                 text = part["text"]
+                                # Count output tokens (approximate: ~4 chars per token)
+                                token_usage["output_tokens"] += len(text) // 4
                                 print(f"📝 AI: {text[:80]}...")
                                 await websocket.send_json({
                                     "type": "transcript",
@@ -288,6 +310,7 @@ async def websocket_endpoint(websocket: WebSocket):
         
         async def send_to_gemini():
             """Receive audio/commands from frontend and forward to Gemini"""
+            nonlocal token_usage
             try:
                 while True:
                     # Receive from frontend
@@ -297,6 +320,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     if msg_type == "audio":
                         # Forward audio chunk to Gemini
                         audio_b64 = data.get("data", "")
+                        
+                        # Count input audio tokens
+                        if audio_b64:
+                            audio_bytes = len(audio_b64) * 3 // 4  # Approximate decoded size
+                            # Estimate audio duration (16kHz, 16-bit mono = 32000 bytes/sec)
+                            audio_duration = audio_bytes / 32000
+                            token_usage["audio_input_seconds"] += audio_duration
+                            # Approximate input tokens (Gemini uses ~25 tokens per second of audio)
+                            token_usage["input_tokens"] += int(audio_duration * 25)
                         
                         realtime_input = {
                             "realtimeInput": {
@@ -362,6 +394,18 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.close()
         except:
             pass
+        
+        # Print token usage summary
+        print("\n" + "=" * 60)
+        print("📊 INTERVIEW SESSION TOKEN USAGE SUMMARY")
+        print("=" * 60)
+        print(f"📥 Input Tokens:  {token_usage['input_tokens']:,}")
+        print(f"📤 Output Tokens: {token_usage['output_tokens']:,}")
+        print(f"🔢 Total Tokens:  {token_usage['input_tokens'] + token_usage['output_tokens']:,}")
+        print("-" * 60)
+        print(f"🎤 Audio Input:   {token_usage['audio_input_seconds']:.2f} seconds")
+        print(f"🔊 Audio Output:  {token_usage['audio_output_seconds']:.2f} seconds")
+        print("=" * 60 + "\n")
         
         print("👋 Session ended")
 
