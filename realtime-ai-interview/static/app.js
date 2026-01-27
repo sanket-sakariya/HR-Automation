@@ -1,75 +1,73 @@
-﻿/**
- * Real-time Multilingual AI Interviewer - Professional Grade Audio
+/**
+ * Live AI Interview - Professional Grade Audio & Video
+ * =====================================================
  * 
- * ARCHITECTURE:
- * =============
- * Model: gemini-2.5-flash-native-audio-preview-12-2025
+ * Features:
+ * - Live camera feed with mirror effect
+ * - 16kHz 16-bit PCM mono audio capture
+ * - Real-time transcription display
+ * - Interim (ghost) text support
+ * - WebSocket communication with Gemini API proxy
+ * - Professional status indicators
  * 
- * AUDIO PIPELINE:
+ * Audio Pipeline:
  * ===============
- * INPUT (User → Gemini):
- *   Browser Mic (44.1kHz/48kHz Float32) → Linear Interpolation Resampler → 16kHz Int16 → Base64 → WebSocket
- * 
- * OUTPUT (Gemini → User):
- *   WebSocket → Base64 → 24kHz Int16 → Linear Interpolation Resampler → Browser Rate → Jitter Buffer → Speaker
- * 
- * KEY FEATURES:
- * - Precision Linear Interpolation Resampling (both directions)
- * - 50-100ms Jitter Buffer for gapless playback
- * - Proper barge-in with audioContext.suspend() and queue clearing
- * - Zero server-side audio processing (transparent proxy)
+ * INPUT:  Browser Mic (44.1/48kHz) → Linear Resampler → 16kHz Int16 → Base64 → WebSocket
+ * OUTPUT: WebSocket → Base64 → 24kHz Int16 → Linear Resampler → Browser Rate → Speaker
  */
 
 // ============== Configuration ==============
-const GEMINI_INPUT_RATE = 16000;      // What Gemini expects from us
-const GEMINI_OUTPUT_RATE = 24000;     // What Gemini sends to us
-const JITTER_BUFFER_MS = 100;         // 100ms look-ahead buffer for smooth playback
-const INITIAL_BUFFER_CHUNKS = 3;      // Wait for 3 chunks before starting playback (prevents fast start)
-const SAFETY_MARGIN_MS = 50;          // Safety margin when resetting playback
-const INPUT_CHUNK_INTERVAL_MS = 100;  // Send input chunks every 100ms (rate limiting)
-const OUTPUT_PROCESS_INTERVAL_MS = 20; // Process output queue every 20ms (rate limiting output)
-const NUM_VISUALIZER_BARS = 32;
+const GEMINI_INPUT_RATE = 16000;      // What Gemini expects
+const GEMINI_OUTPUT_RATE = 24000;     // What Gemini sends
+const JITTER_BUFFER_MS = 100;         // Look-ahead buffer for smooth playback
+const INITIAL_BUFFER_CHUNKS = 3;      // Wait for N chunks before playing
+const INPUT_CHUNK_INTERVAL_MS = 100;  // Send input every 100ms
+const OUTPUT_PROCESS_INTERVAL_MS = 20; // Process output every 20ms
 
 // ============== State ==============
 let websocket = null;
-let audioStreamer = null;            // Professional AudioStreamer instance
-let audioRecorder = null;            // Professional AudioRecorder instance
+let audioStreamer = null;
+let audioRecorder = null;
+let videoStream = null;
 let isInterviewActive = false;
 let isAISpeaking = false;
-let currentLanguage = 'en';
-let detectedLanguage = null;
+let sessionStartTime = null;
+let timerInterval = null;
+let selectedCameraId = null;
+let availableCameras = [];
 
 // ============== DOM Elements ==============
+const videoFeed = document.getElementById('videoFeed');
+const videoPlaceholder = document.getElementById('videoPlaceholder');
+const videoOverlay = document.getElementById('videoOverlay');
+const recordingIndicator = document.getElementById('recordingIndicator');
+const audioLevel = document.getElementById('audioLevel');
+const liveBadge = document.getElementById('liveBadge');
+const sessionTimer = document.getElementById('sessionTimer');
 const startBtn = document.getElementById('startBtn');
 const stopBtn = document.getElementById('stopBtn');
 const interruptBtn = document.getElementById('interruptBtn');
-const statusIndicator = document.getElementById('statusIndicator');
-const statusText = document.getElementById('statusText');
+const micStatus = document.getElementById('micStatus');
+const connectionStatus = document.getElementById('connectionStatus');
+const aiStatus = document.getElementById('aiStatus');
+const aiSpeakingBar = document.getElementById('aiSpeakingBar');
+const errorBanner = document.getElementById('errorBanner');
+const errorText = document.getElementById('errorText');
 const transcript = document.getElementById('transcript');
-const errorMessage = document.getElementById('errorMessage');
-const audioVisualizer = document.getElementById('audioVisualizer');
-const detectedLanguageEl = document.getElementById('detectedLanguage');
-const langNameEl = document.getElementById('langName');
-const audioMeter = document.getElementById('audioMeter');
-const visualizerLabel = document.getElementById('visualizerLabel');
+const transcriptPlaceholder = document.getElementById('transcriptPlaceholder');
+const transcriptContainer = document.getElementById('transcriptContainer');
+const interimTranscript = document.getElementById('interimTranscript');
 const languageBadges = document.querySelectorAll('.lang-badge');
+const cameraSelect = document.getElementById('cameraSelect');
+const refreshCamerasBtn = document.getElementById('refreshCameras');
 
 // ======================================================================
-// LINEAR INTERPOLATION RESAMPLER (Shared Utility)
+// LINEAR INTERPOLATION RESAMPLER
 // ======================================================================
 
 class LinearResampler {
-    /**
-     * Resample audio using high-quality linear interpolation
-     * @param {Float32Array} input - Input samples
-     * @param {number} inputRate - Input sample rate
-     * @param {number} outputRate - Output sample rate
-     * @returns {Float32Array} - Resampled output
-     */
     static resample(input, inputRate, outputRate) {
-        if (inputRate === outputRate) {
-            return input;
-        }
+        if (inputRate === outputRate) return input;
         
         const ratio = inputRate / outputRate;
         const outputLength = Math.floor(input.length / ratio);
@@ -80,17 +78,12 @@ class LinearResampler {
             const srcIndexFloor = Math.floor(srcIndex);
             const srcIndexCeil = Math.min(srcIndexFloor + 1, input.length - 1);
             const fraction = srcIndex - srcIndexFloor;
-            
-            // Linear interpolation: y = y0 + (y1 - y0) * t
             output[i] = input[srcIndexFloor] + (input[srcIndexCeil] - input[srcIndexFloor]) * fraction;
         }
         
         return output;
     }
     
-    /**
-     * Convert Float32 [-1, 1] to Int16 [-32768, 32767]
-     */
     static float32ToInt16(float32Array) {
         const int16Array = new Int16Array(float32Array.length);
         for (let i = 0; i < float32Array.length; i++) {
@@ -100,9 +93,6 @@ class LinearResampler {
         return int16Array;
     }
     
-    /**
-     * Convert Int16 [-32768, 32767] to Float32 [-1, 1]
-     */
     static int16ToFloat32(int16Array) {
         const float32Array = new Float32Array(int16Array.length);
         for (let i = 0; i < int16Array.length; i++) {
@@ -113,7 +103,7 @@ class LinearResampler {
 }
 
 // ======================================================================
-// AUDIO RECORDER CLASS (Microphone → Gemini) WITH RATE LIMITING
+// AUDIO RECORDER CLASS (Microphone → Gemini)
 // ======================================================================
 
 class AudioRecorder {
@@ -125,16 +115,12 @@ class AudioRecorder {
         this.micSource = null;
         this.inputSampleRate = 44100;
         this.isRecording = false;
-        
-        // Rate limiting - accumulate samples and send at fixed intervals
         this.sampleBuffer = [];
         this.sendInterval = null;
-        this.lastSendTime = 0;
     }
     
     async start() {
         try {
-            // Request microphone with optimal settings
             this.mediaStream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     channelCount: 1,
@@ -144,42 +130,31 @@ class AudioRecorder {
                 }
             });
             
-            // Create AudioContext - browser will use its native rate
             this.audioContext = new AudioContext();
             this.inputSampleRate = this.audioContext.sampleRate;
             
             console.log(`🎤 Microphone: ${this.inputSampleRate}Hz → Resampling to ${GEMINI_INPUT_RATE}Hz`);
-            console.log(`🎤 Rate limiting: Sending chunks every ${INPUT_CHUNK_INTERVAL_MS}ms`);
             
-            // Create source from microphone
             this.micSource = this.audioContext.createMediaStreamSource(this.mediaStream);
-            
-            // ScriptProcessor for capturing audio (2048 samples for lower latency)
             this.scriptProcessor = this.audioContext.createScriptProcessor(2048, 1, 1);
             
-            // Accumulate samples instead of sending immediately
             this.scriptProcessor.onaudioprocess = (event) => {
                 if (!this.isRecording) return;
                 
                 const inputData = event.inputBuffer.getChannelData(0);
-                
-                // Calculate RMS for visualization
                 let sum = 0;
                 for (let i = 0; i < inputData.length; i++) {
                     sum += inputData[i] * inputData[i];
                 }
                 const rms = Math.sqrt(sum / inputData.length);
                 
-                // Store samples in buffer (copy to avoid reference issues)
                 this.sampleBuffer.push({
                     samples: new Float32Array(inputData),
                     rms: rms
                 });
             };
             
-            // Connect: Mic → Processor → Muted output
             this.micSource.connect(this.scriptProcessor);
-            
             const muteGain = this.audioContext.createGain();
             muteGain.gain.value = 0;
             this.scriptProcessor.connect(muteGain);
@@ -187,29 +162,19 @@ class AudioRecorder {
             
             this.isRecording = true;
             this.sampleBuffer = [];
-            this.lastSendTime = performance.now();
             
-            // Start rate-limited sending interval
             this.sendInterval = setInterval(() => this._sendBufferedAudio(), INPUT_CHUNK_INTERVAL_MS);
             
-            console.log('🎤 Audio recording started with rate limiting');
-            
             return this.inputSampleRate;
-            
         } catch (error) {
             console.error('❌ Error starting audio recording:', error);
             throw error;
         }
     }
     
-    /**
-     * Send accumulated audio at fixed intervals (rate limiting)
-     * @private
-     */
     _sendBufferedAudio() {
         if (!this.isRecording || this.sampleBuffer.length === 0) return;
         
-        // Concatenate all buffered samples
         const totalLength = this.sampleBuffer.reduce((sum, b) => sum + b.samples.length, 0);
         const combined = new Float32Array(totalLength);
         let offset = 0;
@@ -221,27 +186,17 @@ class AudioRecorder {
             maxRms = Math.max(maxRms, buffer.rms);
         }
         
-        // Clear buffer
         this.sampleBuffer = [];
         
-        // Resample to 16kHz using linear interpolation
-        const resampled = LinearResampler.resample(
-            combined, 
-            this.inputSampleRate, 
-            GEMINI_INPUT_RATE
-        );
-        
-        // Convert to Int16
+        const resampled = LinearResampler.resample(combined, this.inputSampleRate, GEMINI_INPUT_RATE);
         const int16Data = LinearResampler.float32ToInt16(resampled);
         
-        // Send to callback
         this.onAudioData(int16Data, maxRms);
     }
     
     stop() {
         this.isRecording = false;
         
-        // Clear send interval
         if (this.sendInterval) {
             clearInterval(this.sendInterval);
             this.sendInterval = null;
@@ -274,7 +229,7 @@ class AudioRecorder {
 }
 
 // ======================================================================
-// AUDIO STREAMER CLASS (Gemini → Speaker) WITH QUEUE-BASED RATE LIMITING
+// AUDIO STREAMER CLASS (Gemini → Speaker)
 // ======================================================================
 
 class AudioStreamer {
@@ -282,54 +237,35 @@ class AudioStreamer {
         this.audioContext = null;
         this.gainNode = null;
         this.outputSampleRate = 44100;
-        
-        // Queue-based rate limiting - chunks go into queue, processed at fixed rate
-        this.chunkQueue = [];              // Queue of resampled chunks waiting to be scheduled
-        this.processInterval = null;       // Interval for processing queue
-        this.isProcessing = false;         // Prevent re-entry
-        
-        // Initial Buffering State
-        this.isBuffering = true;           // Start in buffering mode
-        this.bufferingStartTime = 0;       // Track when buffering started
-        
-        // Playback scheduling
+        this.chunkQueue = [];
+        this.processInterval = null;
+        this.isProcessing = false;
+        this.isBuffering = true;
+        this.bufferingStartTime = 0;
         this.nextStartTime = 0;
-        this.scheduledSources = [];        // Track scheduled sources for interruption
+        this.scheduledSources = [];
         this.isPlaying = false;
-        
-        // Statistics
         this.chunksReceived = 0;
         this.chunksScheduled = 0;
-        this.underruns = 0;
     }
     
     async initialize() {
-        // Create AudioContext - browser chooses optimal rate
         this.audioContext = new AudioContext();
         this.outputSampleRate = this.audioContext.sampleRate;
         
         console.log(`🔊 Playback: ${GEMINI_OUTPUT_RATE}Hz → Resampling to ${this.outputSampleRate}Hz`);
-        console.log(`🔊 Initial Buffer: Wait for ${INITIAL_BUFFER_CHUNKS} chunks before playing`);
-        console.log(`🔊 Jitter Buffer: ${JITTER_BUFFER_MS}ms look-ahead`);
-        console.log(`🔊 Output Rate Limiting: Process queue every ${OUTPUT_PROCESS_INTERVAL_MS}ms`);
         
-        // Create gain node for volume control and smooth interruption
         this.gainNode = this.audioContext.createGain();
         this.gainNode.gain.value = 1.0;
         this.gainNode.connect(this.audioContext.destination);
         
-        // Resume context (required after user interaction)
         if (this.audioContext.state === 'suspended') {
             await this.audioContext.resume();
         }
         
-        // Reset all state
         this._resetState();
-        
-        // Start the queue processor
         this._startQueueProcessor();
         
-        console.log('🔊 Audio streamer initialized');
         return this.outputSampleRate;
     }
     
@@ -342,14 +278,10 @@ class AudioStreamer {
         this.bufferingStartTime = 0;
         this.chunksReceived = 0;
         this.chunksScheduled = 0;
-        this.underruns = 0;
     }
     
     _startQueueProcessor() {
-        // Process queue at fixed intervals to prevent burst scheduling
-        if (this.processInterval) {
-            clearInterval(this.processInterval);
-        }
+        if (this.processInterval) clearInterval(this.processInterval);
         this.processInterval = setInterval(() => this._processQueue(), OUTPUT_PROCESS_INTERVAL_MS);
     }
     
@@ -360,59 +292,38 @@ class AudioStreamer {
         }
     }
     
-    /**
-     * Process chunks from the queue at a controlled rate
-     * @private
-     */
     _processQueue() {
-        if (this.isProcessing || !this.audioContext || this.audioContext.state === 'closed') {
-            return;
-        }
+        if (this.isProcessing || !this.audioContext || this.audioContext.state === 'closed') return;
         
         this.isProcessing = true;
         
         try {
-            // Still in initial buffering mode?
             if (this.isBuffering) {
                 const bufferTime = this.bufferingStartTime > 0 ? performance.now() - this.bufferingStartTime : 0;
                 const hasEnoughChunks = this.chunkQueue.length >= INITIAL_BUFFER_CHUNKS;
                 const hasWaitedLongEnough = this.bufferingStartTime > 0 && bufferTime >= 150;
                 
                 if (hasEnoughChunks || hasWaitedLongEnough) {
-                    console.log(`🔊 Initial buffer ready: ${this.chunkQueue.length} chunks in ${bufferTime.toFixed(0)}ms`);
                     this.isBuffering = false;
-                    
-                    // Set initial start time with jitter buffer
                     const currentTime = this.audioContext.currentTime;
                     this.nextStartTime = currentTime + (JITTER_BUFFER_MS / 1000);
                     
-                    // Schedule all buffered chunks at once
-                    console.log(`🔊 Scheduling ${this.chunkQueue.length} buffered chunks starting at +${JITTER_BUFFER_MS}ms`);
                     while (this.chunkQueue.length > 0) {
                         const chunk = this.chunkQueue.shift();
                         this._scheduleChunkInternal(chunk);
                     }
                     this.isPlaying = true;
                 }
-                // If still buffering, don't process anything yet
                 this.isProcessing = false;
                 return;
             }
             
-            // Normal mode - process ONE chunk per interval to prevent burst
             if (this.chunkQueue.length > 0) {
                 const currentTime = this.audioContext.currentTime;
-                
-                // Only schedule if we need more audio scheduled ahead
-                // This prevents scheduling too many chunks at once
                 const bufferAhead = this.nextStartTime - currentTime;
                 
-                // Keep ~200ms of audio scheduled ahead
                 if (bufferAhead < 0.2) {
-                    // Check for underrun
                     if (this.nextStartTime <= currentTime && this.isPlaying) {
-                        this.underruns++;
-                        console.warn(`⚠️ Buffer underrun #${this.underruns}, rebuilding buffer`);
                         this.nextStartTime = currentTime + (JITTER_BUFFER_MS / 1000);
                     }
                     
@@ -426,186 +337,105 @@ class AudioStreamer {
         }
     }
     
-    /**
-     * Reset to buffering mode (for new AI response)
-     */
     resetBuffering() {
         this.chunkQueue = [];
         this.isBuffering = true;
         this.bufferingStartTime = 0;
         this.nextStartTime = 0;
         this.isPlaying = false;
-        console.log('🔊 Reset to buffering mode');
     }
     
-    /**
-     * Add audio chunk to the queue
-     * @param {string} base64Data - Base64 encoded 24kHz Int16 PCM
-     * @returns {Float32Array} - Original samples for visualization
-     */
     addChunk(base64Data) {
-        if (!this.audioContext || this.audioContext.state === 'closed') {
-            return null;
-        }
+        if (!this.audioContext || this.audioContext.state === 'closed') return null;
         
         this.chunksReceived++;
         
-        // Decode base64 → bytes → Int16
         const binaryString = atob(base64Data);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);
         }
         const int16Data = new Int16Array(bytes.buffer);
-        
-        // Convert Int16 → Float32
         const float32Data = LinearResampler.int16ToFloat32(int16Data);
+        const resampled = LinearResampler.resample(float32Data, GEMINI_OUTPUT_RATE, this.outputSampleRate);
         
-        // Resample 24kHz → browser rate using linear interpolation
-        const resampled = LinearResampler.resample(
-            float32Data,
-            GEMINI_OUTPUT_RATE,
-            this.outputSampleRate
-        );
-        
-        // Add to queue - will be processed by the interval
         this.chunkQueue.push(resampled);
         
-        // Start buffering timer on first chunk
         if (this.isBuffering && this.bufferingStartTime === 0) {
             this.bufferingStartTime = performance.now();
-            console.log('🔊 Started initial buffering...');
         }
         
-        return float32Data;  // Return original for visualization
+        return float32Data;
     }
     
-    /**
-     * Internal chunk scheduling
-     * @param {Float32Array} samples - Resampled audio samples
-     * @private
-     */
     _scheduleChunkInternal(samples) {
-        // Resume context if suspended
         if (this.audioContext.state === 'suspended') {
             this.audioContext.resume();
         }
         
-        // Create audio buffer at browser's sample rate
-        const audioBuffer = this.audioContext.createBuffer(
-            1, 
-            samples.length, 
-            this.outputSampleRate
-        );
+        const audioBuffer = this.audioContext.createBuffer(1, samples.length, this.outputSampleRate);
         audioBuffer.getChannelData(0).set(samples);
         
-        // Calculate chunk duration
         const duration = samples.length / this.outputSampleRate;
         const currentTime = this.audioContext.currentTime;
         
-        // Ensure nextStartTime is valid
         if (this.nextStartTime < currentTime) {
             this.nextStartTime = currentTime + 0.01;
         }
         
-        // Create buffer source
         const source = this.audioContext.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(this.gainNode);
-        
-        // Schedule playback at exact time
         source.start(this.nextStartTime);
         
-        // Track source for potential interruption
         this.scheduledSources.push({
             source: source,
             startTime: this.nextStartTime,
             endTime: this.nextStartTime + duration
         });
         
-        // Clean up finished sources
         this.scheduledSources = this.scheduledSources.filter(s => s.endTime > currentTime);
-        
-        // Update nextStartTime for next chunk
         this.nextStartTime += duration;
         
-        // Prevent buffer from growing too large (max 2 seconds ahead)
         if (this.nextStartTime > currentTime + 2) {
-            console.warn('⚠️ Buffer overflow, resetting to prevent latency');
-            this.nextStartTime = currentTime + (SAFETY_MARGIN_MS / 1000);
+            this.nextStartTime = currentTime + 0.05;
         }
         
         this.chunksScheduled++;
     }
     
-    /**
-     * Interrupt playback immediately (for barge-in)
-     */
     async interrupt() {
         if (!this.audioContext) return;
         
-        console.log(`🛑 Interrupting: ${this.scheduledSources.length} scheduled, ${this.chunkQueue.length} queued`);
-        
-        // 1. Clear the queue first!
         this.chunkQueue = [];
         this.isBuffering = true;
         this.bufferingStartTime = 0;
         
-        // 2. Immediately fade out to prevent click
         const currentTime = this.audioContext.currentTime;
         this.gainNode.gain.setTargetAtTime(0, currentTime, 0.015);
         
-        // 3. Stop all scheduled sources
         for (const scheduled of this.scheduledSources) {
-            try {
-                scheduled.source.stop();
-            } catch (e) {
-                // Source may have already finished
-            }
+            try { scheduled.source.stop(); } catch (e) {}
         }
         this.scheduledSources = [];
         
-        // 4. Suspend audio context to stop all processing
         if (this.audioContext.state === 'running') {
             await this.audioContext.suspend();
         }
         
-        // 5. Resume after brief pause
         setTimeout(async () => {
             if (this.audioContext && this.audioContext.state === 'suspended') {
                 await this.audioContext.resume();
             }
-            // Reset gain
             if (this.gainNode) {
                 this.gainNode.gain.value = 1.0;
             }
         }, 30);
         
-        // 6. Reset scheduling state
         this.nextStartTime = 0;
         this.isPlaying = false;
-        
-        console.log('🛑 Playback interrupted and cleared');
     }
     
-    /**
-     * Get current playback statistics
-     */
-    getStats() {
-        return {
-            chunksReceived: this.chunksReceived,
-            chunksScheduled: this.chunksScheduled,
-            queueLength: this.chunkQueue.length,
-            underruns: this.underruns,
-            scheduledSources: this.scheduledSources.length,
-            isBuffering: this.isBuffering,
-            bufferAhead: this.nextStartTime - (this.audioContext?.currentTime || 0)
-        };
-    }
-    
-    /**
-     * Stop and clean up streamer
-     */
     stop() {
         this._stopQueueProcessor();
         this.interrupt();
@@ -617,138 +447,345 @@ class AudioStreamer {
         this.audioContext = null;
         this.gainNode = null;
         this._resetState();
+    }
+}
+
+// ======================================================================
+// VIDEO/CAMERA FUNCTIONS
+// ======================================================================
+
+// Enumerate all available video input devices (cameras)
+async function enumerateCameras() {
+    try {
+        console.log('📷 Enumerating available cameras...');
         
-        console.log(`🔊 Streamer stopped. Stats: ${this.chunksScheduled}/${this.chunksReceived} chunks, ${this.underruns} underruns`);
+        // First request temporary camera access to get full device labels
+        // (Without this, device labels may be empty for privacy reasons)
+        let tempStream = null;
+        try {
+            tempStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        } catch (e) {
+            console.log('📷 Could not get temp stream for labels, using partial info');
+        }
+        
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        // Release temporary stream
+        if (tempStream) {
+            tempStream.getTracks().forEach(track => track.stop());
+        }
+        
+        availableCameras = videoDevices;
+        console.log(`📷 Found ${videoDevices.length} camera(s):`, videoDevices.map(d => d.label || d.deviceId));
+        
+        return videoDevices;
+    } catch (error) {
+        console.error('❌ Error enumerating cameras:', error);
+        return [];
     }
 }
 
-// ======================================================================
-// VISUALIZER FUNCTIONS
-// ======================================================================
-
-function initVisualizer() {
-    audioVisualizer.innerHTML = '';
-    for (let i = 0; i < NUM_VISUALIZER_BARS; i++) {
-        const bar = document.createElement('div');
-        bar.className = 'visualizer-bar';
-        bar.style.height = '4px';
-        audioVisualizer.appendChild(bar);
-    }
-}
-
-function updateVisualizer(values) {
-    const bars = audioVisualizer.children;
-    const step = Math.max(1, Math.floor(values.length / bars.length));
+// Populate the camera dropdown with available devices
+async function populateCameraDropdown() {
+    const cameras = await enumerateCameras();
     
-    for (let i = 0; i < bars.length; i++) {
-        const value = values[i * step] || 0;
-        const height = Math.max(4, value * 70);
-        bars[i].style.height = `${height}px`;
-    }
-}
-
-function resetVisualizer() {
-    const bars = audioVisualizer.children;
-    for (let i = 0; i < bars.length; i++) {
-        bars[i].style.height = '4px';
-    }
-}
-
-function updateAudioMeter(level) {
-    const meterBars = audioMeter.querySelectorAll('.meter-bar');
-    const normalizedLevel = Math.min(1, level * 2);
+    // Clear existing options except the first one
+    cameraSelect.innerHTML = '<option value="">Select Camera...</option>';
     
-    meterBars.forEach((bar, i) => {
-        const threshold = (i + 1) / meterBars.length;
-        if (normalizedLevel >= threshold) {
-            bar.classList.add('active');
-            bar.style.height = `${4 + (normalizedLevel - threshold) * 16}px`;
+    if (cameras.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No cameras found';
+        option.disabled = true;
+        cameraSelect.appendChild(option);
+        return;
+    }
+    
+    cameras.forEach((camera, index) => {
+        const option = document.createElement('option');
+        option.value = camera.deviceId;
+        
+        // Use the label if available, otherwise create a generic name
+        let label = camera.label || `Camera ${index + 1}`;
+        
+        // Identify common camera types for better UX
+        if (label.toLowerCase().includes('virtual')) {
+            label = `🖥️ ${label}`;
+        } else if (label.toLowerCase().includes('droid') || label.toLowerCase().includes('phone')) {
+            label = `📱 ${label}`;
+        } else if (label.toLowerCase().includes('usb')) {
+            label = `🔌 ${label}`;
+        } else if (label.toLowerCase().includes('obs') || label.toLowerCase().includes('stream')) {
+            label = `🎬 ${label}`;
+        } else if (label.toLowerCase().includes('webcam') || label.toLowerCase().includes('integrated') || label.toLowerCase().includes('front')) {
+            label = `📹 ${label}`;
         } else {
-            bar.classList.remove('active');
-            bar.style.height = '4px';
+            label = `📷 ${label}`;
         }
+        
+        option.textContent = label;
+        cameraSelect.appendChild(option);
     });
-}
-
-function animateVisualizerForAudio(samples) {
-    let rms = 0.3;
     
-    if (samples && samples.length > 0) {
-        let sum = 0;
-        for (let i = 0; i < samples.length; i++) {
-            sum += samples[i] * samples[i];
-        }
-        rms = Math.sqrt(sum / samples.length);
+    // Auto-select the first camera if none selected
+    if (!selectedCameraId && cameras.length > 0) {
+        selectedCameraId = cameras[0].deviceId;
+        cameraSelect.value = selectedCameraId;
+    } else if (selectedCameraId) {
+        cameraSelect.value = selectedCameraId;
     }
     
-    const vizData = Array(NUM_VISUALIZER_BARS).fill(0).map((_, i) => {
-        const phase = Date.now() / 80 + i * 0.35;
-        const wave = Math.sin(phase) * 0.3 + Math.cos(phase * 0.7) * 0.2;
-        return Math.max(0.08, (rms * 5) + wave * 0.5);
-    });
-    updateVisualizer(vizData);
+    console.log('📷 Camera dropdown populated');
+}
+
+// Refresh the camera list (called by refresh button)
+async function refreshCameraList() {
+    console.log('🔄 Refreshing camera list...');
+    const btn = refreshCamerasBtn;
+    btn.classList.add('loading');
+    btn.disabled = true;
+    
+    await populateCameraDropdown();
+    
+    // Add slight delay for visual feedback
+    setTimeout(() => {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+    }, 500);
+}
+
+// Handle camera selection change
+function handleCameraChange(event) {
+    const newCameraId = event.target.value;
+    if (newCameraId && newCameraId !== selectedCameraId) {
+        selectedCameraId = newCameraId;
+        console.log('📷 Camera selected:', selectedCameraId);
+        
+        // If camera is already running, switch to new camera
+        if (videoStream) {
+            switchCamera(selectedCameraId);
+        }
+    }
+}
+
+// Switch to a different camera while streaming
+async function switchCamera(deviceId) {
+    try {
+        console.log('📷 Switching camera to:', deviceId);
+        
+        // Stop current video tracks
+        if (videoStream) {
+            videoStream.getVideoTracks().forEach(track => track.stop());
+        }
+        
+        // Start new camera
+        const newStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                deviceId: { exact: deviceId },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        });
+        
+        videoStream = newStream;
+        videoFeed.srcObject = newStream;
+        
+        console.log('📷 Camera switched successfully');
+    } catch (error) {
+        console.error('❌ Error switching camera:', error);
+        showError('Failed to switch camera. Please try again.');
+    }
+}
+
+async function startCamera() {
+    try {
+        console.log('📷 Starting camera...');
+        
+        const constraints = {
+            video: {
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        };
+        
+        // Use selected camera if available
+        if (selectedCameraId) {
+            constraints.video.deviceId = { exact: selectedCameraId };
+            console.log('📷 Using selected camera:', selectedCameraId);
+        } else {
+            constraints.video.facingMode = 'user';
+            console.log('📷 Using default front-facing camera');
+        }
+        
+        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        videoFeed.srcObject = videoStream;
+        videoFeed.classList.add('active');
+        videoPlaceholder.classList.add('hidden');
+        videoOverlay.classList.add('active');
+        
+        // Update selected camera ID with actual device being used
+        const videoTrack = videoStream.getVideoTracks()[0];
+        if (videoTrack) {
+            const settings = videoTrack.getSettings();
+            if (settings.deviceId && settings.deviceId !== selectedCameraId) {
+                selectedCameraId = settings.deviceId;
+                cameraSelect.value = selectedCameraId;
+            }
+        }
+        
+        console.log('📷 Camera started successfully');
+        return true;
+    } catch (error) {
+        console.error('❌ Error starting camera:', error);
+        
+        // Provide specific error messages
+        if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+            showError('Selected camera not found. Please choose another camera.');
+        } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+            showError('Camera access denied. Please allow camera permissions.');
+        } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+            showError('Camera is in use by another application. Please close other apps using the camera.');
+        } else if (error.name === 'OverconstrainedError') {
+            // Try again without specific device ID
+            console.log('📷 Retrying with default camera...');
+            selectedCameraId = null;
+            return await startCamera();
+        } else {
+            showError('Failed to access camera. Please check your camera connection.');
+        }
+        return false;
+    }
+}
+
+function stopCamera() {
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+    videoFeed.srcObject = null;
+    videoFeed.classList.remove('active');
+    videoPlaceholder.classList.remove('hidden');
+    videoOverlay.classList.remove('active');
+    console.log('📷 Camera stopped');
+}
+
+// ======================================================================
+// TIMER FUNCTIONS
+// ======================================================================
+
+function startTimer() {
+    sessionStartTime = Date.now();
+    liveBadge.classList.add('active');
+    
+    timerInterval = setInterval(() => {
+        const elapsed = Date.now() - sessionStartTime;
+        const hours = Math.floor(elapsed / 3600000);
+        const minutes = Math.floor((elapsed % 3600000) / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        sessionTimer.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }, 1000);
+}
+
+function stopTimer() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    liveBadge.classList.remove('active');
+    sessionStartTime = null;
 }
 
 // ======================================================================
 // STATUS & UI FUNCTIONS
 // ======================================================================
 
-function setStatus(status, text) {
-    statusIndicator.className = 'status-indicator ' + status;
-    statusText.textContent = text;
+function updateMicStatus(active, text) {
+    micStatus.classList.toggle('active', active);
+    micStatus.querySelector('.status-text').textContent = text;
+}
+
+function updateConnectionStatus(active, text) {
+    connectionStatus.classList.toggle('active', active);
+    connectionStatus.querySelector('.status-text').textContent = text;
+}
+
+function updateAIStatus(active, speaking, text) {
+    aiStatus.classList.toggle('active', active);
+    aiStatus.classList.toggle('warning', speaking);
+    aiStatus.querySelector('.status-text').textContent = text;
+    
+    aiSpeakingBar.classList.toggle('active', speaking);
 }
 
 function showError(message) {
-    errorMessage.textContent = message;
-    errorMessage.style.display = 'block';
-    setTimeout(() => {
-        errorMessage.style.display = 'none';
-    }, 5000);
+    errorText.textContent = message;
+    errorBanner.classList.add('active');
 }
 
-function updateDetectedLanguage(lang) {
-    detectedLanguage = lang;
+function hideError() {
+    errorBanner.classList.remove('active');
+}
+
+function updateAudioLevel(level) {
+    const bars = audioLevel.querySelectorAll('.level-bar');
+    const normalizedLevel = Math.min(1, level * 3);
     
-    const langNames = {
-        'en': 'English',
-        'hi': 'Hindi (हिंदी)',
-        'gu': 'Gujarati (ગુજરાતી)',
-        'english': 'English',
-        'hindi': 'Hindi (हिंदी)',
-        'gujarati': 'Gujarati (ગુજરાતી)'
-    };
-    
-    const langCode = lang.toLowerCase().substring(0, 2);
-    langNameEl.textContent = langNames[lang] || langNames[langCode] || lang;
-    detectedLanguageEl.style.display = 'flex';
-    detectedLanguageEl.classList.add('active');
-    
-    languageBadges.forEach(badge => {
-        badge.classList.remove('active');
-        if (badge.dataset.lang === langCode) {
-            badge.classList.add('active');
-        }
+    bars.forEach((bar, i) => {
+        const threshold = (i + 1) / bars.length;
+        const height = normalizedLevel >= threshold ? 6 + (normalizedLevel - threshold) * 20 : 6;
+        bar.style.height = `${height}px`;
     });
 }
 
-function appendTranscript(text, speaker = 'ai', lang = null) {
-    const entry = document.createElement('div');
-    entry.className = `transcript-entry ${speaker}`;
+// ======================================================================
+// TRANSCRIPT FUNCTIONS
+// ======================================================================
+
+function appendTranscript(text, speaker = 'ai', isInterim = false) {
+    transcriptPlaceholder.classList.add('hidden');
     
-    const speakerLabel = speaker === 'ai' ? '🤖 AI Interviewer' : '👤 Candidate';
-    const langIndicator = lang ? ` (${lang})` : '';
+    if (isInterim) {
+        interimTranscript.textContent = text;
+        return;
+    }
     
-    entry.innerHTML = `
-        <div class="speaker">${speakerLabel}${langIndicator}</div>
-        <div>${text}</div>
+    interimTranscript.textContent = '';
+    
+    const message = document.createElement('div');
+    message.className = `message ${speaker}`;
+    
+    const now = new Date();
+    const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    
+    const avatarIcon = speaker === 'ai' 
+        ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2z"/></svg>'
+        : '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+    
+    const senderName = speaker === 'ai' ? 'AI Interviewer' : 'You';
+    
+    message.innerHTML = `
+        <div class="message-avatar">${avatarIcon}</div>
+        <div class="message-content">
+            <div class="message-header">
+                <span class="message-sender">${senderName}</span>
+                <span class="message-time">${time}</span>
+            </div>
+            <div class="message-bubble">${text}</div>
+        </div>
     `;
     
-    transcript.appendChild(entry);
-    transcript.scrollTop = transcript.scrollHeight;
+    transcript.appendChild(message);
+    transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
 }
 
 function clearTranscript() {
     transcript.innerHTML = '';
+    interimTranscript.textContent = '';
+    transcriptPlaceholder.classList.remove('hidden');
 }
 
 // ======================================================================
@@ -765,14 +802,14 @@ function connectWebSocket() {
         
         websocket.onopen = () => {
             console.log('✅ WebSocket connected');
-            setStatus('connected', 'Connected - Setting up Gemini...');
+            updateConnectionStatus(true, 'Connected');
             resolve();
         };
         
         websocket.onclose = (event) => {
             console.log('🔌 WebSocket closed:', event.code, event.reason);
+            updateConnectionStatus(false, 'Disconnected');
             if (isInterviewActive) {
-                setStatus('', 'Disconnected');
                 stopInterview();
             }
         };
@@ -793,21 +830,17 @@ function handleServerMessage(data) {
     switch (data.type) {
         case 'setup_complete':
             console.log('✅ Gemini setup complete');
-            setStatus('user-speaking', 'Listening... Speak in any language!');
+            updateConnectionStatus(true, 'AI Connected');
             interruptBtn.disabled = false;
             break;
             
         case 'audio':
-            // Gemini sends 24kHz Int16 PCM as base64
             handleGeminiAudio(data.data);
             break;
             
         case 'transcript':
             if (data.text) {
-                appendTranscript(data.text, 'ai', data.language);
-                if (data.language) {
-                    updateDetectedLanguage(data.language);
-                }
+                appendTranscript(data.text, 'ai');
             }
             break;
             
@@ -816,27 +849,19 @@ function handleServerMessage(data) {
             break;
             
         case 'interrupted':
-            console.log('🛑 AI interrupted - clearing playback');
+            console.log('🛑 AI interrupted');
             if (audioStreamer) {
                 audioStreamer.interrupt();
             }
             isAISpeaking = false;
-            setStatus('user-speaking', 'Listening...');
-            visualizerLabel.textContent = 'Your Audio';
-            resetVisualizer();
+            updateAIStatus(true, false, 'Listening');
             break;
             
         case 'turn_complete':
             console.log('✅ AI turn complete');
             isAISpeaking = false;
-            setStatus('user-speaking', 'Your turn - Speak now');
-            visualizerLabel.textContent = 'Your Audio';
-            
-            // Log playback stats and reset buffering for next response
+            updateAIStatus(true, false, 'Your Turn');
             if (audioStreamer) {
-                const stats = audioStreamer.getStats();
-                console.log(`📊 Playback stats: ${stats.chunksScheduled}/${stats.chunksReceived} chunks scheduled, ${stats.underruns} underruns, queue: ${stats.queueLength}`);
-                // Reset buffering mode for next AI response
                 audioStreamer.resetBuffering();
             }
             break;
@@ -848,48 +873,22 @@ function handleServerMessage(data) {
     }
 }
 
-// ======================================================================
-// AUDIO HANDLERS
-// ======================================================================
-
-/**
- * Handle incoming audio from Gemini (24kHz Int16 PCM as base64)
- */
 function handleGeminiAudio(base64Data) {
     if (!audioStreamer) return;
     
-    // Add to jitter buffer and get original samples for visualization
     const originalSamples = audioStreamer.addChunk(base64Data);
     
     if (originalSamples) {
-        // Update UI
         isAISpeaking = true;
-        setStatus('ai-speaking', 'AI is speaking...');
-        visualizerLabel.textContent = 'AI Audio';
-        
-        // Animate visualizer
-        animateVisualizerForAudio(originalSamples);
+        updateAIStatus(true, true, 'Speaking...');
     }
 }
 
-/**
- * Handle outgoing audio to Gemini (from microphone)
- */
 function handleMicrophoneAudio(int16Data, rms) {
-    if (!isInterviewActive || !websocket || websocket.readyState !== WebSocket.OPEN) {
-        return;
-    }
+    if (!isInterviewActive || !websocket || websocket.readyState !== WebSocket.OPEN) return;
     
-    // Update visualizer if not AI speaking
-    if (!isAISpeaking && rms > 0.01) {
-        updateAudioMeter(rms);
-        const vizData = Array(NUM_VISUALIZER_BARS).fill(0).map((_, i) => {
-            return rms * (1 + Math.sin(Date.now() / 100 + i * 0.3) * 0.3);
-        });
-        updateVisualizer(vizData);
-    }
+    updateAudioLevel(rms);
     
-    // Convert to base64 and send
     const base64Data = arrayBufferToBase64(int16Data.buffer);
     websocket.send(JSON.stringify({
         type: 'audio',
@@ -921,42 +920,50 @@ function arrayBufferToBase64(buffer) {
 async function startInterview() {
     try {
         startBtn.disabled = true;
-        interruptBtn.disabled = true;
-        setStatus('', 'Connecting...');
+        hideError();
         
-        // Initialize visualizer
-        initVisualizer();
+        // Start camera
+        const cameraStarted = await startCamera();
+        if (!cameraStarted) {
+            startBtn.disabled = false;
+            return;
+        }
         
-        // Initialize AudioStreamer (playback with jitter buffer)
+        // Initialize audio streamer
         audioStreamer = new AudioStreamer();
-        const outputRate = await audioStreamer.initialize();
+        await audioStreamer.initialize();
         
         // Connect WebSocket
         await connectWebSocket();
         
-        // Initialize AudioRecorder (microphone with resampling)
+        // Initialize audio recorder
         audioRecorder = new AudioRecorder(handleMicrophoneAudio);
-        const inputRate = await audioRecorder.start();
+        await audioRecorder.start();
+        updateMicStatus(true, 'Mic Live');
         
         isInterviewActive = true;
         stopBtn.disabled = false;
         
+        // Start timer
+        startTimer();
+        
         // Clear previous transcript
         clearTranscript();
         
-        // Reset language detection
-        detectedLanguageEl.style.display = 'none';
-        
-        console.log('🎙️ Interview started - Professional Grade Audio');
-        console.log(`📊 Input Pipeline: Mic(${inputRate}Hz) → Resample → ${GEMINI_INPUT_RATE}Hz → Gemini`);
-        console.log(`📊 Output Pipeline: Gemini → ${GEMINI_OUTPUT_RATE}Hz → Resample → ${outputRate}Hz → Jitter Buffer(${JITTER_BUFFER_MS}ms) → Speaker`);
+        console.log('🎙️ Interview started');
         
     } catch (error) {
         console.error('❌ Error starting interview:', error);
-        showError('Failed to start interview. Please check microphone permissions.');
-        setStatus('', 'Error - Click Start to retry');
+        
+        if (error.name === 'NotAllowedError') {
+            showError('Microphone access denied. Please allow microphone permissions.');
+        } else {
+            showError('Failed to start interview. Please check permissions and try again.');
+        }
+        
         startBtn.disabled = false;
-        interruptBtn.disabled = true;
+        stopCamera();
+        stopTimer();
     }
 }
 
@@ -965,20 +972,16 @@ async function interruptAI() {
     
     console.log('✋ User requested interrupt');
     
-    // 1. Clear local playback immediately with proper suspension
     if (audioStreamer) {
         await audioStreamer.interrupt();
     }
     
-    // 2. Send interrupt signal to server
     if (websocket && websocket.readyState === WebSocket.OPEN) {
         websocket.send(JSON.stringify({ type: 'interrupt' }));
     }
     
     isAISpeaking = false;
-    setStatus('user-speaking', 'Listening...');
-    visualizerLabel.textContent = 'Your Audio';
-    resetVisualizer();
+    updateAIStatus(true, false, 'Interrupted');
 }
 
 function stopInterview() {
@@ -1003,13 +1006,19 @@ function stopInterview() {
         audioStreamer = null;
     }
     
+    // Stop camera
+    stopCamera();
+    
+    // Stop timer
+    stopTimer();
+    
     // Update UI
     startBtn.disabled = false;
     stopBtn.disabled = true;
     interruptBtn.disabled = true;
-    setStatus('', 'Interview ended');
-    resetVisualizer();
-    detectedLanguageEl.style.display = 'none';
+    updateMicStatus(false, 'Mic Ready');
+    updateConnectionStatus(false, 'Disconnected');
+    updateAIStatus(false, false, 'AI Ready');
     isAISpeaking = false;
     
     console.log('🏁 Interview stopped');
@@ -1019,10 +1028,8 @@ function stopInterview() {
 // INITIALIZATION
 // ======================================================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    initVisualizer();
-    
-    // Language badge click handlers (informational only)
+document.addEventListener('DOMContentLoaded', async () => {
+    // Language badge click handlers
     languageBadges.forEach(badge => {
         badge.addEventListener('click', () => {
             languageBadges.forEach(b => b.classList.remove('active'));
@@ -1030,9 +1037,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    console.log('🚀 Multilingual AI Interviewer - Professional Grade Audio');
-    console.log('📝 Supported languages: English, Hindi (हिंदी), Gujarati (ગુજરાతી)');
-    console.log('Features: VAD Silence Detection, Rate-limited Input (50ms), Initial Buffering (2 chunks), Jitter Buffer (50ms), Barge-in');
+    // Camera selection event listeners
+    if (cameraSelect) {
+        cameraSelect.addEventListener('change', handleCameraChange);
+    }
+    
+    if (refreshCamerasBtn) {
+        refreshCamerasBtn.addEventListener('click', refreshCameraList);
+    }
+    
+    // Populate camera dropdown on page load
+    await populateCameraDropdown();
+    
+    // Listen for device changes (camera plugged/unplugged)
+    navigator.mediaDevices.addEventListener('devicechange', async () => {
+        console.log('📷 Device change detected, refreshing camera list...');
+        await populateCameraDropdown();
+    });
+    
+    console.log('🚀 Live AI Interview Platform initialized');
+    console.log('📝 Supported languages: English, Hindi (हिंदी), Gujarati (ગુજરાતી)');
+    console.log('📷 Camera selection enabled');
 });
 
 // Handle page unload

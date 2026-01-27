@@ -3,523 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Technical Interview | Multilingual</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: white;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
-        }
-
-        .container {
-            max-width: 900px;
-            width: 100%;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .header h1 {
-            font-size: 2.2rem;
-            color: #000;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .header p {
-            color: #666;
-            font-size: 1rem;
-        }
-
-        /* Language badges */
-        .language-badges {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-
-        .lang-badge {
-            padding: 8px 16px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #666;
-            background: white;
-            transition: all 0.3s ease;
-        }
-
-        .lang-badge.active {
-            border-color: #000;
-            background: #000;
-            color: white;
-        }
-
-        .lang-badge .lang-native {
-            font-size: 0.8rem;
-            opacity: 0.8;
-            margin-left: 4px;
-        }
-
-        .interview-card {
-            background: white;
-            border: 2px solid #000;
-            border-radius: 16px;
-            padding: 35px;
-            margin-bottom: 25px;
-        }
-
-        .status-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .status-section {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .status-indicator {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background: #ccc;
-            transition: background 0.3s ease;
-        }
-
-        .status-indicator.connected {
-            background: #000;
-        }
-
-        .status-indicator.ai-speaking {
-            background: #000;
-            animation: pulse 1s infinite;
-        }
-
-        .status-indicator.user-speaking {
-            background: #333;
-            animation: fastPulse 0.4s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.3); opacity: 0.7; }
-        }
-
-        @keyframes fastPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-        }
-
-        .status-text {
-            font-size: 1rem;
-            color: #333;
-            font-weight: 500;
-        }
-
-        .detected-language {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 14px;
-            background: #f5f5f5;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            color: #666;
-        }
-
-        .detected-language.active {
-            background: #000;
-            color: white;
-        }
-
-        .detected-language .lang-icon {
-            font-size: 1rem;
-        }
-
-        .visualizer-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100px;
-            margin-bottom: 25px;
-            background: #fafafa;
-            border-radius: 12px;
-            border: 1px solid #e0e0e0;
-            position: relative;
-        }
-
-        .audio-visualizer {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
-            height: 70px;
-        }
-
-        .visualizer-bar {
-            width: 5px;
-            background: #000;
-            border-radius: 3px;
-            transition: height 0.05s ease;
-        }
-
-        .visualizer-label {
-            position: absolute;
-            bottom: 8px;
-            right: 12px;
-            font-size: 0.75rem;
-            color: #999;
-        }
-
-        .transcript-section {
-            margin-bottom: 25px;
-        }
-
-        .transcript-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .transcript-label {
-            font-size: 0.9rem;
-            color: #666;
-            font-weight: 500;
-        }
-
-        .transcript-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .transcript-btn {
-            padding: 4px 10px;
-            font-size: 0.75rem;
-            background: transparent;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            color: #666;
-        }
-
-        .transcript-btn:hover {
-            background: #f5f5f5;
-        }
-
-        .transcript-box {
-            background: #fafafa;
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 16px;
-            min-height: 120px;
-            max-height: 200px;
-            overflow-y: auto;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            color: #333;
-        }
-
-        .transcript-box:empty::before {
-            content: "Interview transcript will appear here...";
-            color: #999;
-        }
-
-        .transcript-entry {
-            margin-bottom: 10px;
-            padding: 8px 12px;
-            border-radius: 8px;
-        }
-
-        .transcript-entry.ai {
-            background: #f0f0f0;
-            margin-right: 20px;
-        }
-
-        .transcript-entry.user {
-            background: #e8e8e8;
-            margin-left: 20px;
-        }
-
-        .transcript-entry .speaker {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: #666;
-            margin-bottom: 4px;
-        }
-
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 14px 40px;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: 2px solid #000;
-        }
-
-        .btn-start {
-            background: #000;
-            color: white;
-        }
-
-        .btn-start:hover:not(:disabled) {
-            background: #333;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .btn-stop {
-            background: white;
-            color: #000;
-        }
-
-        .btn-stop:hover:not(:disabled) {
-            background: #f0f0f0;
-            transform: translateY(-2px);
-        }
-
-        .btn-interrupt {
-            background: white;
-            color: #000;
-            padding: 14px 30px;
-        }
-
-        .btn-interrupt:hover:not(:disabled) {
-            background: #f5f5f5;
-        }
-
-        .btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .info-section {
-            background: #fafafa;
-            border: 1px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 20px;
-        }
-
-        .info-section h3 {
-            font-size: 1rem;
-            color: #000;
-            margin-bottom: 12px;
-            font-weight: 600;
-        }
-
-        .info-section ul {
-            list-style: none;
-            color: #666;
-            font-size: 0.9rem;
-            line-height: 1.8;
-        }
-
-        .info-section li::before {
-            content: "•";
-            margin-right: 10px;
-            color: #000;
-        }
-
-        .feature-highlight {
-            display: inline-block;
-            background: #000;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            margin-left: 5px;
-        }
-
-        .error-message {
-            background: white;
-            border: 2px solid #000;
-            color: #000;
-            padding: 14px 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .loading-dots {
-            display: inline-flex;
-            gap: 4px;
-        }
-
-        .loading-dots span {
-            width: 6px;
-            height: 6px;
-            background: #000;
-            border-radius: 50%;
-            animation: loadingDot 1.4s infinite ease-in-out both;
-        }
-
-        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
-        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
-        .loading-dots span:nth-child(3) { animation-delay: 0; }
-
-        @keyframes loadingDot {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-
-        /* Audio meter for input level */
-        .audio-meter {
-            position: absolute;
-            left: 12px;
-            bottom: 8px;
-            display: flex;
-            align-items: flex-end;
-            gap: 2px;
-            height: 20px;
-        }
-
-        .meter-bar {
-            width: 3px;
-            background: #ccc;
-            border-radius: 1px;
-            transition: height 0.1s, background 0.1s;
-        }
-
-        .meter-bar.active {
-            background: #000;
-        }
-
-        @media (max-width: 600px) {
-            .header h1 {
-                font-size: 1.6rem;
-            }
-            
-            .interview-card {
-                padding: 20px;
-            }
-            
-            .btn {
-                padding: 12px 24px;
-                font-size: 0.9rem;
-            }
-
-            .status-row {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-    </style>
+    <title>Live AI Interview | Enterprise Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎤 AI Technical Interview</h1>
-            <p>Real-time multilingual voice interview powered by Gemini 2.5 Flash</p>
-        </div>
-
-        <!-- Language Support Badges -->
-        <div class="language-badges">
-            <div class="lang-badge active" data-lang="en">
-                English
-            </div>
-            <div class="lang-badge" data-lang="hi">
-                Hindi <span class="lang-native">हिंदी</span>
-            </div>
-            <div class="lang-badge" data-lang="gu">
-                Gujarati <span class="lang-native">ગુજરાતી</span>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-left">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#6366f1"/>
+                    <path d="M10 16L14 20L22 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>AI Interview Platform</span>
             </div>
         </div>
-
-        <div id="errorMessage" class="error-message"></div>
-
-        <div class="interview-card">
-            <div class="status-row">
-                <div class="status-section">
-                    <div id="statusIndicator" class="status-indicator"></div>
-                    <span id="statusText" class="status-text">Ready to start</span>
+        <div class="nav-center">
+            <div class="session-info">
+                <div class="live-badge" id="liveBadge">
+                    <span class="live-dot"></span>
+                    <span>LIVE</span>
                 </div>
-                <div id="detectedLanguage" class="detected-language" style="display: none;">
-                    <span class="lang-icon">🌍</span>
-                    <span id="langName">Detecting...</span>
+                <div class="timer" id="sessionTimer">00:00:00</div>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="language-selector">
+                <span class="lang-label">Language:</span>
+                <div class="lang-badges">
+                    <button class="lang-badge active" data-lang="en">EN</button>
+                    <button class="lang-badge" data-lang="hi">हि</button>
+                    <button class="lang-badge" data-lang="gu">ગુ</button>
                 </div>
             </div>
+        </div>
+    </nav>
 
-            <div class="visualizer-container">
-                <!-- Audio level meter -->
-                <div class="audio-meter" id="audioMeter">
-                    <div class="meter-bar" style="height: 4px;"></div>
-                    <div class="meter-bar" style="height: 4px;"></div>
-                    <div class="meter-bar" style="height: 4px;"></div>
-                    <div class="meter-bar" style="height: 4px;"></div>
-                    <div class="meter-bar" style="height: 4px;"></div>
+    <!-- Main Split Container -->
+    <main class="split-container">
+        <!-- Left Panel: Video Feed -->
+        <section class="video-panel">
+            <!-- Camera Selector -->
+            <div class="camera-selector" id="cameraSelector">
+                <div class="selector-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/>
+                    </svg>
+                    <span>Select Camera</span>
                 </div>
-                
-                <div id="audioVisualizer" class="audio-visualizer">
-                    <!-- Visualizer bars will be created by JS -->
-                </div>
-                
-                <div class="visualizer-label" id="visualizerLabel">AI Audio</div>
+                <select id="cameraSelect" class="camera-dropdown">
+                    <option value="">Loading cameras...</option>
+                </select>
+                <button class="refresh-btn" id="refreshCameras" onclick="refreshCameraList()" title="Refresh camera list">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                    </svg>
+                </button>
             </div>
-
-            <div class="transcript-section">
-                <div class="transcript-header">
-                    <div class="transcript-label">Live Transcript</div>
-                    <div class="transcript-actions">
-                        <button class="transcript-btn" onclick="clearTranscript()">Clear</button>
+            
+            <div class="video-container">
+                <video id="videoFeed" autoplay playsinline muted></video>
+                <div class="video-placeholder" id="videoPlaceholder">
+                    <div class="placeholder-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M23 7l-7 5 7 5V7z"/>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                        </svg>
+                    </div>
+                    <p>Select a camera and start the interview</p>
+                </div>
+                
+                <!-- Video Overlay Controls -->
+                <div class="video-overlay" id="videoOverlay">
+                    <div class="overlay-top">
+                        <div class="recording-indicator" id="recordingIndicator">
+                            <span class="rec-dot"></span>
+                            <span>REC</span>
+                        </div>
+                    </div>
+                    <div class="overlay-bottom">
+                        <div class="candidate-info">
+                            <div class="avatar">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                </svg>
+                            </div>
+                            <div class="info-text">
+                                <span class="name">Candidate</span>
+                                <span class="role">Technical Interview</span>
+                            </div>
+                        </div>
+                        <div class="audio-level" id="audioLevel">
+                            <div class="level-bar"></div>
+                            <div class="level-bar"></div>
+                            <div class="level-bar"></div>
+                            <div class="level-bar"></div>
+                            <div class="level-bar"></div>
+                        </div>
                     </div>
                 </div>
-                <div id="transcript" class="transcript-box"></div>
             </div>
-
+            
+            <!-- Status Indicators -->
+            <div class="status-bar">
+                <div class="status-item" id="micStatus">
+                    <div class="status-icon mic-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15a.998.998 0 00-.98-.85c-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+                        </svg>
+                    </div>
+                    <span class="status-text">Mic Ready</span>
+                </div>
+                <div class="status-item" id="connectionStatus">
+                    <div class="status-icon connection-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                        </svg>
+                    </div>
+                    <span class="status-text">Disconnected</span>
+                </div>
+                <div class="status-item" id="aiStatus">
+                    <div class="status-icon ai-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M21 10.12h-6.78l2.74-2.82c-2.73-2.7-7.15-2.8-9.88-.1-2.73 2.71-2.73 7.08 0 9.79s7.15 2.71 9.88 0C18.32 15.65 19 14.08 19 12.1h2c0 1.98-.88 4.55-2.64 6.29-3.51 3.48-9.21 3.48-12.72 0-3.5-3.47-3.53-9.11-.02-12.58s9.14-3.47 12.65 0L21 3v7.12z"/>
+                        </svg>
+                    </div>
+                    <span class="status-text">AI Ready</span>
+                </div>
+            </div>
+            
+            <!-- Control Buttons -->
             <div class="controls">
-                <button id="startBtn" class="btn btn-start" onclick="startInterview()">
-                    Start Interview
+                <button class="control-btn primary" id="startBtn" onclick="startInterview()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    <span>Start Interview</span>
                 </button>
-                <button id="interruptBtn" class="btn btn-interrupt" onclick="interruptAI()" disabled>
-                    ✋ Interrupt
+                <button class="control-btn secondary" id="interruptBtn" onclick="interruptAI()" disabled>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/>
+                    </svg>
+                    <span>Interrupt</span>
                 </button>
-                <button id="stopBtn" class="btn btn-stop" onclick="stopInterview()" disabled>
-                    End Interview
+                <button class="control-btn danger" id="stopBtn" onclick="stopInterview()" disabled>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 6h12v12H6z"/>
+                    </svg>
+                    <span>End Interview</span>
                 </button>
             </div>
-        </div>
+        </section>
 
-        <div class="info-section">
-            <h3>Instructions</h3>
-            <ul>
-                <li>Click "Start Interview" and allow microphone access</li>
-                <li>Speak in <strong>English</strong>, <strong>Hindi</strong>, or <strong>Gujarati</strong> — the AI adapts automatically! <span class="feature-highlight">Multilingual</span></li>
-                <li>The AI interviewer will greet you and begin asking questions</li>
-                <li>Speak naturally — you can interrupt anytime <span class="feature-highlight">Barge-in</span></li>
-                <li>The AI will detect and match your language in real-time</li>
-                <li>Click "End Interview" when finished</li>
-            </ul>
-        </div>
-    </div>
+        <!-- Right Panel: Transcript & Conversation -->
+        <section class="transcript-panel">
+            <div class="panel-header">
+                <h2>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+                    </svg>
+                    Live Transcript
+                </h2>
+                <div class="panel-actions">
+                    <button class="action-btn" onclick="clearTranscript()" title="Clear transcript">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- AI Speaking Indicator -->
+            <div class="ai-speaking-bar" id="aiSpeakingBar">
+                <div class="ai-avatar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2a2 2 0 012 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 017 7h1a1 1 0 011 1v3a1 1 0 01-1 1h-1v1a2 2 0 01-2 2H5a2 2 0 01-2-2v-1H2a1 1 0 01-1-1v-3a1 1 0 011-1h1a7 7 0 017-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 012-2zM7.5 13a1.5 1.5 0 100 3 1.5 1.5 0 000-3zm9 0a1.5 1.5 0 100 3 1.5 1.5 0 000-3z"/>
+                    </svg>
+                </div>
+                <span class="speaking-text">AI Interviewer is speaking...</span>
+                <div class="speaking-wave">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+            
+            <!-- Error Message -->
+            <div class="error-banner" id="errorBanner">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                <span id="errorText">An error occurred</span>
+                <button onclick="hideError()">×</button>
+            </div>
+            
+            <!-- Transcript Container -->
+            <div class="transcript-container" id="transcriptContainer">
+                <div class="transcript-messages" id="transcript">
+                    <!-- Messages will be added here dynamically -->
+                </div>
+                <div class="transcript-placeholder" id="transcriptPlaceholder">
+                    <div class="placeholder-content">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" opacity="0.3">
+                            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+                        </svg>
+                        <p>Start the interview to see the live transcript</p>
+                        <span class="hint">Supports English, Hindi (हिंदी), and Gujarati (ગુજરાતી)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Interim Transcript (ghost text) -->
+            <div class="interim-transcript" id="interimTranscript"></div>
+        </section>
+    </main>
+
+    <!-- Audio Visualizer (hidden, for processing) -->
+    <div class="audio-visualizer-hidden" id="audioVisualizer"></div>
+    <div id="visualizerLabel" style="display:none;"></div>
+    <div id="audioMeter" style="display:none;"></div>
+    <div id="detectedLanguage" style="display:none;"></div>
+    <span id="langName" style="display:none;"></span>
+    <div id="statusIndicator" style="display:none;"></div>
+    <span id="statusText" style="display:none;"></span>
 
     <script src="/static/app.js"></script>
 </body>
