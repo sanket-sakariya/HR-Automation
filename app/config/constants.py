@@ -6,6 +6,8 @@ class DatabaseErrorMessages:
 
     # General database errors
     DATA_RETRIEVAL_ERROR: Final[str] = "Database error during data retrieval"
+    GENERAL_UPDATE_ERROR: Final[str] = "Database error during update operation"
+    GENERAL_CREATION_ERROR: Final[str] = "Database error during creation operation"
 
     # DemoA-related database errors
     DEMO_A_CREATION_ERROR: Final[str] = "Database error during demo A creation"
