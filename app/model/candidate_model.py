@@ -27,6 +27,19 @@ class CandidateModel(BaseAppModel):
     candidate_resume_score = Column(Numeric(10, 4), nullable=True)  # AI-generated resume score
     status = Column(String(20), nullable=False, default="active")  # active, inactive
 
+    # Test tracking fields - indicates if candidate has taken the test
+    aptitude_test = Column(Boolean, nullable=True, default=False)  # Has taken aptitude test
+    technical_test = Column(Boolean, nullable=True, default=False)  # Has taken technical test
+    hr_test = Column(Boolean, nullable=True, default=False)  # Has taken HR test
+
+    # Test result fields - pass/fail status
+    aptitude_test_result = Column(String(10), nullable=True)  # 'pass' or 'fail'
+    technical_test_result = Column(String(10), nullable=True)  # 'pass' or 'fail'
+    hr_test_result = Column(String(10), nullable=True)  # 'pass' or 'fail'
+
+    # Resume selection field - based on top N resume scores for the job
+    resume_selected = Column(Boolean, nullable=True, default=False)  # True if resume is selected
+
     # Unique constraint to prevent same candidate from applying to same job multiple times
     __table_args__ = (
         Index('unique_candidate_job', candidate_id, job_requirement_id, email, phone, unique=True),

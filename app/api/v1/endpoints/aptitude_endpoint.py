@@ -504,3 +504,126 @@ async def submit_test(
             detail=f"Failed to submit test: {str(e)}"
         )
 
+
+@router.post("/select-top-candidates", response_model=ApiResponseSchema[dict])
+async def select_top_candidates(
+    job_requirement_id: UUID,
+    aptitude_test_id: UUID,
+    top_n: int,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Select top N candidates based on their aptitude test scores.
+    
+    - Fetches all completed attempts for the given job and aptitude test
+    - Ranks candidates by score in descending order
+    - Selects top N candidates as passed
+    - Updates candidate table: aptitude_test=True for all, aptitude_test_result=True for passed, False for failed
+    
+    **Parameters:**
+    - job_requirement_id: UUID of the job requirement
+    - aptitude_test_id: UUID of the aptitude test
+    - top_n: Number of top candidates to select (e.g., 5 means top 5 will pass)
+    
+    **Returns:**
+    - List of selected (passed) candidates with their scores
+    - List of rejected (failed) candidates with their scores
+    """
+    try:
+        test_repo = AptitudeTestRepository(db)
+        candidate_repo = CandidateRepository(db)
+        
+        # Verify the test exists
+        test = await test_repo.get_test_by_id(aptitude_test_id)
+        if not test:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Aptitude test not found: {aptitude_test_id}"
+            )
+        
+        if test.job_requirement_id != job_requirement_id:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail=f"Test {aptitude_test_id} does not belong to job requirement {job_requirement_id}"
+            )
+        
+        # Get all completed attempts sorted by score (descending)
+        attempts = await test_repo.get_completed_attempts_by_job_and_test(
+            job_requirement_id=job_requirement_id,
+            aptitude_test_id=aptitude_test_id
+        )
+        
+        if not attempts:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="No completed test attempts found for this job and test"
+            )
+        
+        total_attempts = len(attempts)
+        
+        # Determine which candidates passed (top N) and which failed (rest)
+        passed_attempts = attempts[:top_n]
+        failed_attempts = attempts[top_n:]
+        
+        # Prepare email lists for bulk update
+        passed_emails = [attempt.candidate_email for attempt in passed_attempts]
+        failed_emails = [attempt.candidate_email for attempt in failed_attempts]
+        
+        # Bulk update candidate records
+        update_result = await candidate_repo.bulk_update_aptitude_test_results(
+            job_requirement_id=job_requirement_id,
+            passed_emails=passed_emails,
+            failed_emails=failed_emails
+        )
+        
+        # Prepare response data
+        selected_candidates = [
+            {
+                "candidate_email": attempt.candidate_email,
+                "candidate_name": attempt.candidate_name,
+                "score": attempt.score,
+                "rank": idx + 1,
+                "status": "passed"
+            }
+            for idx, attempt in enumerate(passed_attempts)
+        ]
+        
+        rejected_candidates = [
+            {
+                "candidate_email": attempt.candidate_email,
+                "candidate_name": attempt.candidate_name,
+                "score": attempt.score,
+                "rank": top_n + idx + 1,
+                "status": "failed"
+            }
+            for idx, attempt in enumerate(failed_attempts)
+        ]
+        
+        return ApiResponseSchema(
+            success=True,
+            message=f"Successfully selected top {min(top_n, total_attempts)} candidates out of {total_attempts}",
+            data={
+                "job_requirement_id": str(job_requirement_id),
+                "aptitude_test_id": str(aptitude_test_id),
+                "total_attempts": total_attempts,
+                "top_n_requested": top_n,
+                "candidates_passed": len(selected_candidates),
+                "candidates_failed": len(rejected_candidates),
+                "selected_candidates": selected_candidates,
+                "rejected_candidates": rejected_candidates,
+                "update_summary": {
+                    "candidates_updated_as_passed": len(update_result.get("updated_passed", [])),
+                    "candidates_updated_as_failed": len(update_result.get("updated_failed", [])),
+                    "candidates_not_found": update_result.get("not_found", [])
+                }
+            }
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to select top candidates: {str(e)}"
+        )
+

@@ -387,3 +387,65 @@ async def list_candidates(
         )
 
 
+@router.post("/select-top-resumes/{job_requirement_id}", response_model=ApiResponseSchema[dict])
+async def select_top_resumes(
+    job_requirement_id: UUID,
+    top_n: int,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Select top N candidates based on their resume scores for a job requirement.
+    
+    - Fetches all candidates for the given job requirement with resume scores
+    - Ranks candidates by resume score in descending order
+    - Sets resume_selected=True for top N candidates
+    - Sets resume_selected=False for remaining candidates
+    
+    **Parameters:**
+    - job_requirement_id: UUID of the job requirement
+    - top_n: Number of top candidates to select (e.g., 5 means top 5 will be selected)
+    
+    **Returns:**
+    - List of selected candidates with their resume scores
+    - List of rejected candidates with their resume scores
+    """
+    try:
+        from app.repository.candidate_repository import CandidateRepository
+        
+        candidate_repo = CandidateRepository(db)
+        
+        # Bulk update resume_selected for candidates
+        result = await candidate_repo.bulk_update_resume_selected(
+            job_requirement_id=job_requirement_id,
+            top_n=top_n
+        )
+        
+        if result["total_candidates"] == 0:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="No candidates with resume scores found for this job requirement"
+            )
+        
+        return ApiResponseSchema(
+            success=True,
+            message=f"Successfully selected top {min(top_n, result['total_candidates'])} resumes out of {result['total_candidates']} candidates",
+            data={
+                "job_requirement_id": str(job_requirement_id),
+                "top_n_requested": top_n,
+                "total_candidates": result["total_candidates"],
+                "selected_count": result["selected_count"],
+                "rejected_count": result["rejected_count"],
+                "selected_candidates": result["selected_candidates"],
+                "rejected_candidates": result["rejected_candidates"]
+            }
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to select top resumes: {str(e)}"
+        )
+
+

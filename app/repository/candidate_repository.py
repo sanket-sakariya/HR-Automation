@@ -272,3 +272,180 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
             skip=skip,
             limit=limit
         )
+
+    async def update_aptitude_test_result(
+        self,
+        email: str,
+        job_requirement_id: UUID,
+        aptitude_test: bool,
+        aptitude_test_result: str,  # 'pass' or 'fail'
+    ) -> Optional[CandidateModel]:
+        """
+        Update aptitude test fields for a candidate based on email and job requirement.
+        Sets aptitude_test to True and aptitude_test_result to 'pass' or 'fail'.
+        """
+        try:
+            candidate = await self.get_by_email_and_job_requirement(email, str(job_requirement_id))
+            if not candidate:
+                return None
+
+            candidate.aptitude_test = aptitude_test
+            candidate.aptitude_test_result = aptitude_test_result
+
+            await self.db.commit()
+            await self.db.refresh(candidate)
+            return candidate
+        except SQLAlchemyError as e:
+            raise CandidateUpdateException(
+                candidate_id=candidate.candidate_id if candidate else None,
+                message=f"Failed to update aptitude test result: {str(e)}"
+            ) from e
+
+    async def bulk_update_aptitude_test_results(
+        self,
+        job_requirement_id: UUID,
+        passed_emails: List[str],
+        failed_emails: List[str],
+    ) -> Dict[str, Any]:
+        """
+        Bulk update aptitude test results for multiple candidates.
+        Candidates in passed_emails get aptitude_test=True and aptitude_test_result='pass'.
+        Candidates in failed_emails get aptitude_test=True and aptitude_test_result='fail'.
+        """
+        updated_passed = []
+        updated_failed = []
+        not_found = []
+
+        # Update passed candidates
+        for email in passed_emails:
+            candidate = await self.update_aptitude_test_result(
+                email=email,
+                job_requirement_id=job_requirement_id,
+                aptitude_test=True,
+                aptitude_test_result="pass"
+            )
+            if candidate:
+                updated_passed.append(email)
+            else:
+                not_found.append(email)
+
+        # Update failed candidates
+        for email in failed_emails:
+            candidate = await self.update_aptitude_test_result(
+                email=email,
+                job_requirement_id=job_requirement_id,
+                aptitude_test=True,
+                aptitude_test_result="fail"
+            )
+            if candidate:
+                updated_failed.append(email)
+            else:
+                not_found.append(email)
+
+        return {
+            "updated_passed": updated_passed,
+            "updated_failed": updated_failed,
+            "not_found": not_found
+        }
+
+    async def get_candidates_by_job_with_resume_score(
+        self,
+        job_requirement_id: UUID,
+    ) -> List[CandidateModel]:
+        """
+        Get all candidates for a job requirement sorted by resume score (descending).
+        Only returns candidates with a resume score.
+        """
+        try:
+            query = select(CandidateModel).where(
+                and_(
+                    CandidateModel.job_requirement_id == job_requirement_id,
+                    CandidateModel.status != "deleted",
+                    CandidateModel.candidate_resume_score.isnot(None)
+                )
+            ).order_by(CandidateModel.candidate_resume_score.desc())
+
+            result = await self.db.execute(query)
+            return result.scalars().all()
+        except SQLAlchemyError as e:
+            raise InternalServerErrorException(
+                message=f"Failed to get candidates by job with resume score: {str(e)}"
+            ) from e
+
+    async def update_resume_selected(
+        self,
+        candidate_id: UUID,
+        resume_selected: bool,
+    ) -> Optional[CandidateModel]:
+        """Update resume_selected field for a candidate."""
+        try:
+            candidate = await self.get_by_id(candidate_id)
+            if not candidate:
+                return None
+
+            candidate.resume_selected = resume_selected
+
+            await self.db.commit()
+            await self.db.refresh(candidate)
+            return candidate
+        except SQLAlchemyError as e:
+            raise CandidateUpdateException(
+                candidate_id=candidate_id,
+                message=f"Failed to update resume_selected: {str(e)}"
+            ) from e
+
+    async def bulk_update_resume_selected(
+        self,
+        job_requirement_id: UUID,
+        top_n: int,
+    ) -> Dict[str, Any]:
+        """
+        Select top N candidates based on resume score for a job requirement.
+        Sets resume_selected=True for top N, False for others.
+        """
+        # Get all candidates with resume score sorted by score
+        candidates = await self.get_candidates_by_job_with_resume_score(job_requirement_id)
+        
+        if not candidates:
+            return {
+                "total_candidates": 0,
+                "selected_count": 0,
+                "rejected_count": 0,
+                "selected_candidates": [],
+                "rejected_candidates": []
+            }
+
+        selected_candidates = []
+        rejected_candidates = []
+
+        for idx, candidate in enumerate(candidates):
+            if idx < top_n:
+                # Top N candidates - selected
+                candidate.resume_selected = True
+                selected_candidates.append({
+                    "candidate_id": str(candidate.candidate_id),
+                    "email": candidate.email,
+                    "name": f"{candidate.first_name} {candidate.last_name}",
+                    "resume_score": float(candidate.candidate_resume_score) if candidate.candidate_resume_score else None,
+                    "rank": idx + 1
+                })
+            else:
+                # Rest - not selected
+                candidate.resume_selected = False
+                rejected_candidates.append({
+                    "candidate_id": str(candidate.candidate_id),
+                    "email": candidate.email,
+                    "name": f"{candidate.first_name} {candidate.last_name}",
+                    "resume_score": float(candidate.candidate_resume_score) if candidate.candidate_resume_score else None,
+                    "rank": idx + 1
+                })
+
+        await self.db.commit()
+
+        return {
+            "total_candidates": len(candidates),
+            "selected_count": len(selected_candidates),
+            "rejected_count": len(rejected_candidates),
+            "selected_candidates": selected_candidates,
+            "rejected_candidates": rejected_candidates
+        }

@@ -51,6 +51,19 @@ class CandidateReadSchema(BaseAppSchema):
     resume_url: Optional[str]
     candidate_resume_score: Optional[float]
     status: CandidateStatus
+    
+    # Test tracking fields
+    aptitude_test: Optional[bool] = Field(None, description="Has taken aptitude test")
+    technical_test: Optional[bool] = Field(None, description="Has taken technical test")
+    hr_test: Optional[bool] = Field(None, description="Has taken HR test")
+    
+    # Test result fields - 'pass' or 'fail'
+    aptitude_test_result: Optional[str] = Field(None, description="Aptitude test result: 'pass' or 'fail'")
+    technical_test_result: Optional[str] = Field(None, description="Technical test result: 'pass' or 'fail'")
+    hr_test_result: Optional[str] = Field(None, description="HR test result: 'pass' or 'fail'")
+    
+    # Resume selection field
+    resume_selected: Optional[bool] = Field(None, description="Resume selected based on score")
 
 
 class CandidateUpdateSchema(BaseModel):
@@ -68,6 +81,19 @@ class CandidateUpdateSchema(BaseModel):
     notice_period: Optional[str] = Field(None)
     resume_url: Optional[str] = Field(None, description="Path to resume file")
     candidate_resume_score: Optional[float] = Field(None, ge=0, le=100, description="AI-generated resume score")
+    
+    # Test tracking fields (optional updates)
+    aptitude_test: Optional[bool] = Field(None, description="Has taken aptitude test")
+    technical_test: Optional[bool] = Field(None, description="Has taken technical test")
+    hr_test: Optional[bool] = Field(None, description="Has taken HR test")
+    
+    # Test result fields (optional updates) - 'pass' or 'fail'
+    aptitude_test_result: Optional[str] = Field(None, description="Aptitude test result: 'pass' or 'fail'")
+    technical_test_result: Optional[str] = Field(None, description="Technical test result: 'pass' or 'fail'")
+    hr_test_result: Optional[str] = Field(None, description="HR test result: 'pass' or 'fail'")
+    
+    # Resume selection field
+    resume_selected: Optional[bool] = Field(None, description="Resume selected based on score")
 
 
 class CandidateListParamsSchema(BaseModel):

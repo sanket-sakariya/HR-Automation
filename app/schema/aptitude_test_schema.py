@@ -111,3 +111,34 @@ class TestCreatedResponse(BaseModel):
     questions_generated: int
     public_url: str
 
+
+# Candidate Selection Schemas
+class SelectTopCandidatesRequest(BaseModel):
+    """Schema for selecting top candidates based on aptitude test scores."""
+    job_requirement_id: UUID = Field(..., description="Job requirement ID")
+    aptitude_test_id: UUID = Field(..., description="Aptitude test ID")
+    top_n: int = Field(..., gt=0, description="Number of top candidates to select")
+
+
+class CandidateSelectionResult(BaseModel):
+    """Schema for candidate selection result."""
+    candidate_id: UUID
+    candidate_email: str
+    candidate_name: Optional[str]
+    score: float
+    passed: bool
+
+    class Config:
+        from_attributes = True
+
+
+class SelectTopCandidatesResponse(BaseModel):
+    """Response schema for top candidates selection."""
+    job_requirement_id: UUID
+    aptitude_test_id: UUID
+    total_attempts: int
+    top_n_requested: int
+    selected_candidates: List[CandidateSelectionResult]
+    rejected_candidates: List[CandidateSelectionResult]
+
+

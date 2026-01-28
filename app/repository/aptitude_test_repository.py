@@ -112,3 +112,22 @@ class AptitudeTestRepository:
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_completed_attempts_by_job_and_test(
+        self, 
+        job_requirement_id: UUID, 
+        aptitude_test_id: UUID
+    ) -> List[AptitudeTestAttemptModel]:
+        """
+        Get all completed attempts for a specific job requirement and aptitude test,
+        sorted by score in descending order (highest score first).
+        """
+        query = select(AptitudeTestAttemptModel).where(
+            AptitudeTestAttemptModel.job_requirement_id == job_requirement_id,
+            AptitudeTestAttemptModel.aptitude_test_id == aptitude_test_id,
+            AptitudeTestAttemptModel.status == "completed",
+            AptitudeTestAttemptModel.score.isnot(None)
+        ).order_by(AptitudeTestAttemptModel.score.desc())
+
+        result = await self.db.execute(query)
+        return result.scalars().all()
+
