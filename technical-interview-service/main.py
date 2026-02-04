@@ -64,7 +64,7 @@ active_sessions = {}
 
 
 class InterviewSession:
-    """Stores interview session data"""
+    """Stores interview session data and dynamically calculated scores"""
     def __init__(self, session_id: str, technical_interview_id: str, job_details: dict, candidate_info: dict, system_instruction: str):
         self.session_id = session_id
         self.technical_interview_id = technical_interview_id
@@ -79,6 +79,41 @@ class InterviewSession:
             "audio_input_seconds": 0.0,
             "audio_output_seconds": 0.0
         }
+        
+        # Dynamic scoring metrics (updated during interview)
+        self.scores = {
+            "overall_score": 0.0,
+            "overall_rating": "average",
+            "technical_knowledge_score": 0.0,
+            "domain_expertise_score": 0.0,
+            "communication_score": 0.0,
+            "articulation_score": 0.0,
+            "language_proficiency_score": 0.0,
+            "confidence_score": 0.0,
+            "composure_score": 0.0,
+            "enthusiasm_score": 0.0,
+            "professionalism_score": 0.0,
+            "response_relevance_score": 0.0,
+            "response_depth_score": 0.0,
+            "response_clarity_score": 0.0,
+            "engagement_score": 0.0,
+            "attentiveness_score": 0.0,
+        }
+        
+        # Question tracking
+        self.questions_asked = 0
+        self.questions_answered = 0
+        self.questions_skipped = 0
+        self.response_times = []  # List of response times in seconds
+        
+        # AI analysis results
+        self.candidate_strengths = []
+        self.candidate_weaknesses = []
+        self.improvement_areas = []
+        self.skills_assessment = []
+        self.ai_recommendation = "neutral"
+        self.ai_recommendation_reason = ""
+        self.ai_feedback_summary = ""
 
 
 @asynccontextmanager
@@ -574,23 +609,104 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
 
 
 async def save_interview_results(session: InterviewSession, duration: int):
-    """Save interview results to main service"""
+    """Save interview results to main service after AI evaluation"""
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Prepare completion data
+        # First, evaluate the interview using AI
+        print("🤖 Evaluating interview with AI...")
+        await evaluate_interview_with_ai(session, duration)
+        print("✅ AI evaluation complete")
+        
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            # Calculate average response time
+            avg_response_time = (
+                sum(session.response_times) / len(session.response_times) 
+                if session.response_times else 0.0
+            )
+            
+            # Determine overall rating based on score
+            overall_score = session.scores["overall_score"]
+            if overall_score >= 85:
+                overall_rating = "excellent"
+            elif overall_score >= 70:
+                overall_rating = "good"
+            elif overall_score >= 55:
+                overall_rating = "average"
+            elif overall_score >= 40:
+                overall_rating = "below_average"
+            else:
+                overall_rating = "poor"
+            
+            # Determine result
+            result = "pass" if overall_score >= 50 else "fail"
+            
+            # Prepare comprehensive completion data
             completion_data = {
+                # Duration
                 "interview_duration_seconds": duration,
-                "overall_score": 70.0,  # Default score - AI evaluation would set this
-                "overall_rating": "average",
+                
+                # Overall Scores
+                "overall_score": session.scores["overall_score"],
+                "overall_rating": overall_rating,
+                
+                # Technical Knowledge Scores
+                "technical_knowledge_score": session.scores["technical_knowledge_score"],
+                "domain_expertise_score": session.scores["domain_expertise_score"],
+                
+                # Communication Scores
+                "communication_score": session.scores["communication_score"],
+                "articulation_score": session.scores["articulation_score"],
+                "language_proficiency_score": session.scores["language_proficiency_score"],
+                
+                # Behavioral Scores
+                "confidence_score": session.scores["confidence_score"],
+                "composure_score": session.scores["composure_score"],
+                "enthusiasm_score": session.scores["enthusiasm_score"],
+                "professionalism_score": session.scores["professionalism_score"],
+                
+                # Response Quality Scores
+                "response_relevance_score": session.scores["response_relevance_score"],
+                "response_depth_score": session.scores["response_depth_score"],
+                "response_clarity_score": session.scores["response_clarity_score"],
+                
+                # Engagement Metrics
+                "engagement_score": session.scores["engagement_score"],
+                "attentiveness_score": session.scores["attentiveness_score"],
+                
+                # Question Statistics
+                "total_questions_asked": session.questions_asked,
+                "questions_answered": session.questions_answered,
+                "questions_skipped": session.questions_skipped,
+                
+                # Time Metrics
+                "average_response_time_seconds": avg_response_time,
+                "total_speaking_time_seconds": session.token_usage["audio_input_seconds"],
+                
+                # Detailed JSON Data
                 "interview_transcript": session.transcript,
+                "skills_assessment": session.skills_assessment,
+                "candidate_strengths": session.candidate_strengths,
+                "candidate_weaknesses": session.candidate_weaknesses,
+                
+                # AI Recommendations
+                "ai_recommendation": session.ai_recommendation,
+                "ai_recommendation_reason": session.ai_recommendation_reason,
+                "ai_feedback_summary": session.ai_feedback_summary,
+                "improvement_areas": session.improvement_areas,
+                
+                # Interview Metadata
                 "interview_language": "English",
                 "languages_used": ["English"],
+                "ai_model_used": GEMINI_MODEL,
+                
+                # Token Usage
                 "input_tokens_used": session.token_usage["input_tokens"],
                 "output_tokens_used": session.token_usage["output_tokens"],
                 "audio_input_seconds": session.token_usage["audio_input_seconds"],
                 "audio_output_seconds": session.token_usage["audio_output_seconds"],
-                "result": "pass",  # Default - would be evaluated by AI
-                "ai_model_used": GEMINI_MODEL
+                
+                # Final Result
+                "result": result,
+                "passed_threshold": 50.0
             }
             
             response = await client.post(
@@ -600,11 +716,185 @@ async def save_interview_results(session: InterviewSession, duration: int):
             
             if response.status_code == 200:
                 print("✅ Interview results saved successfully")
+                print(f"   📊 Overall Score: {overall_score:.1f}/100 ({overall_rating})")
+                print(f"   🎯 Result: {result.upper()}")
+                print(f"   💡 Recommendation: {session.ai_recommendation}")
             else:
                 print(f"⚠️ Failed to save results: {response.status_code} - {response.text}")
                 
     except Exception as e:
         print(f"❌ Error saving interview results: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+async def evaluate_interview_with_ai(session: InterviewSession, duration: int):
+    """
+    Use Gemini API to evaluate the interview transcript and generate scores.
+    This analyzes the conversation and provides comprehensive evaluation.
+    """
+    import google.generativeai as genai
+    
+    genai.configure(api_key=GEMINI_API_KEY)
+    
+    # Prepare transcript for analysis
+    transcript_text = "\n".join([
+        f"[{entry['speaker'].upper()}]: {entry['text']}"
+        for entry in session.transcript
+    ])
+    
+    # Get job context
+    job_title = session.job_details.get("title", "Technical Position")
+    required_skills = []
+    for req in session.job_details.get("requirements", []):
+        if isinstance(req, dict):
+            skill = req.get("skill", "")
+            if skill:
+                required_skills.append(skill)
+    
+    skills_str = ", ".join(required_skills[:10]) if required_skills else "general technical skills"
+    
+    evaluation_prompt = f"""You are an expert interview evaluator. Analyze this technical interview transcript and provide a comprehensive evaluation.
+
+JOB CONTEXT:
+- Position: {job_title}
+- Required Skills: {skills_str}
+- Interview Duration: {duration} seconds
+
+INTERVIEW TRANSCRIPT:
+{transcript_text}
+
+Provide your evaluation in the following JSON format ONLY (no other text):
+{{
+    "scores": {{
+        "overall_score": <0-100>,
+        "technical_knowledge_score": <0-100>,
+        "domain_expertise_score": <0-100>,
+        "communication_score": <0-100>,
+        "articulation_score": <0-100>,
+        "language_proficiency_score": <0-100>,
+        "confidence_score": <0-100>,
+        "composure_score": <0-100>,
+        "enthusiasm_score": <0-100>,
+        "professionalism_score": <0-100>,
+        "response_relevance_score": <0-100>,
+        "response_depth_score": <0-100>,
+        "response_clarity_score": <0-100>,
+        "engagement_score": <0-100>,
+        "attentiveness_score": <0-100>
+    }},
+    "questions_asked": <number>,
+    "questions_answered": <number>,
+    "questions_skipped": <number>,
+    "candidate_strengths": ["strength1", "strength2", ...],
+    "candidate_weaknesses": ["weakness1", "weakness2", ...],
+    "improvement_areas": ["area1", "area2", ...],
+    "skills_assessment": [
+        {{"skill_name": "skill", "proficiency_level": "beginner/intermediate/advanced", "score": <0-100>, "evidence": "observation"}}
+    ],
+    "ai_recommendation": "strongly_recommend/recommend/neutral/not_recommend",
+    "ai_recommendation_reason": "detailed reason for recommendation",
+    "ai_feedback_summary": "2-3 sentence summary of candidate performance"
+}}
+
+EVALUATION CRITERIA:
+- Technical Knowledge: Depth of technical understanding demonstrated
+- Domain Expertise: Specific knowledge related to job requirements
+- Communication: Clarity and effectiveness of communication
+- Articulation: How well they express their thoughts
+- Language Proficiency: Grammar, vocabulary, fluency
+- Confidence: Self-assurance in responses
+- Composure: Calmness and handling of difficult questions
+- Enthusiasm: Interest and passion for the role
+- Professionalism: Professional demeanor throughout
+- Response Relevance: How relevant answers were to questions
+- Response Depth: Thoroughness of answers
+- Response Clarity: Clarity of responses
+- Engagement: Active participation in the interview
+- Attentiveness: Attention to questions and context
+
+Be fair but critical. Base all scores on actual evidence from the transcript."""
+
+    try:
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        response = model.generate_content(evaluation_prompt)
+        
+        # Parse JSON response
+        response_text = response.text.strip()
+        
+        # Extract JSON if wrapped in code blocks
+        if "```json" in response_text:
+            response_text = response_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in response_text:
+            response_text = response_text.split("```")[1].split("```")[0].strip()
+        
+        evaluation = json.loads(response_text)
+        
+        # Update session with evaluation results
+        if "scores" in evaluation:
+            for key, value in evaluation["scores"].items():
+                if key in session.scores:
+                    session.scores[key] = float(value)
+        
+        session.questions_asked = evaluation.get("questions_asked", 0)
+        session.questions_answered = evaluation.get("questions_answered", 0)
+        session.questions_skipped = evaluation.get("questions_skipped", 0)
+        session.candidate_strengths = evaluation.get("candidate_strengths", [])
+        session.candidate_weaknesses = evaluation.get("candidate_weaknesses", [])
+        session.improvement_areas = evaluation.get("improvement_areas", [])
+        session.skills_assessment = evaluation.get("skills_assessment", [])
+        session.ai_recommendation = evaluation.get("ai_recommendation", "neutral")
+        session.ai_recommendation_reason = evaluation.get("ai_recommendation_reason", "")
+        session.ai_feedback_summary = evaluation.get("ai_feedback_summary", "")
+        
+        print(f"📊 AI Evaluation Results:")
+        print(f"   Overall Score: {session.scores['overall_score']:.1f}/100")
+        print(f"   Technical: {session.scores['technical_knowledge_score']:.1f}")
+        print(f"   Communication: {session.scores['communication_score']:.1f}")
+        print(f"   Recommendation: {session.ai_recommendation}")
+        
+    except json.JSONDecodeError as e:
+        print(f"⚠️ Failed to parse AI evaluation JSON: {e}")
+        print(f"   Response was: {response_text[:500]}...")
+        # Set default scores if parsing fails
+        _set_default_scores(session, duration)
+    except Exception as e:
+        print(f"⚠️ AI evaluation failed: {e}")
+        # Set default scores based on basic metrics
+        _set_default_scores(session, duration)
+
+
+def _set_default_scores(session: InterviewSession, duration: int):
+    """Set default scores based on basic metrics when AI evaluation fails"""
+    # Calculate basic scores from transcript length and duration
+    transcript_length = len(session.transcript)
+    candidate_responses = [t for t in session.transcript if t["speaker"] == "candidate"]
+    
+    # More responses = more engagement
+    base_score = min(70, 40 + (len(candidate_responses) * 3))
+    
+    # Longer responses = better depth
+    total_response_length = sum(len(t["text"]) for t in candidate_responses)
+    depth_bonus = min(15, total_response_length // 200)
+    
+    default_score = base_score + depth_bonus
+    
+    session.scores["overall_score"] = default_score
+    session.scores["technical_knowledge_score"] = default_score
+    session.scores["communication_score"] = default_score + 5
+    session.scores["confidence_score"] = default_score
+    session.scores["engagement_score"] = min(85, default_score + 10)
+    session.scores["response_clarity_score"] = default_score
+    
+    # Copy default to other scores
+    for key in session.scores:
+        if session.scores[key] == 0.0:
+            session.scores[key] = default_score
+    
+    session.questions_asked = transcript_length // 2
+    session.questions_answered = len(candidate_responses)
+    session.ai_feedback_summary = "Interview completed. Automatic scoring applied due to evaluation service unavailability."
+    session.ai_recommendation = "neutral"
 
 
 def generate_system_instruction(job_details: dict, candidate_info: dict) -> str:
@@ -645,6 +935,15 @@ JOB CONTEXT:
 - Key Skills Required: {skills_str}
 - Job Description: {description[:500]}...
 
+STRICT RULES - MUST FOLLOW:
+1. OFF-TOPIC QUESTIONS: If the candidate asks ANY question unrelated to the interview or job (like general knowledge, personal questions about you, weather, news, etc.), politely decline by saying: "I appreciate your curiosity, but let's stay focused on the interview. Let me ask you the next question."
+2. WRONG ANSWERS: When the candidate gives an incorrect answer to a technical question:
+   - Briefly state the correct answer in ONE short sentence
+   - Do NOT explain in detail or teach the concept
+   - Move on to the next question immediately
+   - Example: "Actually, the correct answer is [X]. Let's move to the next question."
+3. STAY ON TRACK: Your ONLY purpose is to evaluate the candidate. Do not engage in any conversation outside the interview scope.
+
 CRITICAL SPEAKING GUIDELINES:
 - Speak at a MODERATE, CLEAR pace - not too fast, not too slow
 - Pronounce each word clearly and distinctly
@@ -660,12 +959,12 @@ LANGUAGE BEHAVIOR:
 - Always match the language preference of the candidate
 
 INTERVIEW STRUCTURE:
-1. INTRODUCTION (2-3 mins):
+1. INTRODUCTION (1-2 mins):
    - Warm greeting - address candidate by name: {candidate_name}
    - Brief overview of the interview process
    - Put the candidate at ease
 
-2. BACKGROUND (3-5 mins):
+2. BACKGROUND (2-3 mins):
    - Ask about their experience and background
    - Current/previous role responsibilities
    - Why they're interested in this position
@@ -676,18 +975,18 @@ INTERVIEW STRUCTURE:
    - Probe deeper based on their responses
    - Ask follow-up questions to assess depth of knowledge
 
-4. PROBLEM SOLVING (5-7 mins):
+4. PROBLEM SOLVING (3-5 mins):
    - Present a relevant scenario or problem
    - Assess their analytical thinking
    - Evaluate their approach to problem-solving
 
-5. BEHAVIORAL QUESTIONS (3-5 mins):
+5. BEHAVIORAL QUESTIONS (2-3 mins):
    - Ask about challenging situations they've handled
    - Team collaboration experiences
    - How they handle pressure/deadlines
 
-6. CLOSING (2-3 mins):
-   - Ask if they have questions
+6. CLOSING (1-2 mins):
+   - Ask if they have questions about the role
    - Thank them for their time
    - Mention next steps
 
@@ -701,13 +1000,14 @@ EVALUATION CRITERIA (Assess throughout):
 
 INTERVIEWER GUIDELINES:
 - Ask ONE question at a time and wait for complete response
-- Be encouraging and supportive
-- If answer is unclear, politely ask for clarification
-- Keep responses concise - avoid long monologues
-- Acknowledge good answers positively
-- Note any areas where candidate struggles
+- Be professional but not overly friendly
+- If answer is unclear, ask for clarification ONCE only
+- Keep your responses SHORT and CONCISE
+- Do NOT provide hints or help during technical questions
+- When answer is wrong, give correct answer briefly and move on
+- Do NOT explain concepts - this is evaluation, not teaching
 
-Remember: This is a VOICE conversation. Keep responses concise and natural. No markdown, bullet points, or text formatting. Sound human, not robotic. SPEAK CLEARLY AND AT A COMFORTABLE PACE.
+Remember: This is a VOICE conversation. Keep responses SHORT and TO THE POINT. No markdown, bullet points, or text formatting. Be professional. SPEAK CLEARLY AND AT A COMFORTABLE PACE.
 
 At the end, thank the candidate professionally and wish them well."""
 
