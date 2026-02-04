@@ -10,7 +10,7 @@ GEMINI_API_KEY = "AIzaSyDHNd6W382fBzwf_HbPxf70sxG13XE9xgA"
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Default resume folder path
-DEFAULT_RESUME_FOLDER = r"D:\HR automation\interview-management-service\resume"
+DEFAULT_RESUME_FOLDER = "resume"
 
 def scan_resume_folder(folder_path):
     """

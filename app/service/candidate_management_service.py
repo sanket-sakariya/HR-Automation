@@ -400,8 +400,8 @@ class CandidateManagementService(BaseAppService):
     ) -> str:
         """Save uploaded resume file and return the file path."""
         try:
-            # Use absolute path for resume directory
-            resume_dir = Path(r"D:\HR automation\interview-management-service\resume")
+            # Use relative path for resume directory
+            resume_dir = Path("resume")
             resume_dir.mkdir(parents=True, exist_ok=True)
 
             # Get file extension

@@ -1,5 +1,11 @@
+import warnings
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+# Suppress FastAPI deprecation warnings for 'example' -> 'examples'
+warnings.filterwarnings("ignore", message=".*`example` has been deprecated.*")
+# Suppress google.generativeai deprecation warning
+warnings.filterwarnings("ignore", message=".*All support for the `google.generativeai` package has ended.*")
 
 import uvicorn
 from fastapi import FastAPI
