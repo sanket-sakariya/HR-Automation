@@ -21,6 +21,7 @@ from app.model.candidate_profile_model import CandidateProfileModel
 from app.model.aptitude_test_model import AptitudeTestModel
 from app.model.aptitude_question_model import AptitudeQuestionModel
 from app.model.aptitude_test_attempt_model import AptitudeTestAttemptModel
+from app.model.technical_interview_model import TechnicalInterviewModel
 
 # Import your app config
 

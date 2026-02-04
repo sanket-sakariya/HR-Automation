@@ -120,6 +120,7 @@ class TechnicalInterviewService:
             "interview_status": "pending",
             "ai_model_used": "gemini-2.5-flash-native-audio-preview-12-2025",
             "created_at": datetime.now(timezone.utc),
+            "created_by": candidate_id,  # Candidate creates their own interview session
             "is_active": True,
             "status": "active"
         }
