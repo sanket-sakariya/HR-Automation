@@ -15,7 +15,8 @@ class LinkedInJobPoster:
     def __init__(self, job_data, user_data_dir="./browser_data"):
         self.job_data = job_data
         self.user_data_dir = user_data_dir
-        self.form_link = "https://forms.gle/JW5AcX1zcRgA2ByJ6"
+        # Use dynamic form URL from job data, fallback to default if not available
+        self.form_link = job_data.get('form_url') or "https://forms.gle/JW5AcX1zcRgA2ByJ6"
 
     def generate_job_post_text(self):
         """Generate formatted job post text from job data"""
@@ -193,7 +194,7 @@ Apply here: {self.form_link}"""
             # Launch browser with persistent context (saves login data)
             context = await p.chromium.launch_persistent_context(
                 user_data_dir=self.user_data_dir,
-                headless=True,
+                headless=False,  # Must be False to allow manual login when needed
                 viewport={'width': 1080, 'height': 720},
                 args=[
                     '--disable-blink-features=AutomationControlled',

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import httpx
 from typing import Optional, Dict, Any, List, Tuple
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -132,6 +133,55 @@ class JobRequirementService(BaseAppService):
             max_years = job_data.experience.max_years if job_data.experience else None
             experience_text = self.format_experience_text(min_years, max_years)
         
+        # Generate application form by calling the Flask form service
+        form_url = None
+        try:
+            flask_service_url = f"http://localhost:8889/interview-management-service/api/v1/candidates/apply/{job_data.job_requirement_id}"
+            
+            # Prepare job details for form generation
+            job_details = {
+                "job_requirement_id": str(job_data.job_requirement_id),
+                "title": job_data.title,
+                "department": job_data.department,
+                "description": job_data.description,
+                "location": job_data.location,
+                "job_type": job_data.job_type,
+                "company_name": company.company_name if company else "Our Company",
+                "salary_range": {
+                    "min": job_data.salary_range.min if job_data.salary_range else None,
+                    "max": job_data.salary_range.max if job_data.salary_range else None,
+                    "currency": job_data.salary_range.currency if job_data.salary_range else "USD",
+                } if job_data.salary_range else None,
+                "experience": {
+                    "min_years": job_data.experience.min_years if job_data.experience else None,
+                    "max_years": job_data.experience.max_years if job_data.experience else None,
+                } if job_data.experience else None,
+                "requirements": [{"skill": req.skill, "level": req.level, "required": req.required} for req in job_data.requirements],
+            }
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    flask_service_url,
+                    json={"job_details": job_details},
+                    timeout=10.0
+                )
+                
+                if response.status_code == 200:
+                    flask_response = response.json()
+                    if flask_response.get("success"):
+                        form_url = flask_response.get("form_url")
+                        log_user_activity(
+                            f"Application form generated: {form_url}",
+                            action_type="form_generation_success",
+                            level="info",
+                        )
+        except Exception as e:
+            log_user_activity(
+                f"Failed to generate application form: {str(e)}",
+                action_type="form_generation_error",
+                level="warning",
+            )
+        
         # Prepare job data for LinkedIn posting
         linkedin_job_data = {
             "job_requirement_id": str(job_data.job_requirement_id),
@@ -159,6 +209,7 @@ class JobRequirementService(BaseAppService):
             "is_active": job_data.is_active,
             "created_at": job_data.created_at.isoformat() if job_data.created_at else None,
             "updated_at": job_data.updated_at.isoformat() if job_data.updated_at else None,
+            "form_url": form_url,  # Include the generated form URL
         }
 
         return job_data, linkedin_job_data
