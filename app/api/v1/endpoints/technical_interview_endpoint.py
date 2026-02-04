@@ -3,6 +3,7 @@
 from __future__ import annotations
 from typing import Optional
 from uuid import UUID
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,11 +14,9 @@ from app.config.constants import SuccessMessages
 from app.schema.response_schema import ApiResponseSchema
 from app.schema.technical_interview_schema import (
     TechnicalInterviewLoginRequest,
-    StartTechnicalInterviewRequest,
     CompleteInterviewRequest,
     TechnicalInterviewReadSchema,
     TechnicalInterviewDetailedSchema,
-    InterviewSessionResponse,
 )
 
 from app.service.technical_interview_service import TechnicalInterviewService
@@ -36,39 +35,91 @@ router = APIRouter(
 )
 
 
-@router.post("/login", response_model=ApiResponseSchema[dict])
-async def candidate_login(
+@router.post("/start/{candidate_id}", response_model=ApiResponseSchema[dict])
+async def start_technical_interview(
+    candidate_id: UUID,
     payload: TechnicalInterviewLoginRequest,
     db: AsyncSession = Depends(get_async_db),
 ):
     """
-    Candidate login for technical interview.
-    Uses the same credentials as aptitude test (email + auto-generated password).
+    Start Technical Interview for a Candidate.
     
-    Returns interview session details and WebSocket URL for the AI interview.
+    Flow:
+    1. Verify candidate credentials (email + password)
+    2. Check if candidate passed aptitude test
+    3. Get candidate details including resume
+    4. Generate master AI prompt based on job requirements and candidate profile
+    5. Create interview session
+    6. Return interview URL and details
+    
+    Interview Duration: Minimum 5 minutes, Maximum 15 minutes
     """
     try:
         service = TechnicalInterviewService(db)
+        candidate_repo = CandidateRepository(db)
+        job_repo = JobRequirementRepository(db)
         
-        # Validate credentials
-        validation = await service.validate_candidate_login(
-            email=payload.email,
-            password=payload.password,
-            job_requirement_id=payload.job_requirement_id
-        )
-        
-        if not validation.get("valid"):
+        # Step 1: Get candidate by ID
+        candidate = await candidate_repo.get_by_id(candidate_id)
+        if not candidate:
             raise HTTPException(
-                status_code=http_status.HTTP_401_UNAUTHORIZED,
-                detail=validation.get("error", "Invalid credentials")
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Candidate not found: {candidate_id}"
             )
         
-        candidate = validation["candidate"]
+        # Step 2: Verify credentials
+        if candidate.email != payload.email:
+            raise HTTPException(
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail="Email does not match candidate record"
+            )
         
-        # Create interview session
+        if candidate.password != payload.password:
+            raise HTTPException(
+                status_code=http_status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid password"
+            )
+        
+        # Step 3: Verify job requirement matches
+        if str(candidate.job_requirement_id) != str(payload.job_requirement_id):
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="Job requirement does not match candidate's application"
+            )
+        
+        # Step 4: Check if candidate passed aptitude test
+        if not candidate.aptitude_test or candidate.aptitude_test_result != "pass":
+            raise HTTPException(
+                status_code=http_status.HTTP_403_FORBIDDEN,
+                detail="Candidate must pass aptitude test before technical interview"
+            )
+        
+        # Step 5: Get job details
+        job = await job_repo.get_by_id(candidate.job_requirement_id)
+        if not job:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail="Job requirement not found"
+            )
+        
+        # Step 6: Extract resume text if available
+        resume_text = None
+        if candidate.resume_url:
+            resume_path = Path(candidate.resume_url)
+            if resume_path.exists():
+                try:
+                    from pypdf import PdfReader
+                    reader = PdfReader(str(resume_path))
+                    resume_text = ""
+                    for page in reader.pages:
+                        resume_text += page.extract_text() + "\n"
+                except Exception as e:
+                    print(f"Warning: Could not extract resume text: {e}")
+        
+        # Step 7: Create interview session
         session_result = await service.create_interview_session(
-            candidate_id=candidate.candidate_id,
-            job_requirement_id=payload.job_requirement_id
+            candidate_id=candidate_id,
+            job_requirement_id=candidate.job_requirement_id
         )
         
         if "error" in session_result:
@@ -86,31 +137,41 @@ async def candidate_login(
         job_details = session_result["job_details"]
         candidate_info = session_result["candidate_info"]
         
-        # Generate customized system instruction
-        system_instruction = service.generate_system_instruction(job_details)
+        # Step 8: Generate master AI prompt with job details, candidate info, and resume
+        system_instruction = service.generate_master_prompt(
+            job_details=job_details,
+            candidate_info=candidate_info,
+            resume_text=resume_text
+        )
         
         # WebSocket URL for the interview (pointing to the technical-interview-service on port 8100)
         websocket_url = f"ws://localhost:8100/ws/{interview.interview_session_id}"
+        interview_url = f"http://localhost:8100/interview/{interview.interview_session_id}"
         
         return ApiResponseSchema(
             success=True,
-            message="Login successful. Ready to start technical interview.",
+            message="Technical interview started successfully. Interview duration: 5-15 minutes.",
             data={
                 "technical_interview_id": str(interview.technical_interview_id),
                 "interview_session_id": interview.interview_session_id,
                 "interview_status": interview.interview_status,
                 "is_existing_session": session_result.get("is_existing", False),
                 "websocket_url": websocket_url,
-                "interview_url": f"http://localhost:8100/interview/{interview.interview_session_id}",
+                "interview_url": interview_url,
                 "job_details": job_details,
                 "candidate_info": candidate_info,
                 "system_instruction": system_instruction,
+                "interview_config": {
+                    "min_duration_minutes": 5,
+                    "max_duration_minutes": 15,
+                    "auto_end_after_minutes": 15
+                },
                 "instructions": {
                     "1": "Open the interview_url in your browser",
                     "2": "Allow microphone and camera permissions",
                     "3": "Click 'Start Interview' to begin",
-                    "4": "Speak clearly in English, Hindi, or Gujarati",
-                    "5": "The AI will adapt to your language preference"
+                    "4": "Speak clearly - the AI supports English, Hindi, and Gujarati",
+                    "5": "Interview will last between 5-15 minutes"
                 }
             }
         )
@@ -120,47 +181,7 @@ async def candidate_login(
     except Exception as e:
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Login failed: {str(e)}"
-        )
-
-
-@router.post("/start/{technical_interview_id}", response_model=ApiResponseSchema[dict])
-async def start_interview(
-    technical_interview_id: UUID,
-    db: AsyncSession = Depends(get_async_db),
-):
-    """
-    Mark the technical interview as started.
-    Call this when the candidate begins the actual interview.
-    """
-    try:
-        service = TechnicalInterviewService(db)
-        
-        interview = await service.start_interview(technical_interview_id)
-        
-        if not interview:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail=f"Technical interview not found: {technical_interview_id}"
-            )
-        
-        return ApiResponseSchema(
-            success=True,
-            message="Technical interview started",
-            data={
-                "technical_interview_id": str(interview.technical_interview_id),
-                "interview_session_id": interview.interview_session_id,
-                "interview_status": interview.interview_status,
-                "started_at": interview.interview_started_at.isoformat() if interview.interview_started_at else None
-            }
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start interview: {str(e)}"
+            detail=f"Failed to start technical interview: {str(e)}"
         )
 
 
@@ -317,7 +338,27 @@ async def get_interview_by_session(
         candidate = await candidate_repo.get_by_id(interview.candidate_id)
         
         job_details = service._format_job_details(job)
-        system_instruction = service.generate_system_instruction(job_details)
+        candidate_info = service._format_candidate_info(candidate)
+        
+        # Extract resume text for prompt
+        resume_text = None
+        if candidate and candidate.resume_url:
+            resume_path = Path(candidate.resume_url)
+            if resume_path.exists():
+                try:
+                    from pypdf import PdfReader
+                    reader = PdfReader(str(resume_path))
+                    resume_text = ""
+                    for page in reader.pages:
+                        resume_text += page.extract_text() + "\n"
+                except Exception:
+                    pass
+        
+        system_instruction = service.generate_master_prompt(
+            job_details=job_details,
+            candidate_info=candidate_info,
+            resume_text=resume_text
+        )
         
         return ApiResponseSchema(
             success=True,
@@ -327,12 +368,13 @@ async def get_interview_by_session(
                 "interview_session_id": interview.interview_session_id,
                 "interview_status": interview.interview_status,
                 "job_details": job_details,
-                "candidate_info": {
-                    "candidate_id": str(candidate.candidate_id) if candidate else None,
-                    "name": f"{candidate.first_name} {candidate.last_name}" if candidate else None,
-                    "email": candidate.email if candidate else None
-                },
-                "system_instruction": system_instruction
+                "candidate_info": candidate_info,
+                "system_instruction": system_instruction,
+                "interview_config": {
+                    "min_duration_minutes": 5,
+                    "max_duration_minutes": 15,
+                    "auto_end_after_minutes": 15
+                }
             }
         )
 
@@ -474,80 +516,69 @@ async def select_top_candidates(
         )
 
 
-@router.post("/generate-test-url", response_model=ApiResponseSchema[dict])
-async def generate_technical_test_url(
-    job_requirement_id: UUID,
+@router.get("/candidate/{candidate_id}/status", response_model=ApiResponseSchema[dict])
+async def get_candidate_interview_status(
     candidate_id: UUID,
     db: AsyncSession = Depends(get_async_db),
 ):
     """
-    Generate a technical test URL for a candidate.
+    Check if a candidate is eligible for technical interview.
     
-    This endpoint creates a new interview session and returns the URL
-    that the candidate can use to access the interview portal.
-    
-    **Parameters:**
-    - job_requirement_id: UUID of the job requirement
-    - candidate_id: UUID of the candidate
-    
-    **Returns:**
-    - Interview URL pointing to technical interview service on port 8100
-    - Interview session details
+    Returns:
+    - Whether candidate has passed aptitude test
+    - Whether technical interview is pending, completed, or not started
+    - Interview URL if eligible
     """
     try:
-        service = TechnicalInterviewService(db)
+        candidate_repo = CandidateRepository(db)
+        interview_repo = TechnicalInterviewRepository(db)
         
-        # Create interview session
-        session_result = await service.create_interview_session(
-            candidate_id=candidate_id,
-            job_requirement_id=job_requirement_id
-        )
-        
-        if "error" in session_result:
-            if session_result.get("already_completed"):
-                raise HTTPException(
-                    status_code=http_status.HTTP_400_BAD_REQUEST,
-                    detail=session_result["error"]
-                )
+        candidate = await candidate_repo.get_by_id(candidate_id)
+        if not candidate:
             raise HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
-                detail=session_result["error"]
+                detail=f"Candidate not found: {candidate_id}"
             )
         
-        interview = session_result["interview"]
-        job_details = session_result["job_details"]
-        candidate_info = session_result["candidate_info"]
+        # Check aptitude test status
+        aptitude_passed = candidate.aptitude_test and candidate.aptitude_test_result == "pass"
         
-        # Generate URLs
-        interview_url = f"http://localhost:8100/interview/{interview.interview_session_id}"
-        login_url = f"http://localhost:8100/?job={job_requirement_id}"
+        # Check existing interview
+        existing_interview = await interview_repo.get_pending_interview(
+            candidate_id, candidate.job_requirement_id
+        )
+        
+        completed_interview = await interview_repo.check_interview_exists(
+            candidate_id, candidate.job_requirement_id
+        )
+        
+        interview_status = "not_started"
+        interview_url = None
+        
+        if completed_interview:
+            interview_status = "completed"
+        elif existing_interview:
+            interview_status = existing_interview.interview_status
+            interview_url = f"http://localhost:8100/interview/{existing_interview.interview_session_id}"
         
         return ApiResponseSchema(
             success=True,
-            message="Technical interview URL generated successfully",
+            message="Candidate interview status retrieved",
             data={
-                "technical_interview_id": str(interview.technical_interview_id),
-                "interview_session_id": interview.interview_session_id,
+                "candidate_id": str(candidate_id),
+                "candidate_name": f"{candidate.first_name} {candidate.last_name}",
+                "candidate_email": candidate.email,
+                "job_requirement_id": str(candidate.job_requirement_id),
+                "aptitude_test_passed": aptitude_passed,
+                "eligible_for_technical_interview": aptitude_passed and not completed_interview,
+                "interview_status": interview_status,
                 "interview_url": interview_url,
-                "login_url": login_url,
-                "direct_access_url": f"http://localhost:8100/interview/{interview.interview_session_id}",
-                "job_details": {
-                    "job_id": str(job_requirement_id),
-                    "title": job_details.get("title", ""),
-                    "department": job_details.get("department", "")
-                },
-                "candidate_info": {
-                    "candidate_id": str(candidate_id),
-                    "name": candidate_info.get("name", ""),
-                    "email": candidate_info.get("email", "")
-                },
-                "is_existing_session": session_result.get("is_existing", False),
-                "instructions": {
-                    "step_1": "Share the interview_url with the candidate",
-                    "step_2": "Candidate logs in with their email and password",
-                    "step_3": "Allow microphone and camera permissions",
-                    "step_4": "Complete the AI-powered voice interview"
-                }
+                "technical_test_result": candidate.technical_test_result,
+                "message": (
+                    "Technical interview already completed" if completed_interview
+                    else "Eligible for technical interview" if aptitude_passed
+                    else "Must pass aptitude test first"
+                )
             }
         )
 
@@ -556,5 +587,5 @@ async def generate_technical_test_url(
     except Exception as e:
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate test URL: {str(e)}"
+            detail=f"Failed to get candidate status: {str(e)}"
         )
