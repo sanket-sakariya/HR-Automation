@@ -15,8 +15,6 @@ from app.schema.response_schema import ApiResponseSchema
 from app.schema.technical_interview_schema import (
     TechnicalInterviewLoginRequest,
     CompleteInterviewRequest,
-    TechnicalInterviewReadSchema,
-    TechnicalInterviewDetailedSchema,
 )
 
 from app.service.technical_interview_service import TechnicalInterviewService
@@ -241,13 +239,14 @@ async def complete_interview(
         )
 
 
-@router.get("/{technical_interview_id}", response_model=ApiResponseSchema[TechnicalInterviewReadSchema])
+@router.get("/{technical_interview_id}", response_model=ApiResponseSchema[dict])
 async def get_interview(
     technical_interview_id: UUID,
     db: AsyncSession = Depends(get_async_db),
 ):
     """
-    Get technical interview details by ID.
+    Get complete technical interview data by ID.
+    Returns all interview details including scores, transcript, and analysis.
     """
     try:
         service = TechnicalInterviewService(db)
@@ -263,7 +262,75 @@ async def get_interview(
         return ApiResponseSchema(
             success=True,
             message="Interview retrieved successfully",
-            data=interview
+            data={
+                "technical_interview_id": str(interview.technical_interview_id),
+                "job_requirement_id": str(interview.job_requirement_id),
+                "candidate_id": str(interview.candidate_id),
+                "interview_session_id": interview.interview_session_id,
+                "interview_started_at": interview.interview_started_at.isoformat() if interview.interview_started_at else None,
+                "interview_ended_at": interview.interview_ended_at.isoformat() if interview.interview_ended_at else None,
+                "interview_duration_seconds": interview.interview_duration_seconds,
+                "interview_status": interview.interview_status,
+                "overall_score": interview.overall_score,
+                "overall_rating": interview.overall_rating,
+                "technical_knowledge_score": interview.technical_knowledge_score,
+                "domain_expertise_score": interview.domain_expertise_score,
+                "communication_score": interview.communication_score,
+                "articulation_score": interview.articulation_score,
+                "language_proficiency_score": interview.language_proficiency_score,
+                "confidence_score": interview.confidence_score,
+                "composure_score": interview.composure_score,
+                "enthusiasm_score": interview.enthusiasm_score,
+                "professionalism_score": interview.professionalism_score,
+                "response_relevance_score": interview.response_relevance_score,
+                "response_depth_score": interview.response_depth_score,
+                "response_clarity_score": interview.response_clarity_score,
+                "total_questions_asked": interview.total_questions_asked,
+                "questions_answered": interview.questions_answered,
+                "questions_skipped": interview.questions_skipped,
+                "questions_partially_answered": interview.questions_partially_answered,
+                "average_response_time_seconds": interview.average_response_time_seconds,
+                "longest_response_time_seconds": interview.longest_response_time_seconds,
+                "shortest_response_time_seconds": interview.shortest_response_time_seconds,
+                "total_speaking_time_seconds": interview.total_speaking_time_seconds,
+                "total_silence_time_seconds": interview.total_silence_time_seconds,
+                "speech_rate_wpm": interview.speech_rate_wpm,
+                "voice_clarity_score": interview.voice_clarity_score,
+                "filler_words_count": interview.filler_words_count,
+                "interruptions_count": interview.interruptions_count,
+                "engagement_score": interview.engagement_score,
+                "attentiveness_score": interview.attentiveness_score,
+                "follow_up_questions_asked": interview.follow_up_questions_asked,
+                "interview_transcript": interview.interview_transcript,
+                "question_analysis": interview.question_analysis,
+                "skills_assessment": interview.skills_assessment,
+                "candidate_strengths": interview.candidate_strengths,
+                "candidate_weaknesses": interview.candidate_weaknesses,
+                "ai_recommendation": interview.ai_recommendation,
+                "ai_recommendation_reason": interview.ai_recommendation_reason,
+                "ai_feedback_summary": interview.ai_feedback_summary,
+                "improvement_areas": interview.improvement_areas,
+                "interview_language": interview.interview_language,
+                "languages_used": interview.languages_used,
+                "ai_model_used": interview.ai_model_used,
+                "tab_switches": interview.tab_switches,
+                "browser_focus_lost_count": interview.browser_focus_lost_count,
+                "suspicious_activity_flags": interview.suspicious_activity_flags,
+                "audio_quality_score": interview.audio_quality_score,
+                "video_enabled": interview.video_enabled,
+                "connection_quality": interview.connection_quality,
+                "technical_issues": interview.technical_issues,
+                "input_tokens_used": interview.input_tokens_used,
+                "output_tokens_used": interview.output_tokens_used,
+                "audio_input_seconds": interview.audio_input_seconds,
+                "audio_output_seconds": interview.audio_output_seconds,
+                "result": interview.result,
+                "passed_threshold": interview.passed_threshold,
+                "interviewer_notes": interview.interviewer_notes,
+                "candidate_feedback": interview.candidate_feedback,
+                "created_at": interview.created_at.isoformat() if interview.created_at else None,
+                "updated_at": interview.updated_at.isoformat() if interview.updated_at else None,
+            }
         )
 
     except HTTPException:
@@ -272,40 +339,6 @@ async def get_interview(
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get interview: {str(e)}"
-        )
-
-
-@router.get("/detailed/{technical_interview_id}", response_model=ApiResponseSchema[TechnicalInterviewDetailedSchema])
-async def get_interview_detailed(
-    technical_interview_id: UUID,
-    db: AsyncSession = Depends(get_async_db),
-):
-    """
-    Get detailed technical interview data including transcript and analysis.
-    """
-    try:
-        service = TechnicalInterviewService(db)
-        
-        interview = await service.get_interview_by_id(technical_interview_id)
-        
-        if not interview:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail=f"Technical interview not found: {technical_interview_id}"
-            )
-        
-        return ApiResponseSchema(
-            success=True,
-            message="Detailed interview data retrieved successfully",
-            data=interview
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to get interview details: {str(e)}"
         )
 
 

@@ -59,9 +59,7 @@ class UpdateInterviewScoresRequest(BaseModel):
     # Technical Knowledge Scores
     technical_knowledge_score: Optional[float] = Field(None, ge=0, le=100)
     domain_expertise_score: Optional[float] = Field(None, ge=0, le=100)
-    coding_skills_score: Optional[float] = Field(None, ge=0, le=100)
-    problem_solving_score: Optional[float] = Field(None, ge=0, le=100)
-    system_design_score: Optional[float] = Field(None, ge=0, le=100)
+
     
     # Communication Scores
     communication_score: Optional[float] = Field(None, ge=0, le=100)
@@ -97,9 +95,7 @@ class CompleteInterviewRequest(BaseModel):
     # Technical Knowledge Scores
     technical_knowledge_score: Optional[float] = Field(None, ge=0, le=100)
     domain_expertise_score: Optional[float] = Field(None, ge=0, le=100)
-    coding_skills_score: Optional[float] = Field(None, ge=0, le=100)
-    problem_solving_score: Optional[float] = Field(None, ge=0, le=100)
-    system_design_score: Optional[float] = Field(None, ge=0, le=100)
+
     
     # Communication Scores
     communication_score: Optional[float] = Field(None, ge=0, le=100)
@@ -199,9 +195,7 @@ class TechnicalInterviewReadSchema(BaseModel):
     # Technical Knowledge Scores
     technical_knowledge_score: Optional[float]
     domain_expertise_score: Optional[float]
-    coding_skills_score: Optional[float]
-    problem_solving_score: Optional[float]
-    system_design_score: Optional[float]
+
     
     # Communication Scores
     communication_score: Optional[float]
