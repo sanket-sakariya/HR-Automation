@@ -73,7 +73,8 @@ class InterviewSession:
         self.candidate_info = candidate_info
         self.system_instruction = system_instruction
         self.started_at = None
-        self.transcript = []
+        self.transcript = []  # Stored in DB - only AI responses
+        self.full_transcript = []  # For AI evaluation - includes candidate responses
         self.token_usage = {
             "input_tokens": 0,
             "output_tokens": 0,
@@ -460,21 +461,17 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                         if "serverContent" in data:
                             server_content = data["serverContent"]
                             
-                            # Check for input (user) audio transcription
+                            # Check for input (user) audio transcription - store in full_transcript for evaluation only
                             if "inputTranscript" in server_content:
                                 user_text = server_content["inputTranscript"]
                                 if user_text and user_text.strip():
-                                    session.transcript.append({
+                                    # Store in full_transcript for AI evaluation (not saved to DB, not sent to UI)
+                                    session.full_transcript.append({
                                         "timestamp": datetime.now(timezone.utc).isoformat(),
                                         "speaker": "candidate",
                                         "text": user_text
                                     })
                                     print(f"📝 User: {user_text[:80]}...")
-                                    await websocket.send_json({
-                                        "type": "transcript",
-                                        "text": user_text,
-                                        "speaker": "candidate"
-                                    })
                             
                             if server_content.get("interrupted"):
                                 print("🛑 Gemini detected interruption")
@@ -518,7 +515,14 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                                 text = part["text"]
                                 text_lower = text.lower()
                                 session.token_usage["output_tokens"] += len(text) // 4
+                                # Store in transcript (saved to DB) - only AI responses
                                 session.transcript.append({
+                                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                                    "speaker": "ai",
+                                    "text": text
+                                })
+                                # Also store in full_transcript for evaluation
+                                session.full_transcript.append({
                                     "timestamp": datetime.now(timezone.utc).isoformat(),
                                     "speaker": "ai",
                                     "text": text
@@ -625,15 +629,16 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                             pass
                     
                     elif msg_type == "transcript":
-                        # User transcript from browser speech recognition
+                        # User transcript from browser speech recognition - store in full_transcript for evaluation
                         text = data.get("text", "")
                         if text:
-                            session.transcript.append({
+                            # Store in full_transcript for AI evaluation (not saved to DB)
+                            session.full_transcript.append({
                                 "timestamp": datetime.now(timezone.utc).isoformat(),
                                 "speaker": "candidate",
                                 "text": text
                             })
-                            print(f"📝 User: {text[:80]}...")
+                            print(f"📝 User (browser): {text[:80]}...")
                     
                     elif msg_type == "stop":
                         print("🛑 Stop signal received from frontend")
@@ -848,11 +853,13 @@ async def evaluate_interview_with_ai(session: InterviewSession, duration: int):
     
     genai.configure(api_key=GEMINI_API_KEY)
     
-    # Prepare transcript for analysis
+    # Prepare FULL transcript for analysis (includes both AI and candidate responses)
     transcript_text = "\n".join([
         f"[{entry['speaker'].upper()}]: {entry['text']}"
-        for entry in session.transcript
+        for entry in session.full_transcript
     ])
+    
+    print(f"📊 Evaluating interview with {len(session.full_transcript)} transcript entries...")
     
     # Get job context
     job_title = session.job_details.get("title", "Technical Position")
@@ -904,19 +911,25 @@ Provide your evaluation in the following JSON format ONLY (no other text):
     "ai_feedback_summary": "2-3 sentence summary of candidate performance"
 }}
 
-EVALUATION CRITERIA:
-- Technical Knowledge: Depth of technical understanding demonstrated
-- Domain Expertise: Specific knowledge related to job requirements
-- Communication: Clarity and effectiveness of communication
-- Language Proficiency: Grammar, vocabulary, fluency
-- Confidence: Self-assurance in responses
-- Professionalism: Professional demeanor throughout
-- Response Relevance: How relevant answers were to questions
-- Response Depth: Thoroughness of answers
-- Response Clarity: Clarity of responses
-- Engagement: Active participation in the interview
+CRITICAL EVALUATION RULES:
+1. Evaluate ALL questions and answers in the ENTIRE transcript, not just the last one
+2. Calculate CUMULATIVE scores based on ALL responses throughout the interview
+3. Count TOTAL questions asked and answered across the whole interview
+4. Consider consistency of performance across all questions
 
-Be fair but critical. Base all scores on actual evidence from the transcript."""
+EVALUATION CRITERIA:
+- Technical Knowledge: Average technical understanding across ALL answers
+- Domain Expertise: Overall job-relevant knowledge demonstrated
+- Communication: Clarity and effectiveness throughout the interview
+- Language Proficiency: Grammar, vocabulary, fluency across all responses
+- Confidence: Overall self-assurance across all answers
+- Professionalism: Professional demeanor throughout entire interview
+- Response Relevance: Average relevance of ALL answers to questions asked
+- Response Depth: Average thoroughness across ALL answers
+- Response Clarity: Average clarity across ALL responses
+- Engagement: Overall participation level throughout the interview
+
+Be fair but critical. Base all scores on actual evidence from the COMPLETE transcript."""
 
     try:
         model = genai.GenerativeModel("gemini-2.0-flash")

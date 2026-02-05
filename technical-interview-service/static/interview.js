@@ -403,7 +403,10 @@ function handleWebSocketMessage(message) {
             break;
             
         case 'transcript':
-            addTranscriptMessage(message.text, message.speaker);
+            // Only show AI messages in transcript, not candidate messages
+            if (message.speaker === 'ai') {
+                addTranscriptMessage(message.text, message.speaker);
+            }
             break;
             
         case 'error':
@@ -493,9 +496,7 @@ function initSpeechRecognition() {
                 const transcript = event.results[i][0].transcript.trim();
                 if (transcript) {
                     console.log('User said:', transcript);
-                    // Add to UI
-                    addTranscriptMessage(transcript, 'candidate');
-                    // Send to server for storage
+                    // Send to server for evaluation only (not displayed in UI)
                     if (ws && ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({
                             type: 'transcript',
