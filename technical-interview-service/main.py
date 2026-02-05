@@ -14,6 +14,7 @@ import json
 import asyncio
 import base64
 import httpx
+import websockets
 from pathlib import Path
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -369,18 +370,21 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     gemini_ws = None
     receive_task = None
     send_task = None
+    max_retries = 3
+    retry_count = 0
     
     session.started_at = datetime.now(timezone.utc)
     
-    try:
-        # Connect to Gemini WebSocket
+    async def connect_to_gemini():
+        """Connect to Gemini WebSocket with retry logic"""
+        nonlocal gemini_ws
         import websockets
         
         print("🔗 Connecting to Gemini 2.5 Flash Multimodal Live API...")
         gemini_ws = await websockets.connect(
             GEMINI_WS_URL,
             additional_headers={"Content-Type": "application/json"},
-            ping_interval=30,
+            ping_interval=20,
             ping_timeout=10,
             close_timeout=5,
             max_size=10 * 1024 * 1024
@@ -407,63 +411,76 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         setup_response = await asyncio.wait_for(gemini_ws.recv(), timeout=30)
         setup_data = json.loads(setup_response)
         
-        if "setupComplete" in setup_data:
-            print("✅ Gemini setup complete - Ready for interview!")
-            await websocket.send_json({
-                "type": "setup_complete",
-                "message": "Connected! Ready to start the interview."
-            })
-            
-            # Notify main service that interview started
-            try:
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    await client.post(
-                        f"{MAIN_SERVICE_URL}/technical-interview/start/{session.technical_interview_id}"
-                    )
-            except Exception as e:
-                print(f"⚠️ Could not notify main service of interview start: {e}")
-            
-            # Send initial prompt to trigger AI greeting
-            candidate_name = session.candidate_info.get("name", "Candidate")
-            initial_prompt = {
-                "clientContent": {
-                    "turns": [{
-                        "role": "user",
-                        "parts": [{"text": f"The candidate {candidate_name} has joined. Please start the interview with a warm greeting and introduce yourself."}]
-                    }],
-                    "turnComplete": True
-                }
+        if "setupComplete" not in setup_data:
+            raise Exception(f"Setup failed: {setup_data}")
+        
+        print("✅ Gemini setup complete - Ready for interview!")
+        return True
+    
+    try:
+        # Initial connection
+        await connect_to_gemini()
+        
+        await websocket.send_json({
+            "type": "setup_complete",
+            "message": "Connected! Ready to start the interview."
+        })
+        
+        # Notify main service that interview started
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                await client.post(
+                    f"{MAIN_SERVICE_URL}/technical-interview/start/{session.technical_interview_id}"
+                )
+        except Exception as e:
+            print(f"⚠️ Could not notify main service of interview start: {e}")
+        
+        # Send initial prompt to trigger AI greeting
+        candidate_name = session.candidate_info.get("name", "Candidate")
+        initial_prompt = {
+            "clientContent": {
+                "turns": [{
+                    "role": "user",
+                    "parts": [{"text": f"The candidate {candidate_name} has joined. Please start the interview with a warm greeting and introduce yourself."}]
+                }],
+                "turnComplete": True
             }
-            await gemini_ws.send(json.dumps(initial_prompt))
-            print("📤 Sent initial prompt to trigger AI greeting")
-            
-        else:
-            print(f"⚠️ Unexpected setup response: {setup_data}")
-            await websocket.send_json({"type": "error", "message": "Setup failed"})
-            return
+        }
+        await gemini_ws.send(json.dumps(initial_prompt))
+        print("📤 Sent initial prompt to trigger AI greeting")
         
         # Create tasks for bidirectional communication
         async def receive_from_gemini():
             """Receive audio/events from Gemini and forward to frontend"""
-            try:
-                async for message in gemini_ws:
-                    data = json.loads(message)
-                    
-                    if "serverContent" in data:
-                        server_content = data["serverContent"]
+            nonlocal session, gemini_ws, retry_count
+            interview_end_detected = False
+            
+            while True:
+                try:
+                    async for message in gemini_ws:
+                        data = json.loads(message)
                         
-                        if server_content.get("interrupted"):
-                            print("🛑 Gemini detected interruption")
-                            await websocket.send_json({"type": "interrupted"})
-                            continue
-                        
-                        if server_content.get("turnComplete"):
-                            print("✅ AI turn complete")
-                            await websocket.send_json({"type": "turn_complete"})
-                            continue
-                        
-                        model_turn = server_content.get("modelTurn", {})
-                        parts = model_turn.get("parts", [])
+                        if "serverContent" in data:
+                            server_content = data["serverContent"]
+                            
+                            if server_content.get("interrupted"):
+                                print("🛑 Gemini detected interruption")
+                                await websocket.send_json({"type": "interrupted"})
+                                continue
+                            
+                            if server_content.get("turnComplete"):
+                                print("✅ AI turn complete")
+                                await websocket.send_json({"type": "turn_complete"})
+                                
+                                # Check if interview ended based on last AI message
+                                if interview_end_detected:
+                                    print("🏁 Interview end detected - sending completion signal")
+                                    await asyncio.sleep(2)  # Wait for audio to finish
+                                    await websocket.send_json({"type": "interview_complete"})
+                                continue
+                            
+                            model_turn = server_content.get("modelTurn", {})
+                            parts = model_turn.get("parts", [])
                         
                         for part in parts:
                             if "inlineData" in part:
@@ -486,6 +503,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                             
                             if "text" in part:
                                 text = part["text"]
+                                text_lower = text.lower()
                                 session.token_usage["output_tokens"] += len(text) // 4
                                 session.transcript.append({
                                     "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -499,13 +517,71 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                                     "speaker": "ai"
                                 })
                                 
-            except websockets.exceptions.ConnectionClosed as e:
-                print(f"🔌 Gemini connection closed: {e}")
-            except Exception as e:
-                print(f"❌ Error receiving from Gemini: {e}")
+                                # Detect interview end phrases
+                                end_phrases = [
+                                    "thank you for your time",
+                                    "thanks for your time",
+                                    "interview is complete",
+                                    "that concludes",
+                                    "we'll get back to you",
+                                    "we will get back to you",
+                                    "all the best",
+                                    "good luck",
+                                    "wish you all the best",
+                                    "results soon",
+                                    "have a great day",
+                                    "interview has ended",
+                                    "end of interview"
+                                ]
+                                for phrase in end_phrases:
+                                    if phrase in text_lower:
+                                        print(f"🏁 Detected interview end phrase: '{phrase}'")
+                                        interview_end_detected = True
+                                        break
+                    
+                    # Connection closed normally, exit loop
+                    break
+                                
+                except websockets.exceptions.ConnectionClosed as e:
+                    print(f"🔌 Gemini connection closed: {e}")
+                    retry_count += 1
+                    
+                    if retry_count >= max_retries:
+                        print(f"❌ Max retries ({max_retries}) reached. Ending interview.")
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": "Connection lost. Please try again."
+                        })
+                        break
+                    
+                    # Try to reconnect
+                    print(f"🔄 Attempting reconnection ({retry_count}/{max_retries})...")
+                    await websocket.send_json({
+                        "type": "status",
+                        "message": "Reconnecting..."
+                    })
+                    
+                    try:
+                        await asyncio.sleep(2)  # Wait before reconnecting
+                        await connect_to_gemini()
+                        print("✅ Reconnected to Gemini!")
+                        await websocket.send_json({
+                            "type": "status",
+                            "message": "Reconnected! Please continue."
+                        })
+                        # Continue the while loop to resume receiving
+                        continue
+                    except Exception as reconnect_error:
+                        print(f"❌ Reconnection failed: {reconnect_error}")
+                        continue  # Try again
+                        
+                except Exception as e:
+                    print(f"❌ Error receiving from Gemini: {e}")
+                    break
         
         async def send_to_gemini():
             """Receive audio/commands from frontend and forward to Gemini"""
+            nonlocal gemini_ws
             try:
                 while True:
                     data = await websocket.receive_json()
@@ -529,7 +605,11 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                             }
                         }
                         
-                        await gemini_ws.send(json.dumps(realtime_input))
+                        try:
+                            await gemini_ws.send(json.dumps(realtime_input))
+                        except Exception as send_error:
+                            # Connection may be closed, just skip this audio chunk
+                            pass
                     
                     elif msg_type == "transcript":
                         # User transcript for storage
@@ -550,11 +630,32 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             except Exception as e:
                 print(f"❌ Error sending to Gemini: {e}")
         
+        async def heartbeat():
+            """Send periodic heartbeat to keep connection alive"""
+            nonlocal gemini_ws
+            try:
+                while True:
+                    await asyncio.sleep(15)  # Every 15 seconds
+                    try:
+                        keepalive = {
+                            "realtimeInput": {
+                                "mediaChunks": []
+                            }
+                        }
+                        await gemini_ws.send(json.dumps(keepalive))
+                        print("💓 Heartbeat sent")
+                    except Exception:
+                        # Connection closed, heartbeat will stop when task is cancelled
+                        pass
+            except asyncio.CancelledError:
+                pass
+        
         receive_task = asyncio.create_task(receive_from_gemini())
         send_task = asyncio.create_task(send_to_gemini())
+        heartbeat_task = asyncio.create_task(heartbeat())
         
         done, pending = await asyncio.wait(
-            [receive_task, send_task],
+            [receive_task, send_task, heartbeat_task],
             return_when=asyncio.FIRST_COMPLETED
         )
         
@@ -907,6 +1008,7 @@ def generate_system_instruction(job_details: dict, candidate_info: dict) -> str:
     
     candidate_name = f"{candidate_info.get('first_name', '')} {candidate_info.get('last_name', '')}".strip() or "Candidate"
     candidate_skills = candidate_info.get("skills", [])
+    candidate_resume = candidate_info.get("resume_text", "")
     
     # Extract skills from requirements
     skills = []
@@ -922,94 +1024,34 @@ def generate_system_instruction(job_details: dict, candidate_info: dict) -> str:
     exp_min = experience.get("minYears", 0) if experience else 0
     exp_max = experience.get("maxYears", 5) if experience else 5
     
-    return f"""You are a Senior Technical Recruiter conducting a real-time voice interview for the position of "{title}" in the {department} department.
+    # Resume section
+    resume_section = ""
+    if candidate_resume:
+        resume_section = f"Resume highlights: {candidate_resume[:1000]}"
+    
+    # Shortened prompt to avoid token limits and improve stability
+    return f"""You are a Senior Technical Recruiter conducting a voice interview for "{title}" position.
 
-CANDIDATE INFORMATION:
-- Name: {candidate_name}
-- Skills: {candidate_skills_str}
+CANDIDATE: {candidate_name}
+SKILLS REQUIRED: {skills_str}
+EXPERIENCE: {exp_min}-{exp_max} years
+{resume_section}
 
-JOB CONTEXT:
-- Position: {title}
-- Department: {department}
-- Required Experience: {exp_min}-{exp_max} years
-- Key Skills Required: {skills_str}
-- Job Description: {description[:500]}...
+RULES:
+1. Ask 10-15 questions covering: job skills ({skills_str}), resume experience, core technical concepts, behavioral scenarios
+2. Interview duration: 5-15 minutes
+3. Speak clearly, one question at a time, wait for answer
+4. If answer unclear: "Could you repeat that?"
+5. If wrong answer: briefly correct, move on
+6. If off-topic question from candidate: "Let's focus on the interview"
+7. If random noise/no answer: "I need a clear verbal response"
+8. Switch to Hindi/Gujarati if candidate uses it
+9. Keep responses short (1-2 sentences)
+10. No markdown, speak naturally
 
-STRICT RULES - MUST FOLLOW:
-1. OFF-TOPIC QUESTIONS: If the candidate asks ANY question unrelated to the interview or job (like general knowledge, personal questions about you, weather, news, etc.), politely decline by saying: "I appreciate your curiosity, but let's stay focused on the interview. Let me ask you the next question."
-2. WRONG ANSWERS: When the candidate gives an incorrect answer to a technical question:
-   - Briefly state the correct answer in ONE short sentence
-   - Do NOT explain in detail or teach the concept
-   - Move on to the next question immediately
-   - Example: "Actually, the correct answer is [X]. Let's move to the next question."
-3. STAY ON TRACK: Your ONLY purpose is to evaluate the candidate. Do not engage in any conversation outside the interview scope.
+START: Greet {candidate_name.split()[0] if candidate_name else 'the candidate'} warmly, introduce yourself briefly, ask them to introduce themselves.
 
-CRITICAL SPEAKING GUIDELINES:
-- Speak at a MODERATE, CLEAR pace - not too fast, not too slow
-- Pronounce each word clearly and distinctly
-- Pause briefly between sentences for better comprehension
-- Avoid rushing through sentences - take your time
-- Speak naturally but ensure every word is understandable
-
-LANGUAGE BEHAVIOR:
-- Start the interview in English with a warm greeting
-- If the candidate speaks in Hindi, seamlessly switch to Hindi
-- If the candidate speaks in Gujarati, seamlessly switch to Gujarati
-- You can mix languages naturally if the candidate does so
-- Always match the language preference of the candidate
-
-INTERVIEW STRUCTURE:
-1. INTRODUCTION (1-2 mins):
-   - Warm greeting - address candidate by name: {candidate_name}
-   - Brief overview of the interview process
-   - Put the candidate at ease
-
-2. BACKGROUND (2-3 mins):
-   - Ask about their experience and background
-   - Current/previous role responsibilities
-   - Why they're interested in this position
-
-3. TECHNICAL ASSESSMENT (10-15 mins):
-   - Ask questions specific to: {skills_str}
-   - Start with easier questions, gradually increase difficulty
-   - Probe deeper based on their responses
-   - Ask follow-up questions to assess depth of knowledge
-
-4. PROBLEM SOLVING (3-5 mins):
-   - Present a relevant scenario or problem
-   - Assess their analytical thinking
-   - Evaluate their approach to problem-solving
-
-5. BEHAVIORAL QUESTIONS (2-3 mins):
-   - Ask about challenging situations they've handled
-   - Team collaboration experiences
-   - How they handle pressure/deadlines
-
-6. CLOSING (1-2 mins):
-   - Ask if they have questions about the role
-   - Thank them for their time
-   - Mention next steps
-
-EVALUATION CRITERIA (Assess throughout):
-- Technical Knowledge: Understanding of core concepts
-- Problem Solving: Analytical and logical thinking
-- Communication: Clarity, articulation, language proficiency
-- Confidence: How confidently they present themselves
-- Enthusiasm: Interest in the role and company
-- Relevance: How well their answers relate to questions
-
-INTERVIEWER GUIDELINES:
-- Ask ONE question at a time and wait for complete response
-- Be professional but not overly friendly
-- If answer is unclear, ask for clarification ONCE only
-- Keep your responses SHORT and CONCISE
-- Do NOT provide hints or help during technical questions
-- When answer is wrong, give correct answer briefly and move on
-- Do NOT explain concepts - this is evaluation, not teaching
-
-Remember: This is a VOICE conversation. Keep responses SHORT and TO THE POINT. No markdown, bullet points, or text formatting. Be professional. SPEAK CLEARLY AND AT A COMFORTABLE PACE.
-
-At the end, thank the candidate professionally and wish them well."""
+END: After 10+ questions or 10+ mins, say "Thank you for your time, we'll get back to you soon" and stop."""
 
 
 @app.get("/health")

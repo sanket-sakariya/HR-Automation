@@ -8,19 +8,19 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #4f46e5;
-            --primary-dark: #4338ca;
-            --success-color: #22c55e;
-            --danger-color: #ef4444;
-            --warning-color: #f59e0b;
-            --bg-color: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-card: #1e293b;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --border-color: #334155;
-            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --gradient-2: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            --primary-color: #ffffff;
+            --primary-dark: #e5e5e5;
+            --success-color: #ffffff;
+            --danger-color: #ff4444;
+            --warning-color: #ffaa00;
+            --bg-color: #000000;
+            --bg-secondary: #111111;
+            --bg-card: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #888888;
+            --border-color: #333333;
+            --gradient-1: linear-gradient(135deg, #ffffff 0%, #cccccc 100%);
+            --gradient-2: linear-gradient(135deg, #333333 0%, #555555 100%);
         }
 
         * {
@@ -33,36 +33,13 @@
             font-family: 'Inter', sans-serif;
             background: var(--bg-color);
             color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* Animated Background */
-        .bg-animation {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
+            height: 100vh;
             overflow: hidden;
         }
 
-        .bg-animation::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 50%, rgba(79, 70, 229, 0.15) 0%, transparent 50%),
-                        radial-gradient(circle at 70% 80%, rgba(124, 58, 237, 0.1) 0%, transparent 40%);
-            animation: bgPulse 15s ease-in-out infinite;
-        }
-
-        @keyframes bgPulse {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(-5%, -5%) scale(1.1); }
+        /* Remove Animated Background for cleaner look */
+        .bg-animation {
+            display: none;
         }
 
         /* Login Container */
@@ -70,18 +47,19 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
             padding: 20px;
+            overflow: auto;
         }
 
         .login-card {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 24px;
+            border-radius: 16px;
             padding: 50px 40px;
             width: 100%;
             max-width: 450px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
         }
 
         .login-logo {
@@ -91,20 +69,14 @@
 
         .login-logo i {
             font-size: 60px;
-            background: var(--gradient-2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
         }
 
         .login-logo h1 {
             font-size: 28px;
             font-weight: 700;
             margin-top: 15px;
-            background: var(--gradient-1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
         }
 
         .login-logo p {
@@ -163,17 +135,18 @@
         }
 
         .btn-primary {
-            background: var(--gradient-2);
-            color: white;
+            background: var(--text-primary);
+            color: var(--bg-color);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.5);
+            box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.3);
+            background: var(--primary-dark);
         }
 
         .btn-primary:disabled {
-            opacity: 0.7;
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
@@ -184,7 +157,7 @@
         }
 
         .btn-danger:hover {
-            background: #dc2626;
+            background: #cc0000;
         }
 
         .error-message {
@@ -201,30 +174,31 @@
         /* Interview Container */
         .interview-container {
             display: none;
-            min-height: 100vh;
+            height: 100vh;
             padding: 20px;
+            overflow: hidden;
         }
 
         .interview-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 30px;
+            padding: 15px 25px;
             background: var(--bg-secondary);
-            border-radius: 16px;
-            margin-bottom: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
             border: 1px solid var(--border-color);
         }
 
         .interview-info h2 {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 600;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .interview-info p {
             color: var(--text-secondary);
-            font-size: 14px;
+            font-size: 13px;
         }
 
         .interview-timer {
@@ -232,33 +206,35 @@
         }
 
         .timer-display {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
             font-family: 'Courier New', monospace;
-            color: var(--success-color);
+            color: var(--text-primary);
         }
 
         .timer-label {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-secondary);
-            margin-top: 3px;
+            margin-top: 2px;
         }
 
         .interview-main {
             display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 20px;
-            height: calc(100vh - 140px);
+            grid-template-columns: 1fr 400px;
+            gap: 15px;
+            height: calc(100vh - 120px);
+            overflow: hidden;
         }
 
         /* Video Section */
         .video-section {
             background: var(--bg-secondary);
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            height: 100%;
         }
 
         .video-container {
@@ -266,6 +242,7 @@
             display: flex;
             position: relative;
             background: #000;
+            min-height: 0;
         }
 
         .ai-video {
@@ -274,14 +251,15 @@
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
         }
 
         .ai-avatar {
-            width: 180px;
-            height: 180px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
-            background: var(--gradient-2);
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -290,8 +268,8 @@
         }
 
         .ai-avatar i {
-            font-size: 80px;
-            color: white;
+            font-size: 70px;
+            color: var(--text-primary);
         }
 
         .ai-speaking-ring {
@@ -299,7 +277,7 @@
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 4px solid var(--primary-color);
+            border: 3px solid var(--text-primary);
             animation: speakingPulse 1.5s ease-in-out infinite;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -315,26 +293,26 @@
         }
 
         .ai-name {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: var(--text-primary);
         }
 
         .ai-role {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-secondary);
             margin-top: 5px;
         }
 
         .user-video-small {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 200px;
-            height: 150px;
-            border-radius: 12px;
+            bottom: 15px;
+            right: 15px;
+            width: 180px;
+            height: 135px;
+            border-radius: 10px;
             overflow: hidden;
-            border: 3px solid var(--primary-color);
+            border: 2px solid var(--border-color);
             background: #000;
         }
 
@@ -346,34 +324,38 @@
         }
 
         .video-controls {
-            padding: 20px;
+            padding: 15px;
             display: flex;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
             background: var(--bg-card);
             border-top: 1px solid var(--border-color);
         }
 
         .control-btn {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            border: none;
+            border: 1px solid var(--border-color);
             cursor: pointer;
-            font-size: 22px;
+            font-size: 18px;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
 
         .control-btn.mic {
-            background: var(--success-color);
-            color: white;
+            background: var(--text-primary);
+            color: var(--bg-color);
+            border: none;
         }
 
         .control-btn.mic.muted {
             background: var(--danger-color);
+            color: white;
         }
 
         .control-btn.camera {
@@ -385,11 +367,13 @@
         .control-btn.camera.off {
             background: var(--danger-color);
             color: white;
+            border: none;
         }
 
         .control-btn.end-call {
             background: var(--danger-color);
             color: white;
+            border: none;
         }
 
         .control-btn:hover {
@@ -399,19 +383,22 @@
         /* Transcript Section */
         .transcript-section {
             background: var(--bg-secondary);
-            border-radius: 16px;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
+            height: 100%;
+            overflow: hidden;
         }
 
         .transcript-header {
-            padding: 20px;
+            padding: 15px 20px;
             border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
         }
 
         .transcript-header h3 {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             display: flex;
             align-items: center;
@@ -419,17 +406,38 @@
         }
 
         .transcript-header h3 i {
-            color: var(--primary-color);
+            color: var(--text-primary);
         }
 
         .transcript-body {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: 15px;
+            min-height: 0;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar for Transcript */
+        .transcript-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .transcript-body::-webkit-scrollbar-track {
+            background: var(--bg-card);
+            border-radius: 3px;
+        }
+
+        .transcript-body::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        .transcript-body::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
         }
 
         .transcript-message {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             display: flex;
             flex-direction: column;
         }
@@ -443,10 +451,10 @@
         }
 
         .message-label {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
             color: var(--text-secondary);
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
             gap: 5px;
@@ -457,18 +465,18 @@
         }
 
         .transcript-message.ai .message-label {
-            color: var(--primary-color);
+            color: var(--text-secondary);
         }
 
         .transcript-message.user .message-label {
-            color: var(--success-color);
+            color: var(--text-primary);
         }
 
         .message-content {
             max-width: 90%;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 14px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
             line-height: 1.5;
         }
 
@@ -476,22 +484,24 @@
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-top-left-radius: 4px;
+            color: var(--text-primary);
         }
 
         .transcript-message.user .message-content {
-            background: var(--primary-color);
-            color: white;
+            background: var(--text-primary);
+            color: var(--bg-color);
             border-top-right-radius: 4px;
         }
 
         /* Status Indicators */
         .status-bar {
-            padding: 15px 20px;
+            padding: 12px 15px;
             border-top: 1px solid var(--border-color);
             display: flex;
             align-items: center;
             gap: 15px;
-            font-size: 13px;
+            font-size: 12px;
+            flex-shrink: 0;
         }
 
         .status-item {
@@ -506,7 +516,7 @@
             border-radius: 50%;
         }
 
-        .status-dot.connected { background: var(--success-color); }
+        .status-dot.connected { background: var(--text-primary); }
         .status-dot.connecting { background: var(--warning-color); animation: blink 1s infinite; }
         .status-dot.disconnected { background: var(--danger-color); }
 
@@ -556,7 +566,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             display: none;
             align-items: center;
             justify-content: center;
@@ -570,7 +580,7 @@
         .modal-content {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
-            border-radius: 20px;
+            border-radius: 16px;
             padding: 40px;
             max-width: 450px;
             text-align: center;
@@ -578,7 +588,7 @@
 
         .modal-content i {
             font-size: 60px;
-            color: var(--warning-color);
+            color: var(--text-primary);
             margin-bottom: 20px;
         }
 
@@ -608,10 +618,11 @@
         @media (max-width: 1024px) {
             .interview-main {
                 grid-template-columns: 1fr;
+                height: calc(100vh - 120px);
             }
 
             .transcript-section {
-                display: none;
+                height: 250px;
             }
         }
 
@@ -621,14 +632,14 @@
             }
 
             .user-video-small {
-                width: 120px;
-                height: 90px;
+                width: 100px;
+                height: 75px;
             }
 
             .control-btn {
-                width: 50px;
-                height: 50px;
-                font-size: 18px;
+                width: 45px;
+                height: 45px;
+                font-size: 16px;
             }
         }
 
@@ -671,7 +682,7 @@
 
             <div class="error-message" id="errorMessage"></div>
 
-            <div class="job-info" id="jobInfo" style="display: none; background: rgba(79, 70, 229, 0.1); border: 1px solid var(--primary-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; text-align: center;">
+            <div class="job-info" id="jobInfo" style="display: none; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; text-align: center;">
                 <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Interview for</p>
                 <h3 id="jobTitleDisplay" style="color: var(--text-primary); margin: 5px 0 0 0; font-size: 18px;"></h3>
             </div>
