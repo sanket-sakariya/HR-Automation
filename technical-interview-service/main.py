@@ -88,17 +88,13 @@ class InterviewSession:
             "technical_knowledge_score": 0.0,
             "domain_expertise_score": 0.0,
             "communication_score": 0.0,
-            "articulation_score": 0.0,
             "language_proficiency_score": 0.0,
             "confidence_score": 0.0,
-            "composure_score": 0.0,
-            "enthusiasm_score": 0.0,
             "professionalism_score": 0.0,
             "response_relevance_score": 0.0,
             "response_depth_score": 0.0,
             "response_clarity_score": 0.0,
             "engagement_score": 0.0,
-            "attentiveness_score": 0.0,
         }
         
         # Question tracking
@@ -773,13 +769,10 @@ async def save_interview_results(session: InterviewSession, duration: int):
                 
                 # Communication Scores
                 "communication_score": session.scores["communication_score"],
-                "articulation_score": session.scores["articulation_score"],
                 "language_proficiency_score": session.scores["language_proficiency_score"],
                 
                 # Behavioral Scores
                 "confidence_score": session.scores["confidence_score"],
-                "composure_score": session.scores["composure_score"],
-                "enthusiasm_score": session.scores["enthusiasm_score"],
                 "professionalism_score": session.scores["professionalism_score"],
                 
                 # Response Quality Scores
@@ -789,7 +782,6 @@ async def save_interview_results(session: InterviewSession, duration: int):
                 
                 # Engagement Metrics
                 "engagement_score": session.scores["engagement_score"],
-                "attentiveness_score": session.scores["attentiveness_score"],
                 
                 # Question Statistics
                 "total_questions_asked": session.questions_asked,
@@ -890,17 +882,13 @@ Provide your evaluation in the following JSON format ONLY (no other text):
         "technical_knowledge_score": <0-100>,
         "domain_expertise_score": <0-100>,
         "communication_score": <0-100>,
-        "articulation_score": <0-100>,
         "language_proficiency_score": <0-100>,
         "confidence_score": <0-100>,
-        "composure_score": <0-100>,
-        "enthusiasm_score": <0-100>,
         "professionalism_score": <0-100>,
         "response_relevance_score": <0-100>,
         "response_depth_score": <0-100>,
         "response_clarity_score": <0-100>,
-        "engagement_score": <0-100>,
-        "attentiveness_score": <0-100>
+        "engagement_score": <0-100>
     }},
     "questions_asked": <number>,
     "questions_answered": <number>,
@@ -920,17 +908,13 @@ EVALUATION CRITERIA:
 - Technical Knowledge: Depth of technical understanding demonstrated
 - Domain Expertise: Specific knowledge related to job requirements
 - Communication: Clarity and effectiveness of communication
-- Articulation: How well they express their thoughts
 - Language Proficiency: Grammar, vocabulary, fluency
 - Confidence: Self-assurance in responses
-- Composure: Calmness and handling of difficult questions
-- Enthusiasm: Interest and passion for the role
 - Professionalism: Professional demeanor throughout
 - Response Relevance: How relevant answers were to questions
 - Response Depth: Thoroughness of answers
 - Response Clarity: Clarity of responses
 - Engagement: Active participation in the interview
-- Attentiveness: Attention to questions and context
 
 Be fair but critical. Base all scores on actual evidence from the transcript."""
 

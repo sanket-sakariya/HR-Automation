@@ -40,13 +40,10 @@ class TechnicalInterviewModel(BaseAppModel):
     
     # Communication Scores
     communication_score = Column(Float, nullable=True)  # Overall communication effectiveness
-    articulation_score = Column(Float, nullable=True)  # Clarity of expression
     language_proficiency_score = Column(Float, nullable=True)  # Grammar, vocabulary, fluency
     
     # Behavioral Scores
     confidence_score = Column(Float, nullable=True)  # Confidence level during interview
-    composure_score = Column(Float, nullable=True)  # Ability to stay calm under pressure
-    enthusiasm_score = Column(Float, nullable=True)  # Interest and enthusiasm for the role
     professionalism_score = Column(Float, nullable=True)  # Professional demeanor
     
     # Response Quality Scores
@@ -60,24 +57,15 @@ class TechnicalInterviewModel(BaseAppModel):
     total_questions_asked = Column(Integer, nullable=True)
     questions_answered = Column(Integer, nullable=True)
     questions_skipped = Column(Integer, nullable=True)
-    questions_partially_answered = Column(Integer, nullable=True)
     
     # Time Metrics
     average_response_time_seconds = Column(Float, nullable=True)  # Average time to start responding
     longest_response_time_seconds = Column(Float, nullable=True)  # Longest pause before answering
     shortest_response_time_seconds = Column(Float, nullable=True)  # Quickest response
     total_speaking_time_seconds = Column(Float, nullable=True)  # Total time candidate spoke
-    total_silence_time_seconds = Column(Float, nullable=True)  # Total silence/thinking time
-    
-    # Audio/Voice Analysis
-    speech_rate_wpm = Column(Float, nullable=True)  # Words per minute (speaking pace)
-    voice_clarity_score = Column(Float, nullable=True)  # Audio clarity/quality
-    filler_words_count = Column(Integer, nullable=True)  # Count of "um", "uh", etc.
-    interruptions_count = Column(Integer, nullable=True)  # Times candidate interrupted AI
     
     # Engagement Metrics
     engagement_score = Column(Float, nullable=True)  # Overall engagement level
-    attentiveness_score = Column(Float, nullable=True)  # Attention to questions
     follow_up_questions_asked = Column(Integer, nullable=True)  # Questions candidate asked
     
     # === DETAILED JSON DATA ===
@@ -128,16 +116,8 @@ class TechnicalInterviewModel(BaseAppModel):
     languages_used = Column(JSONB, nullable=True)  # ["English", "Hindi"] - all languages used
     ai_model_used = Column(String(100), nullable=True)  # gemini-2.5-flash-native-audio
     
-    # Proctoring/Monitoring Data
-    tab_switches = Column(Integer, nullable=True, default=0)
-    browser_focus_lost_count = Column(Integer, nullable=True, default=0)
-    suspicious_activity_flags = Column(JSONB, nullable=True)  # Any suspicious behavior detected
-    
     # Technical Metadata
-    audio_quality_score = Column(Float, nullable=True)  # Quality of audio during interview
     video_enabled = Column(Boolean, nullable=True, default=False)
-    connection_quality = Column(String(20), nullable=True)  # excellent, good, poor
-    technical_issues = Column(JSONB, nullable=True)  # Any technical issues during interview
     
     # Token Usage (for cost tracking)
     input_tokens_used = Column(Integer, nullable=True)
@@ -148,7 +128,3 @@ class TechnicalInterviewModel(BaseAppModel):
     # Final Result
     result = Column(String(10), nullable=True)  # 'pass' or 'fail'
     passed_threshold = Column(Float, nullable=True)  # The threshold score used for pass/fail
-    
-    # Additional Notes
-    interviewer_notes = Column(Text, nullable=True)  # Any additional notes from review
-    candidate_feedback = Column(Text, nullable=True)  # Feedback from candidate about interview experience

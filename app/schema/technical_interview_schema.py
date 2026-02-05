@@ -63,13 +63,10 @@ class UpdateInterviewScoresRequest(BaseModel):
     
     # Communication Scores
     communication_score: Optional[float] = Field(None, ge=0, le=100)
-    articulation_score: Optional[float] = Field(None, ge=0, le=100)
     language_proficiency_score: Optional[float] = Field(None, ge=0, le=100)
     
     # Behavioral Scores
     confidence_score: Optional[float] = Field(None, ge=0, le=100)
-    composure_score: Optional[float] = Field(None, ge=0, le=100)
-    enthusiasm_score: Optional[float] = Field(None, ge=0, le=100)
     professionalism_score: Optional[float] = Field(None, ge=0, le=100)
     
     # Response Quality Scores
@@ -79,7 +76,6 @@ class UpdateInterviewScoresRequest(BaseModel):
     
     # Engagement Metrics
     engagement_score: Optional[float] = Field(None, ge=0, le=100)
-    attentiveness_score: Optional[float] = Field(None, ge=0, le=100)
 
 
 class CompleteInterviewRequest(BaseModel):
@@ -99,13 +95,10 @@ class CompleteInterviewRequest(BaseModel):
     
     # Communication Scores
     communication_score: Optional[float] = Field(None, ge=0, le=100)
-    articulation_score: Optional[float] = Field(None, ge=0, le=100)
     language_proficiency_score: Optional[float] = Field(None, ge=0, le=100)
     
     # Behavioral Scores
     confidence_score: Optional[float] = Field(None, ge=0, le=100)
-    composure_score: Optional[float] = Field(None, ge=0, le=100)
-    enthusiasm_score: Optional[float] = Field(None, ge=0, le=100)
     professionalism_score: Optional[float] = Field(None, ge=0, le=100)
     
     # Response Quality Scores
@@ -117,21 +110,13 @@ class CompleteInterviewRequest(BaseModel):
     total_questions_asked: Optional[int] = None
     questions_answered: Optional[int] = None
     questions_skipped: Optional[int] = None
-    questions_partially_answered: Optional[int] = None
     
     # Time Metrics
     average_response_time_seconds: Optional[float] = None
     total_speaking_time_seconds: Optional[float] = None
-    total_silence_time_seconds: Optional[float] = None
-    
-    # Audio/Voice Analysis
-    speech_rate_wpm: Optional[float] = None
-    filler_words_count: Optional[int] = None
-    interruptions_count: Optional[int] = None
     
     # Engagement Metrics
     engagement_score: Optional[float] = Field(None, ge=0, le=100)
-    attentiveness_score: Optional[float] = Field(None, ge=0, le=100)
     follow_up_questions_asked: Optional[int] = None
     
     # Detailed JSON Data
@@ -150,10 +135,6 @@ class CompleteInterviewRequest(BaseModel):
     # Interview Metadata
     interview_language: Optional[str] = None
     languages_used: Optional[List[str]] = None
-    
-    # Proctoring/Monitoring Data
-    tab_switches: Optional[int] = 0
-    browser_focus_lost_count: Optional[int] = 0
     
     # Token Usage
     input_tokens_used: Optional[int] = None
@@ -199,13 +180,10 @@ class TechnicalInterviewReadSchema(BaseModel):
     
     # Communication Scores
     communication_score: Optional[float]
-    articulation_score: Optional[float]
     language_proficiency_score: Optional[float]
     
     # Behavioral Scores
     confidence_score: Optional[float]
-    composure_score: Optional[float]
-    enthusiasm_score: Optional[float]
     professionalism_score: Optional[float]
     
     # Response Quality Scores
@@ -224,7 +202,6 @@ class TechnicalInterviewReadSchema(BaseModel):
     
     # Engagement Metrics
     engagement_score: Optional[float]
-    attentiveness_score: Optional[float]
     
     # AI Recommendations
     ai_recommendation: Optional[str]
@@ -256,24 +233,9 @@ class TechnicalInterviewDetailedSchema(TechnicalInterviewReadSchema):
     # All time metrics
     longest_response_time_seconds: Optional[float]
     shortest_response_time_seconds: Optional[float]
-    total_silence_time_seconds: Optional[float]
-    
-    # Audio/Voice Analysis
-    speech_rate_wpm: Optional[float]
-    voice_clarity_score: Optional[float]
-    filler_words_count: Optional[int]
-    interruptions_count: Optional[int]
-    
-    # Proctoring Data
-    tab_switches: Optional[int]
-    browser_focus_lost_count: Optional[int]
-    suspicious_activity_flags: Optional[List[Dict[str, Any]]]
     
     # Technical Metadata
-    audio_quality_score: Optional[float]
     video_enabled: Optional[bool]
-    connection_quality: Optional[str]
-    technical_issues: Optional[List[Dict[str, Any]]]
     
     # Token Usage
     input_tokens_used: Optional[int]
@@ -283,8 +245,6 @@ class TechnicalInterviewDetailedSchema(TechnicalInterviewReadSchema):
     
     # Additional
     ai_recommendation_reason: Optional[str]
-    interviewer_notes: Optional[str]
-    candidate_feedback: Optional[str]
     languages_used: Optional[List[str]]
     ai_model_used: Optional[str]
 
