@@ -460,8 +460,25 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                     async for message in gemini_ws:
                         data = json.loads(message)
                         
+                        # Handle user speech transcription from Gemini
                         if "serverContent" in data:
                             server_content = data["serverContent"]
+                            
+                            # Check for input (user) audio transcription
+                            if "inputTranscript" in server_content:
+                                user_text = server_content["inputTranscript"]
+                                if user_text and user_text.strip():
+                                    session.transcript.append({
+                                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                                        "speaker": "candidate",
+                                        "text": user_text
+                                    })
+                                    print(f"📝 User: {user_text[:80]}...")
+                                    await websocket.send_json({
+                                        "type": "transcript",
+                                        "text": user_text,
+                                        "speaker": "candidate"
+                                    })
                             
                             if server_content.get("interrupted"):
                                 print("🛑 Gemini detected interruption")
@@ -612,7 +629,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                             pass
                     
                     elif msg_type == "transcript":
-                        # User transcript for storage
+                        # User transcript from browser speech recognition
                         text = data.get("text", "")
                         if text:
                             session.transcript.append({
@@ -620,6 +637,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                                 "speaker": "candidate",
                                 "text": text
                             })
+                            print(f"📝 User: {text[:80]}...")
                     
                     elif msg_type == "stop":
                         print("🛑 Stop signal received from frontend")
@@ -1029,7 +1047,7 @@ def generate_system_instruction(job_details: dict, candidate_info: dict) -> str:
     if candidate_resume:
         resume_section = f"Resume highlights: {candidate_resume[:1000]}"
     
-    # Shortened prompt to avoid token limits and improve stability
+    # System prompt with clear rules
     return f"""You are a Senior Technical Recruiter conducting a voice interview for "{title}" position.
 
 CANDIDATE: {candidate_name}
@@ -1037,17 +1055,29 @@ SKILLS REQUIRED: {skills_str}
 EXPERIENCE: {exp_min}-{exp_max} years
 {resume_section}
 
-RULES:
-1. Ask 10-15 questions covering: job skills ({skills_str}), resume experience, core technical concepts, behavioral scenarios
-2. Interview duration: 5-15 minutes
-3. Speak clearly, one question at a time, wait for answer
-4. If answer unclear: "Could you repeat that?"
-5. If wrong answer: briefly correct, move on
-6. If off-topic question from candidate: "Let's focus on the interview"
-7. If random noise/no answer: "I need a clear verbal response"
-8. Switch to Hindi/Gujarati if candidate uses it
-9. Keep responses short (1-2 sentences)
-10. No markdown, speak naturally
+INTERVIEW STRUCTURE (MUST ASK MINIMUM 10 QUESTIONS):
+- Questions 1-2: Self introduction, background
+- Questions 3-5: Technical skills from resume ({skills_str})
+- Questions 6-8: Core concepts, problem-solving
+- Questions 9-10: Behavioral, situational
+- Questions 11+: Follow-ups based on answers
+
+LANGUAGE RULES (CRITICAL):
+- If candidate speaks Hindi: Reply in Hindi immediately
+- If candidate speaks Gujarati: Reply in Gujarati immediately  
+- If candidate mixes languages: Match their language
+- Example: Candidate says "मैंने Python में काम किया है" → You reply in Hindi
+- Example: Candidate says "મેં Flask માં API બનાવ્યું છે" → You reply in Gujarati
+
+INTERVIEW RULES:
+1. Ask ONE question, wait for complete answer
+2. After each answer, acknowledge briefly then ask next question
+3. If answer unclear: "Could you please repeat or explain that?"
+4. If wrong answer: Briefly note correct approach, move on
+5. If off-topic: "Let's continue with the interview questions"
+6. Keep your responses SHORT (1-2 sentences max)
+7. Do NOT use markdown or special formatting
+8. Speak naturally like a real interviewer
 
 START: Greet {candidate_name.split()[0] if candidate_name else 'the candidate'} warmly, introduce yourself briefly, ask them to introduce themselves.
 

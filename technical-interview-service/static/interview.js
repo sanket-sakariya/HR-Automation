@@ -22,6 +22,10 @@ let timerInterval = null;
 let audioQueue = [];
 let isPlaying = false;
 
+// Speech Recognition for user transcript
+let speechRecognition = null;
+let recognitionActive = false;
+
 // DOM Elements
 const loginContainer = document.getElementById('loginContainer');
 const interviewContainer = document.getElementById('interviewContainer');
@@ -251,6 +255,9 @@ async function startInterview() {
     showLoading('Connecting to AI interviewer...');
     
     try {
+        // Initialize Speech Recognition for user transcript
+        initSpeechRecognition();
+        
         // Initialize Audio Context
         audioContext = new (window.AudioContext || window.webkitAudioContext)({
             sampleRate: AUDIO_SAMPLE_RATE
@@ -467,15 +474,81 @@ function clearAudioQueue() {
     isPlaying = false;
 }
 
+// Initialize Speech Recognition for user transcript
+function initSpeechRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        console.warn('Speech Recognition not supported in this browser');
+        return;
+    }
+    
+    speechRecognition = new SpeechRecognition();
+    speechRecognition.continuous = true;
+    speechRecognition.interimResults = false;
+    speechRecognition.lang = 'en-IN'; // English India - also understands Hindi
+    
+    speechRecognition.onresult = (event) => {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+                const transcript = event.results[i][0].transcript.trim();
+                if (transcript) {
+                    console.log('User said:', transcript);
+                    // Add to UI
+                    addTranscriptMessage(transcript, 'candidate');
+                    // Send to server for storage
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            type: 'transcript',
+                            text: transcript,
+                            speaker: 'candidate'
+                        }));
+                    }
+                }
+            }
+        }
+    };
+    
+    speechRecognition.onerror = (event) => {
+        console.warn('Speech recognition error:', event.error);
+        // Restart on recoverable errors
+        if (event.error === 'no-speech' || event.error === 'audio-capture') {
+            if (recognitionActive && isRecording) {
+                setTimeout(() => {
+                    try { speechRecognition.start(); } catch(e) {}
+                }, 100);
+            }
+        }
+    };
+    
+    speechRecognition.onend = () => {
+        // Auto-restart if still recording
+        if (recognitionActive && isRecording && !isMicMuted) {
+            try { speechRecognition.start(); } catch(e) {}
+        }
+    };
+}
+
 // Recording controls
 function startRecording() {
     isRecording = true;
     console.log('Recording started');
+    
+    // Start speech recognition for transcript
+    if (speechRecognition) {
+        recognitionActive = true;
+        try { speechRecognition.start(); } catch(e) {}
+    }
 }
 
 function stopRecording() {
     isRecording = false;
+    recognitionActive = false;
     console.log('Recording stopped');
+    
+    // Stop speech recognition
+    if (speechRecognition) {
+        try { speechRecognition.stop(); } catch(e) {}
+    }
 }
 
 // Microphone toggle
