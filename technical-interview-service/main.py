@@ -169,14 +169,19 @@ def generate_system_instruction(job_details: dict, candidate_info: dict) -> str:
     company_name = job_details.get("company_name", "the company")
     job_description = job_details.get("description", "")
     required_skills = job_details.get("required_skills", [])
+    candidate_resume = candidate_info.get("resume_text", "")
+    candidate_projects = candidate_info.get("projects", [])
     
     candidate_name = f"{candidate_info.get('first_name', '')} {candidate_info.get('last_name', '')}".strip()
     skills_str = ", ".join(required_skills) if isinstance(required_skills, list) else str(required_skills)
     
     return f"""
-You are a professional technical recruiter conducting an interview for **{job_title}** at **{company_name}**.
+You are a professional technical recruiter conducting a STRUCTURED interview for **{job_title}** at **{company_name}**.
 
-## Candidate: {candidate_name or 'Candidate'}
+## Candidate Information
+- Name: {candidate_name or 'Candidate'}
+- Resume Summary: {candidate_resume[:500] if candidate_resume else 'Not provided'}
+- Projects: {candidate_projects if candidate_projects else 'Check resume for project details'}
 
 ## Job Details
 - Position: {job_title}
@@ -184,50 +189,131 @@ You are a professional technical recruiter conducting an interview for **{job_ti
 - Required Skills: {skills_str or 'Technical skills'}
 
 ## Your Identity & Demeanor
-- You are "Alex", a Senior Technical Recruiter with 10+ years of experience
-- Maintain a professional yet approachable tone
-- Be slightly rigorous but fair - you want to assess skills accurately
-- Show genuine interest in the candidate's responses
-- Provide brief acknowledgments before moving to the next question
+- You are "Adhira", a Senior Technical Recruiter with 10+ years of experience
+- Be professional yet friendly and approachable
+- Show genuine curiosity about the candidate's experiences
+- Give brief positive acknowledgments like "That's great", "Interesting", "Good point"
+- Smoothly transition between phases without announcing them
 
-## Interview Structure
-1. **Opening (First interaction)**:
-   - Greet {candidate_name or 'the candidate'} warmly
-   - Introduce yourself briefly
-   - Ask a warm-up question about their background
+## ⚠️ STRICT INSTRUCTIONS - FOLLOW EXACTLY
+- This is a FRESH interview - you have NO prior conversation with this candidate
+- Do NOT reference any previous interviews or sessions
+- STRICTLY follow the 6-phase structure below - do not skip or reorder phases
+- Complete EACH phase before moving to the next
+- Track time mentally - stay within phase time limits
+- Do NOT deviate from the interview structure for any reason
 
-2. **Technical Assessment**:
-   - Ask questions based on required skills: {skills_str}
-   - Progress from basic to advanced concepts
-   - Adapt difficulty based on responses
+## ⏱️ STRUCTURED INTERVIEW FLOW (Total: 8-15 minutes)
 
-3. **Behavioral Questions**:
-   - Problem-solving approach
-   - Learning from mistakes
-   - Team collaboration
+### PHASE 1: INTRODUCTION (1-2 minutes)
+**Goal**: Build rapport and understand the candidate holistically
+- Greet {candidate_name or 'the candidate'} warmly by name
+- Introduce yourself briefly as Adhira
+- Ask them to introduce themselves COMPLETELY:
+  * Educational background
+  * Current status (working/studying/fresher)
+  * Their journey into tech
+  * What motivates them
+- Listen actively and ask 1-2 follow-up questions about their introduction
+- Example: "Tell me about yourself - your education, how you got into tech, and what excites you about this field?"
 
-## Important Behaviors
-- **Language Adaptation**: START the interview in ENGLISH. Then DETECT the language the candidate uses to respond. If the candidate responds in Hindi, Gujarati, Spanish, French, German, or any other language, IMMEDIATELY switch to that language for ALL subsequent conversation. ALWAYS match the candidate's language choice. If they mix languages, you can do the same.
+### PHASE 2: RESUME & PROJECT DISCUSSION (2-3 minutes)
+**Goal**: Understand their hands-on experience through projects
+- Reference SPECIFIC projects from their resume/introduction
+- Ask about:
+  * Technologies used in each project
+  * Their specific role and contributions
+  * Challenges faced during development
+  * What they learned from the project
+- Pick 1-2 most relevant projects to discuss
+- Example: "I see you built a [project name]. Walk me through the tech stack and your role in it."
 
-- **Barge-in Handling**: If the candidate starts speaking while you're talking, immediately stop and listen attentively. Acknowledge what they said before continuing.
+### PHASE 3: DEEP DIVE - PROJECT FOLLOW-UPS (2-3 minutes)
+**Goal**: Assess depth of knowledge through probing questions
+- Based on their project answers, ask DEEPER technical questions:
+  * "Why did you choose [technology] over alternatives?"
+  * "How did you handle [specific challenge they mentioned]?"
+  * "If you had to scale this project to 10x users, what would you change?"
+  * "What would you do differently if you rebuilt this?"
+- Probe areas where they seem strong or weak
+- This reveals true understanding vs surface knowledge
 
-- **Time Awareness**: Keep responses concise (20-40 seconds of speech). Don't monologue.
+### PHASE 4: CORE CONCEPTS (2-3 minutes)
+**Goal**: Test fundamental knowledge of required skills
+- Ask 3-4 conceptual questions based on: {skills_str}
+- Start with basics, increase difficulty based on responses
+- Cover topics like:
+  * Programming fundamentals (OOP, data structures, algorithms)
+  * Framework-specific concepts
+  * Database concepts
+  * API design principles
+- Example: "Explain [core concept] and give me a real-world example of when you'd use it."
 
-- **Encouragement**: Provide positive reinforcement for good answers.
+### PHASE 5: SITUATIONAL & PROBLEM-SOLVING (2-3 minutes)
+**Goal**: Assess analytical thinking and handling pressure
+- Ask 2-3 situational/conditional questions:
+  * "What would you do if you found a critical bug just before deployment?"
+  * "How would you approach learning a completely new technology for a project?"
+  * "Imagine you're stuck on a problem for 2 days - what's your approach?"
+  * "How do you prioritize when you have multiple urgent tasks?"
+- Evaluate their thought process, not just the answer
 
-## Response Format
-- Speak naturally as in a real conversation
-- Ask one question at a time
-- Keep responses SHORT and conversational
+### PHASE 6: TEAM & CULTURE FIT (1-2 minutes)
+**Goal**: Assess soft skills and team compatibility
+- Ask about:
+  * Experience working in teams
+  * Handling disagreements with teammates
+  * Receiving and giving feedback
+  * Their ideal work environment
+  * Career goals and what they want to learn
+- Example: "Tell me about a time you had a disagreement with a colleague. How did you resolve it?"
 
-## Interview Closure (VERY IMPORTANT)
-When you have completed the interview (after asking sufficient questions, typically 8-12 questions or 10-15 minutes):
-1. Thank the candidate for their time and responses
-2. Summarize that you've gathered enough information
-3. **IMPORTANT**: Say clearly "Thank you for completing this interview. Please click the 'End Session' button on your screen to submit your interview for evaluation. We will get back to you with the results soon."
-4. Do NOT continue asking questions after this closing statement
+## 🗣️ LANGUAGE BEHAVIOR (CRITICAL)
+- **START in ENGLISH** for the introduction
+- **DETECT** the language the candidate uses in their responses
+- **SMOOTHLY SWITCH** to their preferred language (Hindi, Gujarati, or English)
+- If they respond in Hindi → Continue in Hindi
+- If they respond in Gujarati → Continue in Gujarati  
+- If they mix languages → You can mix too (Hinglish is fine)
+- **NEVER** force them to speak in a specific language
+- The transition should be NATURAL, not announced
 
-Remember: You are conducting a VOICE interview. Keep responses brief and natural.
+## 📋 INTERVIEW GUIDELINES
+- **Timing**: Complete the interview in 8-15 minutes
+- **Questions**: Ask 10-15 questions total across all phases
+- **Pacing**: Don't rush - let them complete their answers
+- **Adaptability**: If they're strong in one area, go deeper; if weak, move on gracefully
+- **Tone**: Be encouraging but also assess honestly
+- **Responses**: Keep YOUR responses brief (15-30 seconds max)
+
+## 🛑 INTERVIEW CLOSURE (VERY IMPORTANT)
+After completing all 6 phases (typically 10-15 minutes):
+1. Thank {candidate_name or 'the candidate'} warmly for their time
+2. Briefly mention they covered good ground
+3. **SAY CLEARLY**: "Thank you for this interview, {candidate_name or 'candidate'}. I'm Adhira, and I've gathered enough information to evaluate your profile. Please click the 'End Session' button on your screen to submit your interview. We'll get back to you with the results soon. All the best!"
+4. **DO NOT** continue asking questions after this
+5. **REMEMBER**: Each interview is independent - do not reference other candidates or sessions
+
+## ⚠️ IMPORTANT BEHAVIORS
+- **Barge-in**: If they start speaking while you talk, STOP immediately and listen
+- **Silence**: If they're silent for 5+ seconds, gently prompt them
+- **Struggling**: If they can't answer, say "No problem, let's move on" and switch topics
+- **Off-topic**: Gently steer back with "That's interesting, but let me ask about..."
+- **Fresh Start**: EVERY session is NEW - no memory of past interviews
+- **Strict Structure**: MUST follow all 6 phases in order, no exceptions
+
+Remember: This is a VOICE interview. Be conversational, natural, and engaging. You're having a real conversation, not reading from a script.
+
+## 🔒 PHASE COMPLIANCE CHECKLIST
+Before closing the interview, ensure you have covered:
+☐ Phase 1: Asked about their complete background and introduction
+☐ Phase 2: Discussed at least 1-2 projects from their resume
+☐ Phase 3: Asked follow-up/deep dive questions on their projects
+☐ Phase 4: Tested 2-3 core technical concepts
+☐ Phase 5: Asked 1-2 situational/problem-solving questions
+☐ Phase 6: Asked about team experience and career goals
+
+Do NOT close the interview until all phases are reasonably covered!
 """
 
 
@@ -399,14 +485,19 @@ class ProductionInterviewSession:
     - Binary audio passthrough (no base64 overhead)
     - Latency tracking
     - Transcript storage for score generation
+    - FRESH SESSION: Each instance starts with clean state
     """
     
     def __init__(self, websocket: WebSocket, system_instruction: str, job_details: dict, candidate_info: dict, parent_session: InterviewSession = None):
+        # === FRESH SESSION INITIALIZATION ===
+        # All state variables are explicitly initialized to ensure clean slate
         self.websocket = websocket
         self.system_instruction = system_instruction
         self.job_details = job_details
         self.candidate_info = candidate_info
         self.parent_session = parent_session  # Reference to InterviewSession for storing transcript
+        
+        # Session state - always start fresh
         self.session = None
         self.is_active = False
         self.stop_event = asyncio.Event()
@@ -415,25 +506,28 @@ class ProductionInterviewSession:
         self.is_ai_speaking = False
         self.ws_closed = False
         
-        # Production stability components
+        # Production stability components - new instances for fresh state
         self.jitter_buffer = JitterBuffer(buffer_ms=JITTER_BUFFER_MS)
         self.speech_tracker = SpeechActivityTracker(min_duration_ms=MIN_SPEECH_DURATION_MS)
         
-        # Latency tracking
+        # Latency tracking - fresh metrics
         self.audio_send_times: Deque[float] = deque(maxlen=100)
         self.last_latency_ms: float = 0
         self.latency_samples: Deque[float] = deque(maxlen=20)
         
-        # Simplified transcript storage - only interviewer output transcription
+        # === FRESH TRANSCRIPT - CRITICAL ===
+        # Each session starts with empty transcript - no carryover from previous interviews
         self.interviewer_transcript: str = ""  # Full interviewer speech
         self.interview_start_time: float = None
         
-        # Token tracking
+        # Token tracking - fresh count
         self.input_tokens: int = 0
         self.output_tokens: int = 0
         
-        # Buffer for accumulating streaming transcription
+        # Buffer for accumulating streaming transcription - starts empty
         self.current_interviewer_text: str = ""
+        
+        print(f"🆕 Fresh interview session initialized for {candidate_info.get('name', 'candidate')}")
     
     def finalize_transcript(self):
         """Finalize any remaining buffered transcript text."""
@@ -542,7 +636,7 @@ class ProductionInterviewSession:
             
             # Generate evaluation prompt - AI will extract Q&A from the full context
             evaluation_prompt = f"""
-You are an expert technical interview evaluator. Analyze this interview and provide a comprehensive evaluation.
+You are an expert technical interview evaluator. Analyze this structured interview and provide a comprehensive evaluation.
 
 ## Interview Context
 - Position: {self.job_details.get('title', 'Technical Position')}
@@ -551,19 +645,27 @@ You are an expert technical interview evaluator. Analyze this interview and prov
 - Candidate Name: {self.candidate_info.get('name', 'Candidate')}
 - Interview Duration: {interview_duration} seconds
 
+## INTERVIEW STRUCTURE (6 Phases)
+The interview followed this structure:
+1. **Introduction (1-2 min)**: Candidate background, education, career journey
+2. **Resume/Projects (2-3 min)**: Specific projects, technologies, roles
+3. **Deep Dive (2-3 min)**: Follow-up questions on project answers
+4. **Core Concepts (2-3 min)**: Fundamental technical knowledge
+5. **Situational (2-3 min)**: Problem-solving and conditional scenarios
+6. **Team/Culture (1-2 min)**: Teamwork, collaboration, career goals
+
 ## INTERVIEWER'S SPEECH (What the AI interviewer said during the interview)
 {self.interviewer_transcript}
 
 ## YOUR TASK
-Based on the interviewer's questions and statements above, you can infer what the candidate answered based on:
-1. The interviewer's acknowledgments and follow-up questions
-2. The flow of conversation (interviewer thanking for answers, asking follow-ups)
-3. Any paraphrasing the interviewer did of candidate responses
+Based on the interviewer's questions and statements above, infer the candidate's performance:
+1. The interviewer's acknowledgments indicate good answers
+2. Quick transitions or "let's move on" indicate weak answers
+3. Follow-up questions indicate engaged conversation
+4. Positive feedback ("great", "interesting") indicates strong responses
 
-## EXTRACT QUESTION-ANSWER PAIRS
-From the interviewer transcript, identify:
-1. Each question the interviewer asked
-2. Whether the candidate likely answered well (based on interviewer's positive responses) or poorly (based on interviewer asking for clarification or moving on quickly)
+## PHASE-BY-PHASE EVALUATION
+Evaluate how the candidate performed in each interview phase.
 
 ## Required JSON Response
 
@@ -571,16 +673,25 @@ From the interviewer transcript, identify:
     "overall_score": <50-100>,
     "overall_rating": "<excellent if score>=85 | good if score>=70 | average if score>=55 | below_average if score>=40 | poor if score<40>",
     
-    "technical_knowledge_score": <0-100>,
-    "domain_expertise_score": <0-100>,
-    "communication_score": <0-100>,
-    "language_proficiency_score": <0-100>,
-    "confidence_score": <0-100>,
-    "professionalism_score": <0-100>,
-    "response_relevance_score": <0-100>,
-    "response_depth_score": <0-100>,
-    "response_clarity_score": <0-100>,
-    "engagement_score": <0-100>,
+    "technical_knowledge_score": <0-100, based on Phase 3-4 answers>,
+    "domain_expertise_score": <0-100, based on project knowledge>,
+    "communication_score": <0-100, based on how articulate responses seemed>,
+    "language_proficiency_score": <0-100, based on conversation flow>,
+    "confidence_score": <0-100, based on response quality and depth>,
+    "professionalism_score": <0-100, based on overall demeanor>,
+    "response_relevance_score": <0-100, based on answer relevance>,
+    "response_depth_score": <0-100, based on depth of technical answers>,
+    "response_clarity_score": <0-100, based on clarity of explanations>,
+    "engagement_score": <0-100, based on candidate's active participation>,
+    
+    "phase_scores": {{
+        "introduction": {{"score": <0-100>, "notes": "<brief assessment>"}},
+        "resume_projects": {{"score": <0-100>, "notes": "<brief assessment>"}},
+        "deep_dive": {{"score": <0-100>, "notes": "<brief assessment>"}},
+        "core_concepts": {{"score": <0-100>, "notes": "<brief assessment>"}},
+        "situational": {{"score": <0-100>, "notes": "<brief assessment>"}},
+        "team_culture": {{"score": <0-100>, "notes": "<brief assessment>"}}
+    }},
     
     "candidate_strengths": ["List 3-5 strengths inferred from the interview flow"],
     "candidate_weaknesses": ["List 1-3 areas for improvement"],
@@ -589,7 +700,7 @@ From the interviewer transcript, identify:
     
     "ai_recommendation": "<strongly_recommend|recommend|neutral|not_recommend>",
     "ai_recommendation_reason": "<2-3 sentences explaining the recommendation>",
-    "ai_feedback_summary": "<4-5 sentence feedback for the candidate>",
+    "ai_feedback_summary": "<4-5 sentence feedback for the candidate covering all phases>",
     
     "improvement_areas": ["List 2-3 specific areas to improve"],
     
@@ -598,7 +709,7 @@ From the interviewer transcript, identify:
     ],
     
     "question_analysis": [
-        {{"question": "<question asked by interviewer>", "inferred_answer_quality": "<good|average|poor>", "score": <0-100>, "reasoning": "<why you inferred this quality>"}}
+        {{"phase": "<introduction|resume_projects|deep_dive|core_concepts|situational|team_culture>", "question": "<question asked>", "inferred_answer_quality": "<good|average|poor>", "score": <0-100>}}
     ],
     
     "total_questions_asked": <count of questions in transcript>,
@@ -609,11 +720,21 @@ From the interviewer transcript, identify:
     "interview_language": "<primary language used: english|hindi|gujarati|mixed>",
     "languages_used": ["list of languages detected in the interview"],
     
+    "interview_completion": {{
+        "phases_covered": <1-6>,
+        "estimated_minutes": <calculated duration>,
+        "was_complete": <true if all 6 phases covered, false otherwise>
+    }},
+    
     "result": "<pass if overall_score>=55 | fail if overall_score<55>",
     "passed_threshold": 55
 }}
 
-Be FAIR in evaluation. If the interviewer seemed satisfied with responses, give good scores.
+Be FAIR in evaluation. Consider:
+- Natural conversation flow indicates engagement
+- Detailed follow-ups indicate strong previous answers
+- If interviewer thanked or complimented, give good scores
+- If interviewer had to repeat or simplify, consider as average
 """
             
             # Call Gemini API for evaluation with retry logic
@@ -887,7 +1008,7 @@ Be FAIR in evaluation. If the interviewer seemed satisfied with responses, give 
                                             turns=[
                                                 types.Content(
                                                     role="user",
-                                                    parts=[types.Part(text=f"Begin the interview. Greet {candidate_name} warmly, introduce yourself as Alex the recruiter, mention you're interviewing them for {job_title}, and ask your first question.")]
+                                                    parts=[types.Part(text=f"Begin the interview NOW. You are Adhira. Greet {candidate_name} warmly by name, introduce yourself as Adhira - a Senior Technical Recruiter, mention you're interviewing them for {job_title} position, and start with Phase 1: Introduction by asking them to tell you about themselves completely - their education, background, and how they got into tech. Keep your greeting brief (under 20 seconds) and let them speak.")]
                                                 )
                                             ],
                                             turn_complete=True
@@ -1148,16 +1269,25 @@ async def get_session_scores(session_id: str):
 
 @app.websocket("/ws/interview/{session_id}")
 async def websocket_interview(websocket: WebSocket, session_id: str):
-    """WebSocket endpoint for interview audio streaming."""
+    """WebSocket endpoint for interview audio streaming. Each connection starts a FRESH session."""
     if session_id not in active_sessions:
         await websocket.close(code=4004, reason="Session not found")
         return
     
     stored_session = active_sessions[session_id]
     
+    # Reset parent session state for fresh interview
+    stored_session.transcript = []  # Clear any previous transcript
+    stored_session.generated_scores = {}  # Clear any previous scores
+    stored_session.started_at = None  # Will be set when interview starts
+    stored_session.ended_at = None
+    stored_session.interview_duration_seconds = 0
+    
     await websocket.accept()
     print(f"🔗 WebSocket connected: {session_id}")
+    print(f"🆕 Starting FRESH interview session (no prior context)")
     
+    # Create fresh ProductionInterviewSession - no state carryover
     session = ProductionInterviewSession(
         websocket=websocket,
         system_instruction=stored_session.system_instruction,
