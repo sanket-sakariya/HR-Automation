@@ -207,7 +207,7 @@ You are a professional technical recruiter conducting an interview for **{job_ti
    - Team collaboration
 
 ## Important Behaviors
-- **Multilingual Support**: If the candidate speaks in Hindi, Gujarati, Spanish, French, German, or any other language, seamlessly switch to that language while maintaining the technical interview context.
+- **Language Adaptation**: START the interview in ENGLISH. Then DETECT the language the candidate uses to respond. If the candidate responds in Hindi, Gujarati, Spanish, French, German, or any other language, IMMEDIATELY switch to that language for ALL subsequent conversation. ALWAYS match the candidate's language choice. If they mix languages, you can do the same.
 
 - **Barge-in Handling**: If the candidate starts speaking while you're talking, immediately stop and listen attentively. Acknowledge what they said before continuing.
 
@@ -303,6 +303,7 @@ class CompleteInterviewRequest(BaseModel):
     total_questions_asked: Optional[int] = None
     questions_answered: Optional[int] = None
     questions_skipped: Optional[int] = None
+    follow_up_questions_asked: Optional[int] = None
     
     # Time Metrics
     average_response_time_seconds: Optional[float] = None
@@ -310,10 +311,8 @@ class CompleteInterviewRequest(BaseModel):
     
     # Engagement Metrics
     engagement_score: Optional[float] = Field(None, ge=0, le=100)
-    follow_up_questions_asked: Optional[int] = None
     
     # Detailed JSON Data
-    interview_transcript: Optional[List[Dict[str, Any]]] = None
     question_analysis: Optional[List[Dict[str, Any]]] = None
     skills_assessment: Optional[List[Dict[str, Any]]] = None
     candidate_strengths: Optional[List[str]] = None
@@ -323,17 +322,24 @@ class CompleteInterviewRequest(BaseModel):
     ai_recommendation: Optional[str] = Field(None, description="strongly_recommend, recommend, neutral, not_recommend")
     ai_recommendation_reason: Optional[str] = None
     ai_feedback_summary: Optional[str] = None
+    candidate_answer_summary: Optional[str] = Field(None, description="Summary of candidate's answers during interview")
     improvement_areas: Optional[List[str]] = None
     
     # Interview Metadata
-    interview_language: Optional[str] = None
-    languages_used: Optional[List[str]] = None
+    interview_language: Optional[str] = Field(None, description="Primary language: english, hindi, gujarati, mixed")
+    languages_used: Optional[List[str]] = Field(None, description="List of languages used in interview")
     
     # Token Usage
-    input_tokens_used: Optional[int] = None
-    output_tokens_used: Optional[int] = None
-    audio_input_seconds: Optional[float] = None
-    audio_output_seconds: Optional[float] = None
+    input_tokens: Optional[int] = Field(None, description="Total input tokens used")
+    output_tokens: Optional[int] = Field(None, description="Total output tokens used")
+    total_tokens: Optional[int] = Field(None, description="Total tokens used (input + output)")
+    
+    # Audio Duration
+    audio_input_seconds: Optional[float] = Field(None, description="Estimated audio input duration in seconds")
+    audio_output_seconds: Optional[float] = Field(None, description="Estimated audio output duration in seconds")
+    
+    # Transcript (interviewer speech only)
+    interviewer_transcript: Optional[str] = Field(None, description="Full transcript of interviewer speech")
     
     # Final Result
     result: str = Field(..., description="'pass' or 'fail'")
@@ -418,44 +424,26 @@ class ProductionInterviewSession:
         self.last_latency_ms: float = 0
         self.latency_samples: Deque[float] = deque(maxlen=20)
         
-        # Local transcript storage (synced to parent session)
-        self.transcript: List[Dict[str, Any]] = []
+        # Simplified transcript storage - only interviewer output transcription
+        self.interviewer_transcript: str = ""  # Full interviewer speech
         self.interview_start_time: float = None
-        self.questions_count: int = 0
-        self.answers_count: int = 0
+        
+        # Token tracking
+        self.input_tokens: int = 0
+        self.output_tokens: int = 0
+        
+        # Buffer for accumulating streaming transcription
+        self.current_interviewer_text: str = ""
     
-    def add_transcript_entry(self, speaker: str, text: str):
-        """Add a transcript entry and sync to parent session."""
-        if not text or not text.strip():
-            return
-        
-        timestamp = ""
-        if self.interview_start_time:
-            elapsed = time.time() - self.interview_start_time
-            minutes = int(elapsed // 60)
-            seconds = int(elapsed % 60)
-            timestamp = f"{minutes:02d}:{seconds:02d}"
-        
-        entry = {
-            "timestamp": timestamp,
-            "speaker": speaker,
-            "text": text.strip(),
-            "time": time.time()
-        }
-        
-        self.transcript.append(entry)
-        
-        # Track question/answer counts
-        if speaker == "interviewer":
-            # Count questions (simple heuristic: ends with ?)
-            if "?" in text:
-                self.questions_count += 1
-        else:
-            self.answers_count += 1
+    def finalize_transcript(self):
+        """Finalize any remaining buffered transcript text."""
+        if self.current_interviewer_text.strip():
+            self.interviewer_transcript += self.current_interviewer_text.strip() + "\n\n"
+            self.current_interviewer_text = ""
         
         # Sync to parent session
         if self.parent_session:
-            self.parent_session.transcript = self.transcript
+            self.parent_session.transcript = [{"speaker": "full_conversation", "text": self.interviewer_transcript}]
         
     async def send_json(self, msg_type: str, **kwargs):
         """Send JSON message to client."""
@@ -493,8 +481,13 @@ class ProductionInterviewSession:
                         if response.server_content:
                             content = response.server_content
                             
-                            # Model turn complete - ready for input
+                            # Model turn complete - finalize interviewer transcript for this turn
                             if content.turn_complete:
+                                # Save the interviewer's completed turn
+                                if self.current_interviewer_text.strip():
+                                    self.interviewer_transcript += self.current_interviewer_text.strip() + "\n\n"
+                                    self.current_interviewer_text = ""
+                                
                                 self.is_ai_speaking = False
                                 self.speech_tracker.reset()
                                 await self.send_json("status", status="listening", latency_ms=round(self.last_latency_ms))
@@ -507,7 +500,7 @@ class ProductionInterviewSession:
                                         await self.send_binary(part.inline_data.data)
                                         await self.send_json("status", status="speaking", latency_ms=round(self.last_latency_ms))
                             
-                            # Stream transcription
+                            # Stream transcription - accumulate for complete sentences
                             if content.output_transcription and content.output_transcription.text:
                                 text = content.output_transcription.text
                                 await self.send_json(
@@ -515,8 +508,8 @@ class ProductionInterviewSession:
                                     role="interviewer",
                                     text=text
                                 )
-                                # Store in transcript
-                                self.add_transcript_entry("interviewer", text)
+                                # Accumulate transcription (will be saved on turn_complete)
+                                self.current_interviewer_text += text
                                 
                 except asyncio.CancelledError:
                     break
@@ -532,44 +525,52 @@ class ProductionInterviewSession:
             print("📡 Gemini stream ended")
     
     async def generate_and_store_scores(self):
-        """Generate AI-based evaluation scores and store in parent session."""
+        """Generate AI-based evaluation scores using full conversation context."""
         try:
-            if not self.transcript:
+            # Finalize any remaining transcript
+            self.finalize_transcript()
+            
+            if not self.interviewer_transcript.strip():
                 print("⚠️ No transcript available for scoring")
                 return
             
             print("🧠 Generating AI evaluation scores...")
+            print(f"📝 Interviewer transcript length: {len(self.interviewer_transcript)} characters")
             
-            # Build the transcript text
-            transcript_text = "\n".join([
-                f"{turn.get('speaker', 'Unknown')}: {turn.get('text', '')}"
-                for turn in self.transcript
-            ])
+            # Get interview duration
+            interview_duration = self.parent_session.interview_duration_seconds if self.parent_session else 0
             
-            # Generate evaluation prompt
+            # Generate evaluation prompt - AI will extract Q&A from the full context
             evaluation_prompt = f"""
-You are an expert technical interview evaluator. Analyze the following interview transcript and provide a comprehensive evaluation.
+You are an expert technical interview evaluator. Analyze this interview and provide a comprehensive evaluation.
 
 ## Interview Context
 - Position: {self.job_details.get('title', 'Technical Position')}
 - Department: {self.job_details.get('department', 'Technology')}
 - Required Skills: {self.job_details.get('requirements', [])}
-- Candidate: {self.candidate_info.get('name', 'Candidate')}
+- Candidate Name: {self.candidate_info.get('name', 'Candidate')}
+- Interview Duration: {interview_duration} seconds
 
-## Interview Transcript
-{transcript_text}
+## INTERVIEWER'S SPEECH (What the AI interviewer said during the interview)
+{self.interviewer_transcript}
 
-## Interview Statistics
-- Total Questions Asked: {self.questions_count}
-- Total Answers Given: {self.answers_count}
-- Interview Duration: {self.parent_session.interview_duration_seconds if self.parent_session else 0} seconds
+## YOUR TASK
+Based on the interviewer's questions and statements above, you can infer what the candidate answered based on:
+1. The interviewer's acknowledgments and follow-up questions
+2. The flow of conversation (interviewer thanking for answers, asking follow-ups)
+3. Any paraphrasing the interviewer did of candidate responses
 
-## Evaluation Required
-Provide a JSON response with the following scores (0-100) and assessments:
+## EXTRACT QUESTION-ANSWER PAIRS
+From the interviewer transcript, identify:
+1. Each question the interviewer asked
+2. Whether the candidate likely answered well (based on interviewer's positive responses) or poorly (based on interviewer asking for clarification or moving on quickly)
+
+## Required JSON Response
 
 {{
-    "overall_score": <0-100>,
-    "overall_rating": "<excellent|good|average|below_average|poor>",
+    "overall_score": <50-100>,
+    "overall_rating": "<excellent if score>=85 | good if score>=70 | average if score>=55 | below_average if score>=40 | poor if score<40>",
+    
     "technical_knowledge_score": <0-100>,
     "domain_expertise_score": <0-100>,
     "communication_score": <0-100>,
@@ -580,53 +581,129 @@ Provide a JSON response with the following scores (0-100) and assessments:
     "response_depth_score": <0-100>,
     "response_clarity_score": <0-100>,
     "engagement_score": <0-100>,
-    "candidate_strengths": ["strength1", "strength2", ...],
-    "candidate_weaknesses": ["weakness1", "weakness2", ...],
+    
+    "candidate_strengths": ["List 3-5 strengths inferred from the interview flow"],
+    "candidate_weaknesses": ["List 1-3 areas for improvement"],
+    
+    "candidate_answer_summary": "<3-4 sentence summary of what the candidate likely discussed based on the interviewer's responses>",
+    
     "ai_recommendation": "<strongly_recommend|recommend|neutral|not_recommend>",
-    "ai_recommendation_reason": "<detailed reason>",
-    "ai_feedback_summary": "<comprehensive feedback summary>",
-    "improvement_areas": ["area1", "area2", ...],
+    "ai_recommendation_reason": "<2-3 sentences explaining the recommendation>",
+    "ai_feedback_summary": "<4-5 sentence feedback for the candidate>",
+    
+    "improvement_areas": ["List 2-3 specific areas to improve"],
+    
     "skills_assessment": [
-        {{"skill_name": "<skill>", "proficiency_level": "<advanced|intermediate|beginner>", "score": <0-100>}}
+        {{"skill_name": "<skill>", "proficiency_level": "<advanced|intermediate|beginner>", "score": <0-100>, "evidence": "<brief note>"}}
     ],
-    "result": "<pass|fail>",
-    "passed_threshold": 60
+    
+    "question_analysis": [
+        {{"question": "<question asked by interviewer>", "inferred_answer_quality": "<good|average|poor>", "score": <0-100>, "reasoning": "<why you inferred this quality>"}}
+    ],
+    
+    "total_questions_asked": <count of questions in transcript>,
+    "questions_answered": <count of questions that got answers (good or average quality)>,
+    "questions_skipped": <count of questions with poor/no answer>,
+    "follow_up_questions_asked": <count of follow-up questions>,
+    
+    "interview_language": "<primary language used: english|hindi|gujarati|mixed>",
+    "languages_used": ["list of languages detected in the interview"],
+    
+    "result": "<pass if overall_score>=55 | fail if overall_score<55>",
+    "passed_threshold": 55
 }}
 
-Be objective and fair in your evaluation. Consider the job requirements when scoring.
-A score of 60 or above should result in "pass", below 60 should be "fail".
+Be FAIR in evaluation. If the interviewer seemed satisfied with responses, give good scores.
 """
             
-            # Call Gemini API for evaluation
+            # Call Gemini API for evaluation with retry logic
             client = genai.Client(api_key=GOOGLE_API_KEY)
             
-            response = await client.aio.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=evaluation_prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                )
-            )
+            evaluation_model = "gemini-2.5-flash"
+            max_retries = 5
+            response = None
+            last_error = None
             
-            # Parse the response
+            for attempt in range(max_retries):
+                try:
+                    print(f"🔄 Attempting evaluation with {evaluation_model} (attempt {attempt + 1}/{max_retries})...")
+                    response = await client.aio.models.generate_content(
+                        model=evaluation_model,
+                        contents=evaluation_prompt,
+                        config=types.GenerateContentConfig(
+                            response_mime_type="application/json"
+                        )
+                    )
+                    print(f"✅ Evaluation successful with {evaluation_model}")
+                    break
+                except Exception as e:
+                    last_error = e
+                    error_str = str(e)
+                    if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                        wait_time = (2 ** attempt) * 5
+                        print(f"⏳ Rate limited, waiting {wait_time}s before retry...")
+                        await asyncio.sleep(wait_time)
+                    else:
+                        print(f"❌ Error with {evaluation_model}: {e}")
+                        await asyncio.sleep(2)
+            
+            if not response:
+                raise last_error or Exception("Evaluation failed after all retries")
+            
+            # Parse the response and extract token usage
             scores = json.loads(response.text)
             
-            # Add additional data
-            scores["interview_duration_seconds"] = self.parent_session.interview_duration_seconds if self.parent_session else 0
-            scores["total_questions_asked"] = self.questions_count
-            scores["questions_answered"] = self.answers_count
-            scores["interview_transcript"] = self.transcript
+            # Extract token counts from response metadata
+            input_tokens = 0
+            output_tokens = 0
+            if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                input_tokens = getattr(response.usage_metadata, 'prompt_token_count', 0) or 0
+                output_tokens = getattr(response.usage_metadata, 'candidates_token_count', 0) or 0
+            
+            # Add token counts and additional data
+            scores["input_tokens"] = input_tokens + self.input_tokens
+            scores["output_tokens"] = output_tokens + self.output_tokens
+            scores["total_tokens"] = scores["input_tokens"] + scores["output_tokens"]
+            scores["interview_duration_seconds"] = interview_duration
+            scores["interviewer_transcript"] = self.interviewer_transcript
+            
+            # Calculate time metrics
+            total_questions = scores.get("total_questions_asked", 0) or 0
+            if total_questions > 0 and interview_duration > 0:
+                scores["average_response_time_seconds"] = round(interview_duration / total_questions, 2)
+            else:
+                scores["average_response_time_seconds"] = 0
+            
+            # Estimate speaking time (roughly 70% of interview duration for active conversation)
+            scores["total_speaking_time_seconds"] = round(interview_duration * 0.7, 2)
+            
+            # Estimate audio input/output seconds (audio is roughly same as speaking time split)
+            scores["audio_input_seconds"] = round(interview_duration * 0.35, 2)  # Candidate speaking ~35% of time
+            scores["audio_output_seconds"] = round(interview_duration * 0.35, 2)  # AI speaking ~35% of time
+            
+            # Ensure all required fields are present
+            scores.setdefault("questions_answered", scores.get("total_questions_asked", 0) - scores.get("questions_skipped", 0))
+            scores.setdefault("questions_skipped", 0)
+            scores.setdefault("follow_up_questions_asked", 0)
+            scores.setdefault("interview_language", "english")
+            scores.setdefault("languages_used", ["english"])
+            
+            print(f"📊 Token Usage - Input: {scores['input_tokens']}, Output: {scores['output_tokens']}, Total: {scores['total_tokens']}")
             
             # Store in parent session
             if self.parent_session:
                 self.parent_session.generated_scores = scores
+                self.parent_session.started_at = datetime.fromtimestamp(self.interview_start_time, tz=timezone.utc) if self.interview_start_time else None
                 print(f"✅ Scores generated - Overall: {scores.get('overall_score', 'N/A')}, Result: {scores.get('result', 'N/A')}")
+                print(f"   Recommendation: {scores.get('ai_recommendation', 'N/A')}")
             
             # Send scores to client
             await self.send_json("scores_generated", scores=scores)
             
         except Exception as e:
             print(f"❌ Score generation error: {e}")
+            import traceback
+            traceback.print_exc()
             # Store default scores on error
             default_scores = {
                 "overall_score": 50,
@@ -634,9 +711,10 @@ A score of 60 or above should result in "pass", below 60 should be "fail".
                 "result": "fail",
                 "error": str(e),
                 "interview_duration_seconds": self.parent_session.interview_duration_seconds if self.parent_session else 0,
-                "total_questions_asked": self.questions_count,
-                "questions_answered": self.answers_count,
-                "interview_transcript": self.transcript
+                "input_tokens": self.input_tokens,
+                "output_tokens": self.output_tokens,
+                "total_tokens": self.input_tokens + self.output_tokens,
+                "interviewer_transcript": self.interviewer_transcript
             }
             if self.parent_session:
                 self.parent_session.generated_scores = default_scores
@@ -723,7 +801,7 @@ A score of 60 or above should result in "pass", below 60 should be "fail".
         
         client = genai.Client(api_key=GOOGLE_API_KEY)
         
-        # Production-hardened config with barge-in mandate
+        # Production-hardened config with barge-in mandate and input transcription
         config = types.LiveConnectConfig(
             response_modalities=["AUDIO"],
             speech_config=types.SpeechConfig(
@@ -737,6 +815,7 @@ A score of 60 or above should result in "pass", below 60 should be "fail".
                 parts=[types.Part(text=self.system_instruction)]
             ),
             output_audio_transcription=types.AudioTranscriptionConfig(),
+            input_audio_transcription=types.AudioTranscriptionConfig(),  # Enable candidate speech transcription
             realtime_input_config=types.RealtimeInputConfig(
                 automatic_activity_detection=types.AutomaticActivityDetection(
                     disabled=False,
@@ -829,6 +908,9 @@ A score of 60 or above should result in "pass", below 60 should be "fail".
                                     
                                     # Generate and store scores before ending
                                     await self.generate_and_store_scores()
+                                    
+                                    # Wait a moment to ensure scores message is sent to client
+                                    await asyncio.sleep(0.5)
                                     break
                                     
                             except json.JSONDecodeError:
@@ -851,7 +933,7 @@ A score of 60 or above should result in "pass", below 60 should be "fail".
             await self.cleanup()
     
     async def cleanup(self):
-        """Clean up resources."""
+        """Clean up resources but keep session data accessible."""
         self.is_active = False
         self.stop_event.set()
         self.ws_closed = True
@@ -866,6 +948,10 @@ A score of 60 or above should result in "pass", below 60 should be "fail".
         
         # Flush remaining buffer
         await self.jitter_buffer.force_flush()
+        
+        # NOTE: Don't remove session from active_sessions here
+        # Keep it accessible for API fallback to fetch scores
+        # Session will be cleaned up after complete endpoint is called
         
         if self.receive_task:
             self.receive_task.cancel()
@@ -999,6 +1085,12 @@ async def start_interview(candidate_id: str, request: StartInterviewRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/thank-you", response_class=HTMLResponse)
+async def thank_you_page(request: Request):
+    """Serve the thank you page after interview completion."""
+    return templates.TemplateResponse("thank_you.html", {"request": request})
+
+
 @app.get("/interview/{session_id}", response_class=HTMLResponse)
 async def interview_page(request: Request, session_id: str):
     """Serve the interview page."""
@@ -1115,6 +1207,29 @@ async def complete_interview(technical_interview_id: str, request: CompleteInter
         # Prepare completion data for main service
         completion_data = request.model_dump(exclude_none=True)
         completion_data.pop("interview_session_id", None)  # Remove session_id, not needed in main service
+        
+        # Map field names to match database model
+        if "input_tokens" in completion_data:
+            completion_data["input_tokens_used"] = completion_data.pop("input_tokens")
+        if "output_tokens" in completion_data:
+            completion_data["output_tokens_used"] = completion_data.pop("output_tokens")
+        if "total_tokens" in completion_data:
+            completion_data.pop("total_tokens")  # Not in DB, remove it
+        
+        # Add interview_started_at from session if available
+        if session_id in active_sessions:
+            session = active_sessions[session_id]
+            if session.started_at:
+                completion_data["interview_started_at"] = session.started_at.isoformat()
+        
+        # Store interviewer transcript as interview_transcript for DB
+        if "interviewer_transcript" in completion_data:
+            # Convert string transcript to list format for DB
+            transcript_text = completion_data.pop("interviewer_transcript")
+            if transcript_text:
+                completion_data["interview_transcript"] = [
+                    {"speaker": "interviewer", "text": transcript_text}
+                ]
         
         # Call main service to complete the interview and store in DB
         async with httpx.AsyncClient(timeout=30.0) as client:
