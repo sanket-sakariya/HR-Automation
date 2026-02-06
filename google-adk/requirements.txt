@@ -1,0 +1,22 @@
+# Live AI Interviewer - Dependencies
+# Production-ready requirements for the real-time interview application
+
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Google GenAI SDK for Gemini Live API
+google-genai==1.0.0
+
+# Template Engine
+jinja2==3.1.4
+
+# Environment Variables
+python-dotenv==1.0.1
+
+# WebSocket support (included in uvicorn[standard])
+websockets==14.1
+
+# Additional utilities
+httpx==0.28.1
+anyio==4.7.0
