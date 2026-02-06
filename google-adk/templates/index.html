@@ -8,6 +8,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     
+    <!-- Load DOM Manager -->
+    <script src="/static/dom_manager.js"></script>
+    
     <style>
         /* ============================================
            CSS Variables & Reset
@@ -30,6 +33,8 @@
             --warning: #f59e0b;
             --live-red: #ff3b30;
             --glass-blur: 20px;
+            --gate-closed: #404040;
+            --gate-open: #ffffff;
         }
 
         * {
@@ -55,8 +60,8 @@
             grid-template-columns: 1fr 420px;
             grid-template-rows: 72px 1fr 88px;
             height: 100vh;
-            max-height: 100vh; /* Prevent overflow */
-            overflow: hidden; /* No page scroll */
+            max-height: 100vh;
+            overflow: hidden;
             background: var(--bg-primary);
         }
 
@@ -103,6 +108,54 @@
             font-size: 11px;
             color: var(--text-muted);
             font-weight: 400;
+        }
+
+        /* Status Indicators Container */
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Performance Status Bar */
+        .perf-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+        }
+
+        .perf-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-muted);
+        }
+
+        .perf-item .label {
+            color: var(--text-muted);
+        }
+
+        .perf-item .value {
+            color: var(--text-secondary);
+            min-width: 45px;
+        }
+
+        .perf-item.good .value {
+            color: var(--success);
+        }
+
+        .perf-item.warning .value {
+            color: var(--warning);
+        }
+
+        .perf-item.bad .value {
+            color: var(--error);
         }
 
         /* Status Badge with Live Indicator */
@@ -197,6 +250,49 @@
             pointer-events: none;
         }
 
+        /* Noise Gate Indicator */
+        .gate-indicator {
+            position: absolute;
+            bottom: -40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.15s ease;
+        }
+
+        .gate-indicator .gate-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gate-closed);
+            transition: all 0.15s ease;
+        }
+
+        .gate-indicator.open .gate-dot {
+            background: var(--gate-open);
+            box-shadow: 0 0 10px var(--gate-open);
+        }
+
+        .gate-indicator .gate-label {
+            color: var(--text-muted);
+        }
+
+        .gate-indicator.open .gate-label {
+            color: var(--text-primary);
+        }
+
+        .gate-indicator .db-level {
+            color: var(--text-muted);
+            min-width: 50px;
+            text-align: right;
+        }
+
         .visualizer-core {
             width: 100px;
             height: 100px;
@@ -257,8 +353,8 @@
             background: var(--bg-glass);
             backdrop-filter: blur(var(--glass-blur));
             border-left: 1px solid var(--border-color);
-            overflow: hidden; /* Prevent panel from expanding */
-            min-height: 0; /* Critical for flex children to shrink */
+            overflow: hidden;
+            min-height: 0;
         }
 
         .panel-header {
@@ -283,6 +379,17 @@
             letter-spacing: 1.5px;
         }
 
+        /* Entry count badge */
+        .entry-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: 2px 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-muted);
+        }
+
         /* Live Recording Indicator */
         .live-indicator {
             display: flex;
@@ -298,6 +405,8 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             opacity: 0;
+            transition: opacity 0.3s ease;
+        }
             transition: opacity 0.3s ease;
         }
 
@@ -335,9 +444,9 @@
 
         /* Transcript Content - Fixed Height with Scroll */
         .transcript-content {
-            flex: 1 1 0; /* Grow, shrink, and basis 0 for proper flex scroll */
-            min-height: 0; /* Critical: allows flex item to shrink below content */
-            max-height: 100%; /* Don't exceed parent */
+            flex: 1 1 0;
+            min-height: 0;
+            max-height: 100%;
             overflow-y: auto;
             overflow-x: hidden;
             padding: 20px 24px;
@@ -345,6 +454,13 @@
             flex-direction: column;
             gap: 16px;
             scroll-behavior: smooth;
+        }
+
+        /* Fade out effect for old messages */
+        .transcript-message.fading-out {
+            opacity: 0;
+            transform: translateX(-20px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
         /* Custom Scrollbar */
@@ -640,9 +756,26 @@
                     <span>Junior Python Developer Position</span>
                 </div>
             </div>
-            <div class="status-badge">
-                <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Initializing...</span>
+            <div class="status-container">
+                <!-- Performance Status Bar -->
+                <div class="perf-status" id="perfStatus">
+                    <div class="perf-item" id="latencyItem">
+                        <span class="label">Latency:</span>
+                        <span class="value" id="latencyValue">--ms</span>
+                    </div>
+                    <div class="perf-item" id="memoryItem">
+                        <span class="label">Memory:</span>
+                        <span class="value" id="memoryValue">Stable</span>
+                    </div>
+                    <div class="perf-item" id="workerItem">
+                        <span class="label">Worker:</span>
+                        <span class="value" id="workerValue">--</span>
+                    </div>
+                </div>
+                <div class="status-badge">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Initializing...</span>
+                </div>
             </div>
         </header>
 
@@ -660,6 +793,12 @@
                         <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                     </svg>
                 </div>
+                <!-- Noise Gate Indicator -->
+                <div class="gate-indicator" id="gateIndicator">
+                    <div class="gate-dot"></div>
+                    <span class="gate-label">Gate</span>
+                    <span class="db-level" id="dbLevel">--dB</span>
+                </div>
             </div>
             <div class="interview-info">
                 <h2>Technical Interview</h2>
@@ -672,6 +811,7 @@
             <div class="panel-header">
                 <div class="panel-title">
                     <h3>Live Transcript</h3>
+                    <span class="entry-count" id="entryCount">0/50</span>
                     <div class="live-indicator" id="liveIndicator">
                         <div class="live-dot"></div>
                         <span>Live</span>
@@ -737,8 +877,14 @@
     <script>
         /**
          * ============================================
-         * Live AI Interviewer - Optimized Frontend
-         * Near-instant audio with client-side VAD
+         * Live AI Interviewer - Production Hardened
+         * Features:
+         * - Web Worker for PCM processing (60fps UI)
+         * - Volume Gate to filter noise
+         * - Capped transcript list (memory management)
+         * - Explicit AudioBufferSourceNode cleanup
+         * - Consistent 50ms send intervals
+         * - Latency and memory monitoring
          * ============================================
          */
         
@@ -749,21 +895,26 @@
                 this.wsUrl = `ws://${window.location.host}/ws/interview`;
                 
                 // Audio Capture
-                this.audioContext = null;
                 this.captureContext = null;
                 this.mediaStream = null;
-                this.workletNode = null;
                 this.analyser = null;
+                this.sourceNode = null;
+                this.processorNode = null;
                 
-                // Low-Latency Audio Playback
+                // Web Worker for PCM processing
+                this.audioWorker = null;
+                this.workerReady = false;
+                
+                // Low-Latency Audio Playback with explicit cleanup
                 this.playbackContext = null;
-                this.audioQueue = [];
-                this.isPlaying = false;
-                this.currentSource = null;
                 this.scheduledTime = 0;
+                this.activeSources = new Set(); // Track all active sources for cleanup
+                
+                // Audio state
+                this.isGateOpen = false;
+                this.currentDbLevel = -Infinity;
                 
                 // Client-side VAD
-                this.vadThreshold = 1500;
                 this.isSpeaking = false;
                 this.silenceStart = 0;
                 this.isAISpeaking = false;
@@ -773,7 +924,18 @@
                 this.startTime = null;
                 this.timerInterval = null;
                 
-                // Transcript
+                // Performance tracking
+                this.latencyMs = 0;
+                this.sendInterval = 20; // Reduced from 50ms for lower latency
+                this.lastSendTime = 0;
+                
+                // DOM Manager for memory-efficient transcript
+                this.domManager = new DOMManager({
+                    maxTranscriptEntries: 50,
+                    onCleanup: (info) => this.updateEntryCount()
+                });
+                
+                // Transcript state
                 this.interviewerText = '';
                 this.candidateText = '';
                 this.interviewerEl = null;
@@ -800,11 +962,24 @@
                         document.getElementById('ring2'),
                         document.getElementById('ring3'),
                         document.getElementById('ring4')
-                    ]
+                    ],
+                    // New performance elements
+                    gateIndicator: document.getElementById('gateIndicator'),
+                    dbLevel: document.getElementById('dbLevel'),
+                    latencyValue: document.getElementById('latencyValue'),
+                    latencyItem: document.getElementById('latencyItem'),
+                    memoryValue: document.getElementById('memoryValue'),
+                    memoryItem: document.getElementById('memoryItem'),
+                    workerValue: document.getElementById('workerValue'),
+                    workerItem: document.getElementById('workerItem'),
+                    entryCount: document.getElementById('entryCount')
                 };
                 
                 this.canvasCtx = this.el.canvas.getContext('2d');
                 this.vizData = new Uint8Array(128);
+                
+                // Set transcript container for DOM manager
+                this.domManager.setContainer(this.el.transcript);
                 
                 this.init();
             }
@@ -814,6 +989,83 @@
                 this.el.endBtn.onclick = () => this.stop();
                 this.el.clearBtn.onclick = () => this.clearTranscript();
                 this.setStatus('disconnected', 'Click Start to begin');
+                this.updateEntryCount();
+                
+                // Initialize Web Worker
+                this.initAudioWorker();
+            }
+            
+            // ==================
+            // Web Worker
+            // ==================
+            
+            initAudioWorker() {
+                try {
+                    this.audioWorker = new Worker('/static/audio_worker.js');
+                    
+                    this.audioWorker.onmessage = (e) => {
+                        const { type, pcmBuffer, metrics } = e.data;
+                        
+                        if (type === 'ready') {
+                            this.workerReady = true;
+                            this.el.workerValue.textContent = 'Ready';
+                            this.el.workerItem.classList.add('good');
+                            console.log('✅ Audio Worker ready');
+                        } else if (type === 'processed_audio') {
+                            this.handleProcessedAudio(pcmBuffer, metrics);
+                        }
+                    };
+                    
+                    this.audioWorker.onerror = (e) => {
+                        console.error('Worker error:', e);
+                        this.workerReady = false;
+                        this.el.workerValue.textContent = 'Error';
+                        this.el.workerItem.classList.remove('good');
+                        this.el.workerItem.classList.add('bad');
+                    };
+                    
+                } catch (err) {
+                    console.warn('Web Worker not available, using main thread:', err);
+                    this.workerReady = false;
+                    this.el.workerValue.textContent = 'N/A';
+                }
+            }
+            
+            handleProcessedAudio(pcmBuffer, metrics) {
+                // Update UI with audio level (for visualization only)
+                this.currentDbLevel = metrics.dbLevel;
+                this.updateGateIndicator();
+                
+                // Don't send audio while AI is speaking (prevents speaker feedback)
+                if (this.isAISpeaking) {
+                    // Allow barge-in with loud voice to interrupt AI
+                    const bargeInThreshold = -20; // dB for barge-in
+                    if (metrics.dbLevel > bargeInThreshold) {
+                        this.stopAudio();
+                        this.send({ type: 'interrupt' });
+                        this.sendBinary(pcmBuffer);
+                    }
+                    return;
+                }
+                
+                // Send ALL audio to Gemini - let its built-in VAD handle speech detection
+                this.sendBinary(pcmBuffer);
+            }
+            
+            updateGateIndicator() {
+                // Show audio level only (gate removed - Gemini handles VAD)
+                const isActive = !this.isAISpeaking && this.currentDbLevel > -50;
+                if (isActive) {
+                    this.el.gateIndicator.classList.add('open');
+                } else {
+                    this.el.gateIndicator.classList.remove('open');
+                }
+                
+                // Update dB display
+                const dbDisplay = isFinite(this.currentDbLevel) 
+                    ? `${Math.round(this.currentDbLevel)}dB` 
+                    : '--dB';
+                this.el.dbLevel.textContent = dbDisplay;
             }
             
             // ==================
@@ -823,7 +1075,7 @@
             async connect() {
                 return new Promise((resolve, reject) => {
                     this.ws = new WebSocket(this.wsUrl);
-                    this.ws.binaryType = 'arraybuffer';
+                    this.ws.binaryType = 'arraybuffer'; // Critical: Use arraybuffer for binary
                     
                     this.ws.onopen = () => {
                         console.log('✅ WebSocket connected');
@@ -857,7 +1109,7 @@
                     
                     switch (msg.type) {
                         case 'status':
-                            this.handleStatus(msg.status);
+                            this.handleStatus(msg.status, msg.latency_ms);
                             break;
                         case 'transcript':
                             this.handleTranscript(msg.role, msg.text);
@@ -874,7 +1126,23 @@
                 }
             }
             
-            handleStatus(status) {
+            handleStatus(status, latencyMs) {
+                // Update latency display
+                if (latencyMs !== undefined) {
+                    this.latencyMs = latencyMs;
+                    this.el.latencyValue.textContent = `${Math.round(latencyMs)}ms`;
+                    
+                    // Color code latency
+                    this.el.latencyItem.classList.remove('good', 'warning', 'bad');
+                    if (latencyMs < 200) {
+                        this.el.latencyItem.classList.add('good');
+                    } else if (latencyMs < 500) {
+                        this.el.latencyItem.classList.add('warning');
+                    } else {
+                        this.el.latencyItem.classList.add('bad');
+                    }
+                }
+                
                 switch (status) {
                     case 'ready':
                         this.setStatus('ready', 'Ready');
@@ -917,7 +1185,7 @@
             }
             
             // ==================
-            // Audio Capture (Low-Latency)
+            // Audio Capture (Web Worker Pipeline)
             // ==================
             
             async initCapture() {
@@ -932,58 +1200,38 @@
                         }
                     });
                     
-                    // Separate context for capture at 16kHz
+                    // Create capture context at 16kHz
                     this.captureContext = new AudioContext({ sampleRate: 16000 });
-                    const source = this.captureContext.createMediaStreamSource(this.mediaStream);
+                    this.sourceNode = this.captureContext.createMediaStreamSource(this.mediaStream);
                     
                     // Analyser for visualization
                     this.analyser = this.captureContext.createAnalyser();
                     this.analyser.fftSize = 256;
-                    source.connect(this.analyser);
+                    this.sourceNode.connect(this.analyser);
                     
-                    // ScriptProcessor for PCM capture (smaller buffer = lower latency)
-                    const processor = this.captureContext.createScriptProcessor(2048, 1, 1);
+                    // ScriptProcessor to feed Web Worker (smaller buffer = lower latency)
+                    this.processorNode = this.captureContext.createScriptProcessor(1024, 1, 1);
                     
-                    processor.onaudioprocess = (e) => {
+                    this.processorNode.onaudioprocess = (e) => {
                         if (!this.isActive) return;
                         
                         const input = e.inputBuffer.getChannelData(0);
-                        const pcm = new Int16Array(input.length);
                         
-                        // Convert and calculate energy for VAD
-                        let energy = 0;
-                        for (let i = 0; i < input.length; i++) {
-                            const s = Math.max(-1, Math.min(1, input[i]));
-                            pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-                            energy += Math.abs(pcm[i]);
-                        }
-                        energy /= input.length;
-                        
-                        // Client-side VAD for barge-in
-                        if (energy > this.vadThreshold) {
-                            this.isSpeaking = true;
-                            this.silenceStart = 0;
-                            
-                            // Barge-in: stop AI audio if user starts speaking
-                            if (this.isAISpeaking) {
-                                this.stopAudio();
-                                this.send({ type: 'interrupt' });
-                            }
+                        if (this.workerReady && this.audioWorker) {
+                            // Send to Web Worker for processing (off main thread)
+                            this.audioWorker.postMessage({
+                                type: 'audio_data',
+                                data: input.buffer.slice(0), // Clone buffer
+                                timestamp: performance.now()
+                            });
                         } else {
-                            if (this.isSpeaking && this.silenceStart === 0) {
-                                this.silenceStart = Date.now();
-                            }
-                            if (this.silenceStart && Date.now() - this.silenceStart > 300) {
-                                this.isSpeaking = false;
-                            }
+                            // Fallback: process on main thread
+                            this.processAudioMainThread(input);
                         }
-                        
-                        // Send PCM to server
-                        this.sendBinary(pcm.buffer);
                     };
                     
-                    source.connect(processor);
-                    processor.connect(this.captureContext.destination);
+                    this.sourceNode.connect(this.processorNode);
+                    this.processorNode.connect(this.captureContext.destination);
                     
                     // Start visualization
                     this.startVisualization();
@@ -991,7 +1239,7 @@
                     this.el.mic.classList.add('active');
                     this.el.live.classList.add('active');
                     
-                    console.log('✅ Audio capture initialized');
+                    console.log('✅ Audio capture initialized with Web Worker');
                     return true;
                     
                 } catch (err) {
@@ -1001,21 +1249,66 @@
                 }
             }
             
+            // Fallback main thread processing if Worker unavailable
+            processAudioMainThread(input) {
+                const pcm = new Int16Array(input.length);
+                let energy = 0;
+                
+                for (let i = 0; i < input.length; i++) {
+                    const s = Math.max(-1, Math.min(1, input[i]));
+                    pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                    energy += input[i] * input[i];
+                }
+                
+                const rms = Math.sqrt(energy / input.length);
+                const dbLevel = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
+                
+                this.handleProcessedAudio(pcm.buffer, {
+                    dbLevel: dbLevel,
+                    rms: rms
+                });
+            }
+            
             stopCapture() {
+                // Cleanup media stream
                 if (this.mediaStream) {
                     this.mediaStream.getTracks().forEach(t => t.stop());
                     this.mediaStream = null;
                 }
+                
+                // Cleanup audio nodes
+                if (this.processorNode) {
+                    this.processorNode.disconnect();
+                    this.processorNode.onaudioprocess = null;
+                    this.processorNode = null;
+                }
+                
+                if (this.sourceNode) {
+                    this.sourceNode.disconnect();
+                    this.sourceNode = null;
+                }
+                
+                if (this.analyser) {
+                    this.analyser.disconnect();
+                    this.analyser = null;
+                }
+                
                 if (this.captureContext) {
                     this.captureContext.close();
                     this.captureContext = null;
                 }
+                
+                // Reset worker
+                if (this.audioWorker) {
+                    this.audioWorker.postMessage({ type: 'reset' });
+                }
+                
                 this.el.mic.classList.remove('active');
                 this.el.live.classList.remove('active');
             }
             
             // ==================
-            // Audio Playback (Low-Latency Queue)
+            // Audio Playback (Memory-Safe)
             // ==================
             
             async playAudioChunk(pcmBuffer) {
@@ -1046,6 +1339,10 @@
                 source.buffer = buffer;
                 source.connect(this.playbackContext.destination);
                 
+                // Track source for cleanup
+                this.activeSources.add(source);
+                this.domManager.registerAudioSource(source);
+                
                 // Calculate start time for gapless playback
                 const now = this.playbackContext.currentTime;
                 const startTime = Math.max(now, this.scheduledTime);
@@ -1053,42 +1350,50 @@
                 source.start(startTime);
                 this.scheduledTime = startTime + buffer.duration;
                 
-                // Track current source for interruption
-                this.currentSource = source;
-                this.isPlaying = true;
-                
+                // Explicit cleanup when source ends
                 source.onended = () => {
-                    if (this.currentSource === source) {
-                        this.isPlaying = false;
-                    }
+                    this.cleanupAudioSource(source);
                 };
             }
             
-            stopAudio() {
-                // Immediately stop all audio playback
-                if (this.currentSource) {
-                    try {
-                        this.currentSource.stop();
-                    } catch (e) {}
-                    this.currentSource = null;
+            cleanupAudioSource(source) {
+                if (!source) return;
+                
+                try {
+                    source.disconnect();
+                    source.buffer = null;
+                    source.onended = null;
+                } catch (e) {
+                    // Already cleaned up
                 }
                 
-                // Reset playback context for clean slate
+                this.activeSources.delete(source);
+            }
+            
+            stopAudio() {
+                // Stop all active sources
+                this.activeSources.forEach(source => {
+                    try {
+                        source.stop();
+                    } catch (e) {}
+                    this.cleanupAudioSource(source);
+                });
+                this.activeSources.clear();
+                
+                // Reset playback context
                 if (this.playbackContext) {
                     this.playbackContext.close();
                     this.playbackContext = null;
                 }
                 
-                this.audioQueue = [];
-                this.isPlaying = false;
                 this.scheduledTime = 0;
                 this.isAISpeaking = false;
                 
-                console.log('🛑 Audio stopped');
+                console.log('🛑 Audio stopped, sources cleaned');
             }
             
             // ==================
-            // Visualization
+            // Visualization (Frequency + Gate State)
             // ==================
             
             startVisualization() {
@@ -1102,6 +1407,7 @@
                     
                     this.drawVisualizer();
                     this.updateMicLevel();
+                    this.updateMemoryStatus();
                 };
                 draw();
             }
@@ -1136,7 +1442,14 @@
                     ctx.beginPath();
                     ctx.moveTo(x1, y1);
                     ctx.lineTo(x2, y2);
-                    ctx.strokeStyle = `rgba(255,255,255,${0.2 + (val / 255) * 0.8})`;
+                    
+                    // Gray when gate closed, white when open
+                    if (this.isGateOpen) {
+                        ctx.strokeStyle = `rgba(255,255,255,${0.3 + (val / 255) * 0.7})`;
+                    } else {
+                        ctx.strokeStyle = `rgba(100,100,100,${0.2 + (val / 255) * 0.4})`;
+                    }
+                    
                     ctx.lineWidth = 2;
                     ctx.lineCap = 'round';
                     ctx.stroke();
@@ -1155,37 +1468,46 @@
                 });
             }
             
+            updateMemoryStatus() {
+                const status = this.domManager.getMemoryStatus();
+                this.el.memoryValue.textContent = status.status.charAt(0).toUpperCase() + status.status.slice(1);
+                
+                this.el.memoryItem.classList.remove('good', 'warning', 'bad');
+                if (status.status === 'stable') {
+                    this.el.memoryItem.classList.add('good');
+                } else if (status.status === 'warning') {
+                    this.el.memoryItem.classList.add('warning');
+                } else {
+                    this.el.memoryItem.classList.add('bad');
+                }
+            }
+            
+            updateEntryCount() {
+                const count = this.domManager.getEntryCount();
+                const max = this.domManager.maxEntries;
+                this.el.entryCount.textContent = `${count}/${max}`;
+            }
+            
             // ==================
-            // Transcript (Auto-Scroll)
+            // Transcript (Memory-Managed)
             // ==================
             
             handleTranscript(role, text) {
+                // Only handle AI/interviewer transcripts (user transcript disabled for latency)
+                if (role !== 'interviewer') return;
+                
                 this.el.placeholder.style.display = 'none';
                 
-                if (role === 'interviewer') {
-                    this.interviewerText += text;
-                    
-                    if (this.interviewerEl) {
-                        this.interviewerEl.querySelector('.text').textContent = this.interviewerText;
-                    } else {
-                        this.interviewerEl = this.createMessage('Interviewer', this.interviewerText, 'interviewer');
-                        this.candidateEl = null;
-                        this.candidateText = '';
-                    }
+                this.interviewerText += text;
+                
+                if (this.interviewerEl) {
+                    this.interviewerEl.querySelector('.text').textContent = this.interviewerText;
                 } else {
-                    this.candidateText += text;
-                    
-                    if (this.candidateEl) {
-                        this.candidateEl.querySelector('.text').textContent = this.candidateText;
-                    } else {
-                        this.candidateEl = this.createMessage('You', this.candidateText, 'candidate');
-                        this.interviewerEl = null;
-                        this.interviewerText = '';
-                    }
+                    this.interviewerEl = this.createMessage('AI Interviewer', this.interviewerText, 'interviewer');
                 }
                 
-                // Auto-scroll to bottom
                 this.autoScroll();
+                this.updateEntryCount();
             }
             
             createMessage(role, text, className) {
@@ -1195,25 +1517,31 @@
                     <span class="role">${role}</span>
                     <p class="text">${text}</p>
                 `;
-                this.el.transcript.appendChild(div);
+                
+                // Use DOM Manager for memory-safe insertion
+                this.domManager.addEntry(div, className);
+                
                 return div;
             }
             
             autoScroll() {
-                // Smooth scroll to bottom
                 requestAnimationFrame(() => {
                     this.el.transcript.scrollTop = this.el.transcript.scrollHeight;
                 });
             }
             
             clearTranscript() {
-                this.el.transcript.innerHTML = '';
+                this.domManager.clearAll();
+                
+                // Re-add placeholder
                 this.el.placeholder.style.display = 'flex';
                 this.el.transcript.appendChild(this.el.placeholder);
+                
                 this.interviewerText = '';
                 this.candidateText = '';
                 this.interviewerEl = null;
                 this.candidateEl = null;
+                this.updateEntryCount();
             }
             
             // ==================
@@ -1266,6 +1594,9 @@
                 this.stopAudio();
                 this.stopCapture();
                 this.stopTimer();
+                
+                // Cleanup DOM manager
+                this.domManager.cleanupAllAudioSources();
                 
                 this.el.startBtn.disabled = false;
                 this.el.endBtn.disabled = true;

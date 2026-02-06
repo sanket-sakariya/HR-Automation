@@ -3,24 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Technical Interview Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Technical Interview | AI-Powered</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Load DOM Manager -->
+    <script src="/static/dom_manager.js"></script>
+    
     <style>
+        /* ============================================
+           CSS Variables & Reset
+           ============================================ */
         :root {
-            --primary-color: #ffffff;
-            --primary-dark: #e5e5e5;
-            --success-color: #ffffff;
-            --danger-color: #ff4444;
-            --warning-color: #ffaa00;
-            --bg-color: #000000;
-            --bg-secondary: #111111;
-            --bg-card: #1a1a1a;
+            --bg-primary: #000000;
+            --bg-secondary: #050505;
+            --bg-tertiary: #0a0a0a;
+            --bg-glass: rgba(10, 10, 10, 0.85);
+            --bg-glass-light: rgba(20, 20, 20, 0.9);
             --text-primary: #ffffff;
-            --text-secondary: #888888;
-            --border-color: #333333;
-            --gradient-1: linear-gradient(135deg, #ffffff 0%, #cccccc 100%);
-            --gradient-2: linear-gradient(135deg, #333333 0%, #555555 100%);
+            --text-secondary: #b0b0b0;
+            --text-muted: #606060;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --border-light: rgba(255, 255, 255, 0.12);
+            --accent: #ffffff;
+            --accent-dim: rgba(255, 255, 255, 0.1);
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --live-red: #ff3b30;
+            --glass-blur: 20px;
+            --gate-closed: #404040;
+            --gate-open: #ffffff;
         }
 
         * {
@@ -30,745 +44,1667 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
             color: var(--text-primary);
-            height: 100vh;
+            min-height: 100vh;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Remove Animated Background for cleaner look */
-        .bg-animation {
-            display: none;
-        }
-
-        /* Login Container */
-        .login-container {
+        /* ============================================
+           Login Screen
+           ============================================ */
+        .login-screen {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             padding: 20px;
-            overflow: auto;
+            background: radial-gradient(ellipse at center, #0a0a0a 0%, #000000 70%);
         }
+        .login-screen.hidden { display: none; }
 
         .login-card {
-            background: var(--bg-card);
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--glass-blur));
             border: 1px solid var(--border-color);
             border-radius: 16px;
-            padding: 50px 40px;
+            padding: 48px;
             width: 100%;
-            max-width: 450px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+            max-width: 420px;
         }
-
-        .login-logo {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .login-logo i {
-            font-size: 60px;
-            color: var(--text-primary);
-        }
-
-        .login-logo h1 {
+        .login-card h1 {
             font-size: 28px;
-            font-weight: 700;
-            margin-top: 15px;
-            color: var(--text-primary);
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
         }
-
-        .login-logo p {
-            color: var(--text-secondary);
-            margin-top: 8px;
+        .login-card p {
+            color: var(--text-muted);
             font-size: 14px;
+            text-align: center;
+            margin-bottom: 32px;
         }
 
         .form-group {
             margin-bottom: 20px;
         }
-
         .form-group label {
             display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
             margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-
         .form-group input {
             width: 100%;
             padding: 14px 16px;
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            background: var(--bg-color);
+            border-radius: 10px;
             color: var(--text-primary);
-            font-size: 16px;
-            transition: all 0.3s ease;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.2s ease;
         }
-
         .form-group input:focus {
             outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+            border-color: var(--text-secondary);
+            background: var(--bg-secondary);
         }
-
         .form-group input::placeholder {
-            color: var(--text-secondary);
-            opacity: 0.7;
+            color: var(--text-muted);
         }
 
-        .btn {
+        .login-btn {
             width: 100%;
-            padding: 16px 24px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btn-primary {
+            padding: 16px;
             background: var(--text-primary);
-            color: var(--bg-color);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.3);
-            background: var(--primary-dark);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-danger {
-            background: var(--danger-color);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #cc0000;
-        }
-
-        .error-message {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid var(--danger-color);
-            color: var(--danger-color);
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            display: none;
-        }
-
-        /* Interview Container */
-        .interview-container {
-            display: none;
-            height: 100vh;
-            padding: 20px;
-            overflow: hidden;
-        }
-
-        .interview-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 25px;
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
-        }
-
-        .interview-info h2 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 3px;
-        }
-
-        .interview-info p {
-            color: var(--text-secondary);
-            font-size: 13px;
-        }
-
-        .interview-timer {
-            text-align: right;
-        }
-
-        .timer-display {
-            font-size: 28px;
-            font-weight: 700;
-            font-family: 'Courier New', monospace;
-            color: var(--text-primary);
-        }
-
-        .timer-label {
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-top: 2px;
-        }
-
-        .interview-main {
-            display: grid;
-            grid-template-columns: 1fr 400px;
-            gap: 15px;
-            height: calc(100vh - 120px);
-            overflow: hidden;
-        }
-
-        /* Video Section */
-        .video-section {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
-        .video-container {
-            flex: 1;
-            display: flex;
-            position: relative;
-            background: #000;
-            min-height: 0;
-        }
-
-        .ai-video {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            background: linear-gradient(180deg, #0a0a0a 0%, #111111 100%);
-        }
-
-        .ai-avatar {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            background: var(--bg-card);
-            border: 2px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .ai-avatar i {
-            font-size: 70px;
-            color: var(--text-primary);
-        }
-
-        .ai-speaking-ring {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 3px solid var(--text-primary);
-            animation: speakingPulse 1.5s ease-in-out infinite;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .ai-avatar.speaking .ai-speaking-ring {
-            opacity: 1;
-        }
-
-        @keyframes speakingPulse {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.15); opacity: 0.2; }
-        }
-
-        .ai-name {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .ai-role {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-top: 5px;
-        }
-
-        .user-video-small {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            width: 180px;
-            height: 135px;
+            color: var(--bg-primary);
+            border: none;
             border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid var(--border-color);
-            background: #000;
-        }
-
-        .user-video-small video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-
-        .video-controls {
-            padding: 15px;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            background: var(--bg-card);
-            border-top: 1px solid var(--border-color);
-        }
-
-        .control-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: 1px solid var(--border-color);
-            cursor: pointer;
-            font-size: 18px;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-        }
-
-        .control-btn.mic {
-            background: var(--text-primary);
-            color: var(--bg-color);
-            border: none;
-        }
-
-        .control-btn.mic.muted {
-            background: var(--danger-color);
-            color: white;
-        }
-
-        .control-btn.camera {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-        }
-
-        .control-btn.camera.off {
-            background: var(--danger-color);
-            color: white;
-            border: none;
-        }
-
-        .control-btn.end-call {
-            background: var(--danger-color);
-            color: white;
-            border: none;
-        }
-
-        .control-btn:hover {
-            transform: scale(1.1);
-        }
-
-        /* Transcript Section */
-        .transcript-section {
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .transcript-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid var(--border-color);
-            flex-shrink: 0;
-        }
-
-        .transcript-header h3 {
             font-size: 14px;
             font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s ease;
+        }
+        .login-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .login-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .error-box {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: var(--error);
+            display: none;
+        }
+
+        /* ============================================
+           Interview Layout
+           ============================================ */
+        .app-container {
+            display: none;
+            grid-template-columns: 1fr 380px;
+            grid-template-rows: 68px 1fr 80px;
+            height: 100vh;
+            max-height: 100vh;
+            overflow: hidden;
+            background: var(--bg-primary);
+        }
+        .app-container.active { display: grid; }
+
+        /* ============================================
+           Header
+           ============================================ */
+        .header {
+            grid-column: 1 / -1;
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+            padding: 0 28px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--glass-blur));
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .transcript-header h3 i {
-            color: var(--text-primary);
-        }
-
-        .transcript-body {
-            flex: 1;
-            overflow-y: auto;
-            padding: 15px;
-            min-height: 0;
-            scroll-behavior: smooth;
-        }
-
-        /* Custom Scrollbar for Transcript */
-        .transcript-body::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .transcript-body::-webkit-scrollbar-track {
-            background: var(--bg-card);
-            border-radius: 3px;
-        }
-
-        .transcript-body::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 3px;
-        }
-
-        .transcript-body::-webkit-scrollbar-thumb:hover {
-            background: var(--text-secondary);
-        }
-
-        .transcript-message {
-            margin-bottom: 12px;
+        .logo {
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            gap: 14px;
         }
 
-        .transcript-message.ai {
-            align-items: flex-start;
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            border: 1.5px solid var(--text-primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: -0.5px;
         }
 
-        .transcript-message.user {
-            align-items: flex-end;
-        }
-
-        .message-label {
-            font-size: 11px;
+        .logo-text h1 {
+            font-size: 16px;
             font-weight: 600;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            letter-spacing: -0.3px;
         }
 
-        .message-label i {
+        .logo-text span {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .status-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* Performance Status */
+        .perf-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 6px 14px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
         }
 
-        .transcript-message.ai .message-label {
-            color: var(--text-secondary);
-        }
-
-        .transcript-message.user .message-label {
-            color: var(--text-primary);
-        }
-
-        .message-content {
-            max-width: 90%;
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .transcript-message.ai .message-content {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-top-left-radius: 4px;
-            color: var(--text-primary);
-        }
-
-        .transcript-message.user .message-content {
-            background: var(--text-primary);
-            color: var(--bg-color);
-            border-top-right-radius: 4px;
-        }
-
-        /* Status Indicators */
-        .status-bar {
-            padding: 12px 15px;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            font-size: 12px;
-            flex-shrink: 0;
-        }
-
-        .status-item {
+        .perf-item {
             display: flex;
             align-items: center;
             gap: 6px;
+            color: var(--text-muted);
+        }
+
+        .perf-item .value {
+            color: var(--text-secondary);
+            min-width: 45px;
+        }
+
+        .perf-item.good .value { color: var(--success); }
+        .perf-item.warning .value { color: var(--warning); }
+        .perf-item.bad .value { color: var(--error); }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: var(--bg-glass-light);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
         .status-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
+            background: var(--text-muted);
+            transition: all 0.2s ease;
         }
 
-        .status-dot.connected { background: var(--text-primary); }
-        .status-dot.connecting { background: var(--warning-color); animation: blink 1s infinite; }
-        .status-dot.disconnected { background: var(--danger-color); }
+        .status-dot.ready { background: var(--success); box-shadow: 0 0 12px var(--success); }
+        .status-dot.speaking { background: var(--accent); box-shadow: 0 0 12px var(--accent); animation: pulse-glow 1.2s ease-in-out infinite; }
+        .status-dot.listening { background: var(--warning); box-shadow: 0 0 12px var(--warning); }
+        .status-dot.error { background: var(--error); box-shadow: 0 0 12px var(--error); }
 
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.1); }
         }
 
-        /* Loading Screen */
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-color);
+        .timer {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            background: var(--bg-tertiary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* ============================================
+           Main Content - Video + Visualizer
+           ============================================ */
+        .main-content {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            position: relative;
+            background: radial-gradient(ellipse at center, #0a0a0a 0%, #000000 70%);
+            padding: 24px;
+            gap: 24px;
         }
 
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid var(--border-color);
-            border-top-color: var(--primary-color);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        /* Video Container */
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            aspect-ratio: 4/3;
+            background: var(--bg-tertiary);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            margin-top: 20px;
-            color: var(--text-secondary);
-            font-size: 16px;
-        }
-
-        /* Permission Modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .video-container video {
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .video-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 1001;
+            color: var(--text-muted);
         }
 
-        .modal.active {
+        .video-placeholder svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .video-label {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* AI Status with Visualizer */
+        .visualizer-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
             display: flex;
-        }
-
-        .modal-content {
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 40px;
-            max-width: 450px;
-            text-align: center;
-        }
-
-        .modal-content i {
-            font-size: 60px;
-            color: var(--text-primary);
-            margin-bottom: 20px;
-        }
-
-        .modal-content h3 {
-            font-size: 22px;
-            margin-bottom: 15px;
-        }
-
-        .modal-content p {
-            color: var(--text-secondary);
-            margin-bottom: 25px;
-            line-height: 1.6;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 15px;
+            align-items: center;
             justify-content: center;
         }
 
-        .modal-actions .btn {
-            width: auto;
-            padding: 12px 30px;
+        .visualizer-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            transition: all 0.15s ease;
         }
 
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .interview-main {
+        .visualizer-ring:nth-child(1) { width: 100%; height: 100%; }
+        .visualizer-ring:nth-child(2) { width: 75%; height: 75%; }
+        .visualizer-ring:nth-child(3) { width: 50%; height: 50%; }
+
+        .visualizer-ring.active { border-color: rgba(255, 255, 255, 0.3); }
+
+        .visualizer-core {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-primary));
+            border: 1.5px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s ease;
+            z-index: 10;
+        }
+
+        .visualizer-core.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+        }
+
+        .visualizer-core svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-muted);
+            transition: fill 0.2s ease;
+        }
+
+        .visualizer-core.active svg { fill: var(--text-primary); }
+
+        .ai-label {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .ai-label span { display: block; color: var(--text-secondary); font-weight: 500; }
+
+        /* Gate Indicator */
+        .gate-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.15s ease;
+        }
+
+        .gate-indicator .gate-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gate-closed);
+            transition: all 0.15s ease;
+        }
+
+        .gate-indicator.open .gate-dot {
+            background: var(--gate-open);
+            box-shadow: 0 0 10px var(--gate-open);
+        }
+
+        .gate-indicator .gate-label { color: var(--text-muted); }
+        .gate-indicator.open .gate-label { color: var(--text-primary); }
+        .gate-indicator .db-level { color: var(--text-muted); min-width: 50px; text-align: right; }
+
+        /* ============================================
+           Transcript Panel
+           ============================================ */
+        .transcript-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--glass-blur));
+            border-left: 1px solid var(--border-color);
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-glass-light);
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-title h3 {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .entry-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            padding: 2px 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-muted);
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(255, 59, 48, 0.15);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--live-red);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .live-indicator.active { opacity: 1; }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--live-red);
+            animation: live-pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes live-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .panel-header button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .panel-header button:hover {
+            color: var(--text-primary);
+            background: var(--accent-dim);
+        }
+
+        .transcript-content {
+            flex: 1 1 0;
+            min-height: 0;
+            max-height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scroll-behavior: smooth;
+        }
+
+        .transcript-content::-webkit-scrollbar { width: 5px; }
+        .transcript-content::-webkit-scrollbar-track { background: transparent; }
+        .transcript-content::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+        .transcript-content::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        .transcript-message {
+            padding: 14px 16px;
+            border-radius: 12px;
+            background: var(--bg-glass-light);
+            border: 1px solid var(--border-color);
+            animation: message-in 0.25s ease-out;
+        }
+
+        @keyframes message-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .transcript-message.interviewer {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .transcript-message .role {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            display: block;
+            color: var(--text-secondary);
+        }
+
+        .transcript-message .text {
+            font-size: 13px;
+            line-height: 1.65;
+            color: var(--text-primary);
+        }
+
+        .transcript-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .transcript-placeholder svg {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 14px;
+            opacity: 0.3;
+        }
+
+        .transcript-placeholder p { font-size: 13px; }
+
+        /* ============================================
+           Controls Footer
+           ============================================ */
+        .controls-footer {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 0 28px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(var(--glass-blur));
+            border-top: 1px solid var(--border-color);
+        }
+
+        .mic-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            font-size: 12px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .mic-indicator.active {
+            color: var(--success);
+            border-color: rgba(16, 185, 129, 0.3);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .mic-indicator svg { width: 14px; height: 14px; }
+
+        .mic-level {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+            height: 14px;
+        }
+
+        .mic-bar {
+            width: 3px;
+            background: currentColor;
+            border-radius: 2px;
+            transition: height 0.05s ease;
+        }
+
+        .control-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .control-btn:hover:not(:disabled) {
+            background: var(--bg-glass-light);
+            border-color: var(--border-light);
+            transform: translateY(-1px);
+        }
+
+        .control-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .control-btn svg { width: 16px; height: 16px; }
+
+        .control-btn.primary {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            border-color: var(--text-primary);
+        }
+
+        .control-btn.primary:hover:not(:disabled) {
+            background: var(--text-secondary);
+            border-color: var(--text-secondary);
+        }
+
+        .control-btn.danger {
+            border-color: rgba(239, 68, 68, 0.5);
+            color: var(--error);
+        }
+
+        .control-btn.danger:hover:not(:disabled) {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--error);
+        }
+
+        /* ============================================
+           Toast
+           ============================================ */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--bg-glass-light);
+            backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+        .toast.error { border-color: rgba(239, 68, 68, 0.4); }
+        .toast svg { width: 18px; height: 18px; flex-shrink: 0; }
+        .toast.error svg { fill: var(--error); }
+        .toast span { font-size: 13px; }
+
+        /* ============================================
+           Responsive
+           ============================================ */
+        @media (max-width: 900px) {
+            .app-container {
                 grid-template-columns: 1fr;
-                height: calc(100vh - 120px);
+                grid-template-rows: 64px 1fr minmax(180px, 240px) 72px;
             }
 
-            .transcript-section {
-                height: 250px;
-            }
-        }
-
-        @media (max-width: 640px) {
-            .login-card {
-                padding: 30px 25px;
+            .transcript-panel {
+                border-left: none;
+                border-top: 1px solid var(--border-color);
             }
 
-            .user-video-small {
-                width: 100px;
-                height: 75px;
-            }
-
-            .control-btn {
-                width: 45px;
-                height: 45px;
-                font-size: 16px;
-            }
-        }
-
-        .hidden {
-            display: none !important;
+            .header, .controls-footer { padding: 0 16px; }
+            .perf-status { display: none; }
+            .video-container { max-width: 320px; }
+            .visualizer-container { width: 80px; height: 80px; }
+            .visualizer-core { width: 36px; height: 36px; }
         }
     </style>
 </head>
 <body>
-    <div class="bg-animation"></div>
-
-    <!-- Loading Screen -->
-    <div class="loading-screen hidden" id="loadingScreen">
-        <div class="loading-spinner"></div>
-        <p class="loading-text" id="loadingText">Connecting to interview service...</p>
-    </div>
-
-    <!-- Permission Modal -->
-    <div class="modal" id="permissionModal">
-        <div class="modal-content">
-            <i class="fas fa-microphone-alt"></i>
-            <h3>Enable Microphone Access</h3>
-            <p>We need access to your microphone to conduct the voice interview. Please allow microphone permissions when prompted.</p>
-            <div class="modal-actions">
-                <button class="btn btn-primary" onclick="requestPermissions()">
-                    <i class="fas fa-check"></i> Allow Access
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Login Container -->
-    <div class="login-container" id="loginContainer">
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
         <div class="login-card">
-            <div class="login-logo">
-                <i class="fas fa-robot"></i>
-                <h1>Technical Interview</h1>
-                <p>AI-Powered Real-time Voice Interview</p>
-            </div>
-
-            <div class="error-message" id="errorMessage"></div>
-
-            <div class="job-info" id="jobInfo" style="display: none; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; margin-bottom: 20px; text-align: center;">
-                <p style="color: var(--text-secondary); font-size: 14px; margin: 0;">Interview for</p>
-                <h3 id="jobTitleDisplay" style="color: var(--text-primary); margin: 5px 0 0 0; font-size: 18px;"></h3>
-            </div>
-
+            <h1>Technical Interview</h1>
+            <p>Enter your credentials to start the AI-powered interview</p>
+            <div class="error-box" id="errorBox"></div>
             <form id="loginForm">
-                <input type="hidden" id="jobId">
                 <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input type="email" id="email" placeholder="Enter your registered email" required>
+                    <label>Candidate ID</label>
+                    <input type="text" id="candidateId" placeholder="Enter candidate ID" required>
                 </div>
                 <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" placeholder="Enter your password" required>
+                    <label>Job Requirement ID</label>
+                    <input type="text" id="jobRequirementId" placeholder="Enter job requirement ID" required>
                 </div>
-                <button type="submit" class="btn btn-primary" id="loginBtn">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Start Interview
-                </button>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="login-btn" id="loginBtn">Start Interview</button>
             </form>
-
-            <div id="noJobError" style="display: none; text-align: center; padding: 20px;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: var(--warning-color); margin-bottom: 15px;"></i>
-                <h3 style="color: var(--text-primary); margin-bottom: 10px;">Invalid Interview Link</h3>
-                <p style="color: var(--text-secondary);">Please use the interview link provided by the recruiter.</p>
-            </div>
         </div>
     </div>
 
-    <!-- Interview Container -->
-    <div class="interview-container" id="interviewContainer">
-        <div class="interview-header">
-            <div class="interview-info">
-                <h2 id="jobTitle">Technical Interview</h2>
-                <p id="candidateName">Welcome, Candidate</p>
+    <!-- Interview Screen -->
+    <div class="app-container" id="appContainer">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">AI</div>
+                <div class="logo-text">
+                    <h1>Technical Interview</h1>
+                    <span id="jobTitle">Position</span>
+                </div>
             </div>
-            <div class="interview-timer">
-                <div class="timer-display" id="timerDisplay">00:00:00</div>
-                <div class="timer-label">Duration</div>
+            <div class="status-container">
+                <div class="perf-status" id="perfStatus">
+                    <div class="perf-item" id="latencyItem">
+                        <span class="label">Latency:</span>
+                        <span class="value" id="latencyValue">--ms</span>
+                    </div>
+                    <div class="perf-item" id="memoryItem">
+                        <span class="label">Memory:</span>
+                        <span class="value" id="memoryValue">Stable</span>
+                    </div>
+                    <div class="perf-item" id="workerItem">
+                        <span class="label">Worker:</span>
+                        <span class="value" id="workerValue">--</span>
+                    </div>
+                </div>
+                <div class="timer" id="timer">00:00</div>
+                <div class="status-badge">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Initializing...</span>
+                </div>
             </div>
-        </div>
+        </header>
 
-        <div class="interview-main">
-            <div class="video-section">
-                <div class="video-container">
-                    <div class="ai-video">
-                        <div class="ai-avatar" id="aiAvatar">
-                            <div class="ai-speaking-ring"></div>
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <div class="ai-name">AI Interviewer</div>
-                        <div class="ai-role">Senior Technical Recruiter</div>
-                    </div>
-                    <div class="user-video-small">
-                        <video id="userVideo" autoplay muted playsinline></video>
-                    </div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="video-container">
+                <video id="userVideo" autoplay muted playsinline></video>
+                <div class="video-placeholder" id="videoPlaceholder">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    <span>Camera will appear here</span>
                 </div>
-                <div class="video-controls">
-                    <button class="control-btn mic" id="micBtn" onclick="toggleMic()">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <button class="control-btn camera" id="cameraBtn" onclick="toggleCamera()">
-                        <i class="fas fa-video"></i>
-                    </button>
-                    <button class="control-btn end-call" onclick="endInterview()">
-                        <i class="fas fa-phone-slash"></i>
-                    </button>
+                <div class="video-label" id="candidateName">Candidate</div>
+            </div>
+
+            <div class="visualizer-container">
+                <div class="visualizer-ring" id="ring1"></div>
+                <div class="visualizer-ring" id="ring2"></div>
+                <div class="visualizer-ring" id="ring3"></div>
+                <div class="visualizer-core" id="visualizerCore">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/>
+                        <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    </svg>
                 </div>
             </div>
 
-            <div class="transcript-section">
-                <div class="transcript-header">
-                    <h3><i class="fas fa-file-alt"></i> Live Transcript</h3>
-                </div>
-                <div class="transcript-body" id="transcriptBody">
-                    <!-- Transcript messages will be added here -->
-                </div>
-                <div class="status-bar">
-                    <div class="status-item">
-                        <span class="status-dot connecting" id="statusDot"></span>
-                        <span id="statusText">Connecting...</span>
+            <div class="ai-label">
+                <span id="aiStatusText">AI Interviewer Ready</span>
+            </div>
+
+            <div class="gate-indicator" id="gateIndicator">
+                <div class="gate-dot"></div>
+                <span class="gate-label">Voice</span>
+                <span class="db-level" id="dbLevel">--dB</span>
+            </div>
+        </main>
+
+        <!-- Transcript Panel -->
+        <aside class="transcript-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Live Transcript</h3>
+                    <span class="entry-count" id="entryCount">0/50</span>
+                    <div class="live-indicator" id="liveIndicator">
+                        <div class="live-dot"></div>
+                        <span>Live</span>
                     </div>
                 </div>
+                <button id="clearTranscript" title="Clear transcript">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                    </svg>
+                </button>
             </div>
-        </div>
+            <div class="transcript-content" id="transcriptContent">
+                <div class="transcript-placeholder" id="transcriptPlaceholder">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+                    </svg>
+                    <p>Start the interview to see the live transcript</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Controls -->
+        <footer class="controls-footer">
+            <div class="mic-indicator" id="micIndicator">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                </svg>
+                <div class="mic-level">
+                    <div class="mic-bar" style="height: 4px;"></div>
+                    <div class="mic-bar" style="height: 6px;"></div>
+                    <div class="mic-bar" style="height: 5px;"></div>
+                    <div class="mic-bar" style="height: 8px;"></div>
+                    <div class="mic-bar" style="height: 4px;"></div>
+                </div>
+                <span>Mic</span>
+            </div>
+            
+            <button class="control-btn primary" id="startBtn">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                Start Interview
+            </button>
+            
+            <button class="control-btn danger" id="endBtn" disabled>
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 6h12v12H6z"/>
+                </svg>
+                End Session
+            </button>
+        </footer>
     </div>
 
-    <script src="/static/interview.js"></script>
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <span id="toastMessage">Error message</span>
+    </div>
+
+    <script>
+        /**
+         * ============================================
+         * Technical Interview - Production Hardened
+         * Features:
+         * - Web Worker for PCM processing (60fps UI)
+         * - Volume Gate to filter noise
+         * - Capped transcript list (memory management)
+         * - Explicit AudioBufferSourceNode cleanup
+         * - Latency and memory monitoring
+         * ============================================
+         */
+        
+        class TechnicalInterview {
+            constructor() {
+                // Session data
+                this.sessionId = null;
+                this.jobDetails = null;
+                this.candidateInfo = null;
+                
+                // WebSocket
+                this.ws = null;
+                this.wsUrl = null;
+                
+                // Audio Capture
+                this.captureContext = null;
+                this.mediaStream = null;
+                this.analyser = null;
+                this.sourceNode = null;
+                this.processorNode = null;
+                
+                // Web Worker for PCM processing
+                this.audioWorker = null;
+                this.workerReady = false;
+                
+                // Audio Playback with explicit cleanup
+                this.playbackContext = null;
+                this.scheduledTime = 0;
+                this.activeSources = new Set();
+                
+                // Audio state
+                this.isGateOpen = false;
+                this.currentDbLevel = -Infinity;
+                this.isAISpeaking = false;
+                
+                // State
+                this.isActive = false;
+                this.startTime = null;
+                this.timerInterval = null;
+                
+                // Performance tracking
+                this.latencyMs = 0;
+                
+                // DOM Manager for memory-efficient transcript
+                this.domManager = new DOMManager({
+                    maxTranscriptEntries: 50,
+                    onCleanup: (info) => this.updateEntryCount()
+                });
+                
+                // Transcript state
+                this.interviewerText = '';
+                this.interviewerEl = null;
+                
+                // Visualization data
+                this.vizData = new Uint8Array(128);
+                
+                // DOM Elements
+                this.el = {
+                    loginScreen: document.getElementById('loginScreen'),
+                    loginForm: document.getElementById('loginForm'),
+                    loginBtn: document.getElementById('loginBtn'),
+                    errorBox: document.getElementById('errorBox'),
+                    candidateId: document.getElementById('candidateId'),
+                    jobRequirementId: document.getElementById('jobRequirementId'),
+                    email: document.getElementById('email'),
+                    password: document.getElementById('password'),
+                    appContainer: document.getElementById('appContainer'),
+                    startBtn: document.getElementById('startBtn'),
+                    endBtn: document.getElementById('endBtn'),
+                    statusDot: document.getElementById('statusDot'),
+                    statusText: document.getElementById('statusText'),
+                    timer: document.getElementById('timer'),
+                    jobTitle: document.getElementById('jobTitle'),
+                    candidateName: document.getElementById('candidateName'),
+                    userVideo: document.getElementById('userVideo'),
+                    videoPlaceholder: document.getElementById('videoPlaceholder'),
+                    aiStatusText: document.getElementById('aiStatusText'),
+                    visualizerCore: document.getElementById('visualizerCore'),
+                    transcript: document.getElementById('transcriptContent'),
+                    placeholder: document.getElementById('transcriptPlaceholder'),
+                    clearBtn: document.getElementById('clearTranscript'),
+                    mic: document.getElementById('micIndicator'),
+                    live: document.getElementById('liveIndicator'),
+                    toast: document.getElementById('toast'),
+                    toastMsg: document.getElementById('toastMessage'),
+                    rings: [
+                        document.getElementById('ring1'),
+                        document.getElementById('ring2'),
+                        document.getElementById('ring3')
+                    ],
+                    gateIndicator: document.getElementById('gateIndicator'),
+                    dbLevel: document.getElementById('dbLevel'),
+                    latencyValue: document.getElementById('latencyValue'),
+                    latencyItem: document.getElementById('latencyItem'),
+                    memoryValue: document.getElementById('memoryValue'),
+                    memoryItem: document.getElementById('memoryItem'),
+                    workerValue: document.getElementById('workerValue'),
+                    workerItem: document.getElementById('workerItem'),
+                    entryCount: document.getElementById('entryCount')
+                };
+                
+                // Set transcript container for DOM manager
+                this.domManager.setContainer(this.el.transcript);
+                
+                this.init();
+            }
+            
+            init() {
+                // Check for session ID in URL
+                const pathMatch = window.location.pathname.match(/\/interview\/([^/]+)/);
+                if (pathMatch) {
+                    this.sessionId = pathMatch[1];
+                    this.loadSession(this.sessionId);
+                }
+                
+                // Event listeners
+                this.el.loginForm.onsubmit = (e) => this.handleLogin(e);
+                this.el.startBtn.onclick = () => this.startInterview();
+                this.el.endBtn.onclick = () => this.endInterview();
+                this.el.clearBtn.onclick = () => this.clearTranscript();
+                
+                this.setStatus('disconnected', 'Ready to start');
+                this.updateEntryCount();
+                
+                // Initialize Web Worker
+                this.initAudioWorker();
+            }
+            
+            // ==================
+            // Web Worker
+            // ==================
+            
+            initAudioWorker() {
+                try {
+                    this.audioWorker = new Worker('/static/audio_worker.js');
+                    
+                    this.audioWorker.onmessage = (e) => {
+                        const { type, pcmBuffer, metrics } = e.data;
+                        
+                        if (type === 'ready') {
+                            this.workerReady = true;
+                            this.el.workerValue.textContent = 'Ready';
+                            this.el.workerItem.classList.add('good');
+                            console.log('✅ Audio Worker ready');
+                        } else if (type === 'processed_audio') {
+                            this.handleProcessedAudio(pcmBuffer, metrics);
+                        }
+                    };
+                    
+                    this.audioWorker.onerror = (e) => {
+                        console.error('Worker error:', e);
+                        this.workerReady = false;
+                        this.el.workerValue.textContent = 'Error';
+                        this.el.workerItem.classList.remove('good');
+                        this.el.workerItem.classList.add('bad');
+                    };
+                    
+                } catch (err) {
+                    console.warn('Web Worker not available:', err);
+                    this.workerReady = false;
+                    this.el.workerValue.textContent = 'N/A';
+                }
+            }
+            
+            handleProcessedAudio(pcmBuffer, metrics) {
+                // Update UI with audio level
+                this.currentDbLevel = metrics.dbLevel;
+                this.updateGateIndicator();
+                
+                // Don't send audio while AI is speaking
+                if (this.isAISpeaking) {
+                    const bargeInThreshold = -20;
+                    if (metrics.dbLevel > bargeInThreshold) {
+                        this.stopAudio();
+                        this.send({ type: 'interrupt' });
+                        this.sendBinary(pcmBuffer);
+                    }
+                    return;
+                }
+                
+                // Send audio to server
+                this.sendBinary(pcmBuffer);
+            }
+            
+            updateGateIndicator() {
+                const isActive = !this.isAISpeaking && this.currentDbLevel > -50;
+                if (isActive) {
+                    this.el.gateIndicator.classList.add('open');
+                } else {
+                    this.el.gateIndicator.classList.remove('open');
+                }
+                
+                const dbDisplay = isFinite(this.currentDbLevel) 
+                    ? `${Math.round(this.currentDbLevel)}dB` 
+                    : '--dB';
+                this.el.dbLevel.textContent = dbDisplay;
+            }
+            
+            // ==================
+            // Login & Session
+            // ==================
+            
+            async handleLogin(e) {
+                e.preventDefault();
+                this.el.loginBtn.disabled = true;
+                this.el.loginBtn.textContent = 'Starting...';
+                this.hideError();
+
+                try {
+                    const response = await fetch('/start', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            candidate_id: this.el.candidateId.value.trim(),
+                            job_requirement_id: this.el.jobRequirementId.value.trim(),
+                            email: this.el.email.value.trim(),
+                            password: this.el.password.value
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.detail || 'Failed to start');
+
+                    if (data.success) {
+                        this.sessionId = data.session_id;
+                        this.jobDetails = data.job_details;
+                        this.candidateInfo = data.candidate_info;
+                        window.history.pushState({}, '', `/interview/${this.sessionId}`);
+                        this.showInterviewScreen();
+                    }
+                } catch (error) {
+                    this.showError(error.message);
+                } finally {
+                    this.el.loginBtn.disabled = false;
+                    this.el.loginBtn.textContent = 'Start Interview';
+                }
+            }
+
+            async loadSession(sessionId) {
+                try {
+                    const response = await fetch(`/api/session/${sessionId}`);
+                    if (!response.ok) throw new Error('Session not found');
+
+                    const data = await response.json();
+                    this.jobDetails = data.job_details;
+                    this.candidateInfo = data.candidate_info;
+                    this.showInterviewScreen();
+                } catch (error) {
+                    console.error('Load session error:', error);
+                    this.showError('Session expired. Please login again.');
+                }
+            }
+
+            showInterviewScreen() {
+                this.el.loginScreen.classList.add('hidden');
+                this.el.appContainer.classList.add('active');
+
+                if (this.jobDetails) {
+                    this.el.jobTitle.textContent = this.jobDetails.title || 'Technical Position';
+                }
+                if (this.candidateInfo) {
+                    const name = `${this.candidateInfo.first_name || ''} ${this.candidateInfo.last_name || ''}`.trim();
+                    this.el.candidateName.textContent = name || 'Candidate';
+                }
+
+                this.setStatus('ready', 'Ready to start');
+                this.initCamera();
+            }
+            
+            // ==================
+            // Camera
+            // ==================
+            
+            async initCamera() {
+                try {
+                    this.mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: true, 
+                        audio: {
+                            sampleRate: 16000,
+                            channelCount: 1,
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        }
+                    });
+                    this.el.userVideo.srcObject = this.mediaStream;
+                    this.el.videoPlaceholder.style.display = 'none';
+                } catch (error) {
+                    console.error('Camera error:', error);
+                }
+            }
+            
+            // ==================
+            // WebSocket
+            // ==================
+            
+            async connect() {
+                return new Promise((resolve, reject) => {
+                    this.wsUrl = `ws://${window.location.host}/ws/interview/${this.sessionId}`;
+                    this.ws = new WebSocket(this.wsUrl);
+                    this.ws.binaryType = 'arraybuffer';
+                    
+                    this.ws.onopen = () => {
+                        console.log('✅ WebSocket connected');
+                        resolve();
+                    };
+                    
+                    this.ws.onclose = () => {
+                        console.log('📴 WebSocket closed');
+                        this.handleDisconnect();
+                    };
+                    
+                    this.ws.onerror = (e) => {
+                        console.error('WebSocket error:', e);
+                        reject(e);
+                    };
+                    
+                    this.ws.onmessage = (e) => this.handleMessage(e);
+                });
+            }
+            
+            handleMessage(event) {
+                // Binary audio
+                if (event.data instanceof ArrayBuffer) {
+                    this.playAudioChunk(event.data);
+                    return;
+                }
+
+                try {
+                    const msg = JSON.parse(event.data);
+                    
+                    switch (msg.type) {
+                        case 'status':
+                            this.handleStatus(msg.status, msg.latency_ms);
+                            break;
+                        case 'transcript':
+                            this.handleTranscript(msg.role, msg.text);
+                            break;
+                        case 'interrupt':
+                            this.stopAudio();
+                            break;
+                        case 'error':
+                            this.showToast(msg.message, 'error');
+                            break;
+                    }
+                } catch (e) {
+                    console.error('Parse error:', e);
+                }
+            }
+            
+            handleStatus(status, latencyMs) {
+                if (latencyMs !== undefined) {
+                    this.latencyMs = latencyMs;
+                    this.el.latencyValue.textContent = `${Math.round(latencyMs)}ms`;
+                    
+                    this.el.latencyItem.classList.remove('good', 'warning', 'bad');
+                    if (latencyMs < 200) {
+                        this.el.latencyItem.classList.add('good');
+                    } else if (latencyMs < 500) {
+                        this.el.latencyItem.classList.add('warning');
+                    } else {
+                        this.el.latencyItem.classList.add('bad');
+                    }
+                }
+                
+                switch (status) {
+                    case 'ready':
+                        this.setStatus('ready', 'Ready');
+                        this.el.aiStatusText.textContent = 'AI Interviewer Ready';
+                        break;
+                    case 'speaking':
+                        this.isAISpeaking = true;
+                        this.setStatus('speaking', 'AI Speaking');
+                        this.el.aiStatusText.textContent = 'Speaking...';
+                        this.el.visualizerCore.classList.add('active');
+                        this.el.rings.forEach(r => r.classList.add('active'));
+                        break;
+                    case 'listening':
+                        this.isAISpeaking = false;
+                        this.setStatus('listening', 'Listening');
+                        this.el.aiStatusText.textContent = 'Listening to you...';
+                        this.el.visualizerCore.classList.remove('active');
+                        this.el.rings.forEach(r => r.classList.remove('active'));
+                        break;
+                }
+            }
+            
+            handleDisconnect() {
+                this.isActive = false;
+                this.setStatus('disconnected', 'Disconnected');
+                this.el.startBtn.disabled = false;
+                this.el.endBtn.disabled = true;
+                this.el.live.classList.remove('active');
+                this.stopTimer();
+                this.stopCapture();
+            }
+            
+            send(data) {
+                if (this.ws?.readyState === WebSocket.OPEN) {
+                    this.ws.send(typeof data === 'string' ? data : JSON.stringify(data));
+                }
+            }
+            
+            sendBinary(buffer) {
+                if (this.ws?.readyState === WebSocket.OPEN) {
+                    this.ws.send(buffer);
+                }
+            }
+            
+            // ==================
+            // Audio Capture
+            // ==================
+            
+            async initCapture() {
+                try {
+                    this.captureContext = new AudioContext({ sampleRate: 16000 });
+                    this.sourceNode = this.captureContext.createMediaStreamSource(this.mediaStream);
+                    
+                    // Analyser for visualization
+                    this.analyser = this.captureContext.createAnalyser();
+                    this.analyser.fftSize = 256;
+                    this.sourceNode.connect(this.analyser);
+                    
+                    // ScriptProcessor for audio processing
+                    this.processorNode = this.captureContext.createScriptProcessor(1024, 1, 1);
+                    
+                    this.processorNode.onaudioprocess = (e) => {
+                        if (!this.isActive) return;
+                        
+                        const input = e.inputBuffer.getChannelData(0);
+                        
+                        if (this.workerReady && this.audioWorker) {
+                            this.audioWorker.postMessage({
+                                type: 'audio_data',
+                                data: input.buffer.slice(0),
+                                timestamp: performance.now()
+                            });
+                        } else {
+                            this.processAudioMainThread(input);
+                        }
+                    };
+                    
+                    this.sourceNode.connect(this.processorNode);
+                    this.processorNode.connect(this.captureContext.destination);
+                    
+                    this.startVisualization();
+                    
+                    this.el.mic.classList.add('active');
+                    this.el.live.classList.add('active');
+                    
+                    console.log('✅ Audio capture initialized');
+                    return true;
+                    
+                } catch (err) {
+                    console.error('Capture error:', err);
+                    this.showToast('Microphone error', 'error');
+                    return false;
+                }
+            }
+            
+            processAudioMainThread(input) {
+                const pcm = new Int16Array(input.length);
+                let energy = 0;
+                
+                for (let i = 0; i < input.length; i++) {
+                    const s = Math.max(-1, Math.min(1, input[i]));
+                    pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                    energy += input[i] * input[i];
+                }
+                
+                const rms = Math.sqrt(energy / input.length);
+                const dbLevel = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
+                
+                this.handleProcessedAudio(pcm.buffer, { dbLevel, rms });
+            }
+            
+            stopCapture() {
+                if (this.processorNode) {
+                    this.processorNode.disconnect();
+                    this.processorNode.onaudioprocess = null;
+                    this.processorNode = null;
+                }
+                
+                if (this.sourceNode) {
+                    this.sourceNode.disconnect();
+                    this.sourceNode = null;
+                }
+                
+                if (this.analyser) {
+                    this.analyser.disconnect();
+                    this.analyser = null;
+                }
+                
+                if (this.captureContext) {
+                    this.captureContext.close();
+                    this.captureContext = null;
+                }
+                
+                if (this.audioWorker) {
+                    this.audioWorker.postMessage({ type: 'reset' });
+                }
+                
+                this.el.mic.classList.remove('active');
+                this.el.live.classList.remove('active');
+            }
+            
+            // ==================
+            // Audio Playback
+            // ==================
+            
+            async playAudioChunk(pcmBuffer) {
+                if (!this.playbackContext || this.playbackContext.state === 'closed') {
+                    this.playbackContext = new AudioContext({ sampleRate: 24000 });
+                    this.scheduledTime = this.playbackContext.currentTime;
+                }
+                
+                if (this.playbackContext.state === 'suspended') {
+                    await this.playbackContext.resume();
+                }
+                
+                const int16 = new Int16Array(pcmBuffer);
+                const float32 = new Float32Array(int16.length);
+                for (let i = 0; i < int16.length; i++) {
+                    float32[i] = int16[i] / 32768.0;
+                }
+                
+                const buffer = this.playbackContext.createBuffer(1, float32.length, 24000);
+                buffer.getChannelData(0).set(float32);
+                
+                const source = this.playbackContext.createBufferSource();
+                source.buffer = buffer;
+                source.connect(this.playbackContext.destination);
+                
+                this.activeSources.add(source);
+                this.domManager.registerAudioSource(source);
+                
+                const now = this.playbackContext.currentTime;
+                const startTime = Math.max(now, this.scheduledTime);
+                
+                source.start(startTime);
+                this.scheduledTime = startTime + buffer.duration;
+                
+                source.onended = () => {
+                    this.cleanupAudioSource(source);
+                };
+            }
+            
+            cleanupAudioSource(source) {
+                if (!source) return;
+                
+                try {
+                    source.disconnect();
+                    source.buffer = null;
+                    source.onended = null;
+                } catch (e) {}
+                
+                this.activeSources.delete(source);
+            }
+            
+            stopAudio() {
+                this.activeSources.forEach(source => {
+                    try { source.stop(); } catch (e) {}
+                    this.cleanupAudioSource(source);
+                });
+                this.activeSources.clear();
+                
+                if (this.playbackContext) {
+                    this.playbackContext.close();
+                    this.playbackContext = null;
+                }
+                
+                this.scheduledTime = 0;
+                this.isAISpeaking = false;
+            }
+            
+            // ==================
+            // Visualization
+            // ==================
+            
+            startVisualization() {
+                const updateMic = () => {
+                    if (!this.isActive) return;
+                    requestAnimationFrame(updateMic);
+                    
+                    if (this.analyser) {
+                        this.analyser.getByteFrequencyData(this.vizData);
+                    }
+                    
+                    this.updateMicLevel();
+                    this.updateMemoryStatus();
+                };
+                updateMic();
+            }
+            
+            updateMicLevel() {
+                const bars = this.el.mic.querySelectorAll('.mic-bar');
+                let sum = 0;
+                for (let i = 0; i < this.vizData.length; i++) sum += this.vizData[i];
+                const avg = sum / this.vizData.length;
+                
+                bars.forEach((bar, i) => {
+                    const h = 3 + (avg / 255) * 11 * (0.6 + Math.random() * 0.4);
+                    bar.style.height = `${Math.min(14, h)}px`;
+                });
+            }
+            
+            updateMemoryStatus() {
+                const status = this.domManager.getMemoryStatus();
+                this.el.memoryValue.textContent = status.status.charAt(0).toUpperCase() + status.status.slice(1);
+                
+                this.el.memoryItem.classList.remove('good', 'warning', 'bad');
+                if (status.status === 'stable') {
+                    this.el.memoryItem.classList.add('good');
+                } else if (status.status === 'warning') {
+                    this.el.memoryItem.classList.add('warning');
+                } else {
+                    this.el.memoryItem.classList.add('bad');
+                }
+            }
+            
+            updateEntryCount() {
+                const count = this.domManager.getEntryCount();
+                const max = this.domManager.maxEntries;
+                this.el.entryCount.textContent = `${count}/${max}`;
+            }
+            
+            // ==================
+            // Transcript
+            // ==================
+            
+            handleTranscript(role, text) {
+                if (role !== 'interviewer') return;
+                
+                this.el.placeholder.style.display = 'none';
+                
+                this.interviewerText += text;
+                
+                if (this.interviewerEl) {
+                    this.interviewerEl.querySelector('.text').textContent = this.interviewerText;
+                } else {
+                    this.interviewerEl = this.createMessage('AI Interviewer', this.interviewerText, 'interviewer');
+                }
+                
+                this.autoScroll();
+                this.updateEntryCount();
+            }
+            
+            createMessage(role, text, className) {
+                const div = document.createElement('div');
+                div.className = `transcript-message ${className}`;
+                div.innerHTML = `
+                    <span class="role">${role}</span>
+                    <p class="text">${text}</p>
+                `;
+                
+                this.domManager.addEntry(div, className);
+                
+                return div;
+            }
+            
+            autoScroll() {
+                requestAnimationFrame(() => {
+                    this.el.transcript.scrollTop = this.el.transcript.scrollHeight;
+                });
+            }
+            
+            clearTranscript() {
+                this.domManager.clearAll();
+                
+                this.el.placeholder.style.display = 'flex';
+                this.el.transcript.appendChild(this.el.placeholder);
+                
+                this.interviewerText = '';
+                this.interviewerEl = null;
+                this.updateEntryCount();
+            }
+            
+            // ==================
+            // Interview Control
+            // ==================
+            
+            async startInterview() {
+                try {
+                    this.el.startBtn.disabled = true;
+                    this.setStatus('listening', 'Connecting...');
+                    
+                    if (!await this.initCapture()) {
+                        this.el.startBtn.disabled = false;
+                        this.setStatus('error', 'Audio error');
+                        return;
+                    }
+                    
+                    await this.connect();
+                    
+                    this.isActive = true;
+                    this.el.endBtn.disabled = false;
+                    
+                    this.clearTranscript();
+                    this.startTimer();
+                    
+                    setTimeout(() => {
+                        this.send({ type: 'start_interview' });
+                    }, 300);
+                    
+                } catch (err) {
+                    console.error('Start error:', err);
+                    this.showToast('Failed to start', 'error');
+                    this.el.startBtn.disabled = false;
+                    this.setStatus('error', 'Failed');
+                }
+            }
+            
+            endInterview() {
+                this.isActive = false;
+                this.send({ type: 'end_session' });
+                
+                if (this.ws) {
+                    this.ws.close();
+                    this.ws = null;
+                }
+                
+                this.stopAudio();
+                this.stopCapture();
+                this.stopTimer();
+                
+                this.domManager.cleanupAllAudioSources();
+                
+                this.el.startBtn.disabled = false;
+                this.el.endBtn.disabled = true;
+                this.el.visualizerCore.classList.remove('active');
+                this.setStatus('ready', 'Interview Ended');
+                this.el.aiStatusText.textContent = 'Interview Complete';
+            }
+            
+            // ==================
+            // Timer
+            // ==================
+            
+            startTimer() {
+                this.startTime = Date.now();
+                this.timerInterval = setInterval(() => {
+                    const elapsed = Date.now() - this.startTime;
+                    const m = Math.floor(elapsed / 60000);
+                    const s = Math.floor((elapsed % 60000) / 1000);
+                    this.el.timer.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                }, 1000);
+            }
+            
+            stopTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+            }
+            
+            // ==================
+            // UI Helpers
+            // ==================
+            
+            setStatus(state, text) {
+                this.el.statusDot.className = 'status-dot ' + state;
+                this.el.statusText.textContent = text;
+            }
+            
+            showError(message) {
+                this.el.errorBox.textContent = message;
+                this.el.errorBox.style.display = 'block';
+            }
+            
+            hideError() {
+                this.el.errorBox.style.display = 'none';
+            }
+            
+            showToast(msg, type = 'info') {
+                this.el.toast.className = `toast ${type}`;
+                this.el.toastMsg.textContent = msg;
+                this.el.toast.classList.add('show');
+                setTimeout(() => this.el.toast.classList.remove('show'), 4000);
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new TechnicalInterview();
+        });
+    </script>
 </body>
 </html>

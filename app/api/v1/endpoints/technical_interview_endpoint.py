@@ -5,6 +5,7 @@ from typing import Optional
 from uuid import UUID
 from pathlib import Path
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +22,9 @@ from app.service.technical_interview_service import TechnicalInterviewService
 from app.repository.technical_interview_repository import TechnicalInterviewRepository
 from app.repository.candidate_repository import CandidateRepository
 from app.repository.job_requirement_repository import JobRequirementRepository
+
+# Technical interview service URL
+TECHNICAL_INTERVIEW_SERVICE_URL = "http://localhost:8100"
 
 router = APIRouter(
     prefix="/technical-interview",
@@ -143,8 +147,26 @@ async def start_technical_interview(
         )
         
         # WebSocket URL for the interview (pointing to the technical-interview-service on port 8100)
-        websocket_url = f"ws://localhost:8100/ws/{interview.interview_session_id}"
+        websocket_url = f"ws://localhost:8100/ws/interview/{interview.interview_session_id}"
         interview_url = f"http://localhost:8100/interview/{interview.interview_session_id}"
+        
+        # Step 9: Register the session with the technical-interview-service
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                register_response = await client.post(
+                    f"{TECHNICAL_INTERVIEW_SERVICE_URL}/register-session",
+                    json={
+                        "session_id": interview.interview_session_id,
+                        "job_details": job_details,
+                        "candidate_info": candidate_info,
+                        "system_instruction": system_instruction
+                    }
+                )
+                if register_response.status_code != 200:
+                    print(f"Warning: Could not register session with technical-interview-service: {register_response.text}")
+        except Exception as e:
+            print(f"Warning: Could not connect to technical-interview-service: {e}")
+            # Continue anyway - the session might need to be registered manually
         
         return ApiResponseSchema(
             success=True,

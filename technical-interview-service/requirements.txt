@@ -1,7 +1,24 @@
 # Technical Interview Service Dependencies
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-websockets>=12.0
+# Based on Google ADK architecture with Gemini 2.5 Flash Native Audio
+
+# Web Framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+
+# Google GenAI SDK for Gemini Live API
+google-genai>=1.0.0
+
+# Template Engine
+jinja2>=3.1.4
+
+# HTTP Client for fetching candidate/job data
 httpx>=0.25.0
-python-dotenv>=1.0.0
+
+# Environment Variables
+python-dotenv>=1.0.1
+
+# WebSocket support
+websockets>=14.1
+
+# Pydantic for data validation
 pydantic>=2.0.0

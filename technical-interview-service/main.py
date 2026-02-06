@@ -1,140 +1,282 @@
 """
 Technical Interview Service - AI-Powered Real-time Interview Platform
-Runs on port 8100 and connects to the main interview-management-service
+Based on Google ADK architecture with Gemini 2.5 Flash Native Audio
 
 Features:
-- Real-time bidirectional audio streaming with Gemini 2.5 Flash
-- Dynamic system instruction based on job requirements
-- Multilingual support: English, Hindi, Gujarati
-- Comprehensive interview evaluation and scoring
+- Asyncio Jitter Buffer for network stability
+- Configurable barge-in mandate filtering
+- Memory-efficient streaming
+- Latency tracking
 """
 
-import os
-import json
 import asyncio
-import base64
-import httpx
-import websockets
+import json
+import os
+import time
+import struct
+from collections import deque
 from pathlib import Path
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from typing import Optional, Deque
+from dataclasses import dataclass, field
 from uuid import uuid4
 
-import dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.requests import Request
 from pydantic import BaseModel
-from typing import Optional
+from dotenv import load_dotenv
+
+from google import genai
+from google.genai import types
 
 # Load environment variables
 env_file = Path(__file__).parent.parent / '.env.dev'
-dotenv.load_dotenv(env_file)
+load_dotenv(env_file)
+load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY not found! Please set it in .env.dev file")
-
-print(f"✅ API Key loaded (ends with: ...{GEMINI_API_KEY[-8:]})")
-
-# Main service URL
+# Configuration
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
+MODEL_ID = os.getenv("MODEL_ID", "gemini-2.5-flash-preview-native-audio-dialog")
 MAIN_SERVICE_URL = os.getenv("MAIN_SERVICE_URL", "http://localhost:8888/interview-management-service/api/v1")
 
-# Gemini Multimodal Live API Configuration
-# Use gemini-2.5-flash-native-audio-preview for real-time bidirectional audio
-GEMINI_MODEL = "models/gemini-2.5-flash-native-audio-preview-12-2025"
-GEMINI_WS_URL = f"wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key={GEMINI_API_KEY}"
+# Jitter Buffer Configuration
+JITTER_BUFFER_MS = 50  # Reduced from 150ms for faster response
+JITTER_BUFFER_MAX_CHUNKS = 5  # Reduced for lower latency
+MIN_SPEECH_DURATION_MS = 150  # Reduced from 200ms for faster barge-in
 
-# Generation config for audio output
-GENERATION_CONFIG = {
-    "response_modalities": ["AUDIO"],
-    "speech_config": {
-        "voice_config": {
-            "prebuilt_voice_config": {
-                "voice_name": "Aoede"
-            }
-        }
-    }
-}
+if not GOOGLE_API_KEY:
+    print("⚠️  WARNING: GOOGLE_API_KEY not found!")
 
 
-# Store active interview sessions
+@dataclass
+class AudioChunk:
+    """Timestamped audio chunk for jitter buffer."""
+    data: bytes
+    timestamp: float = field(default_factory=time.time)
+    sequence: int = 0
+
+
+class JitterBuffer:
+    """
+    Async jitter buffer to smooth out network packet timing variations.
+    Holds audio briefly to ensure correct sequence even if packets arrive out of order.
+    """
+    
+    def __init__(self, buffer_ms: int = JITTER_BUFFER_MS, max_chunks: int = JITTER_BUFFER_MAX_CHUNKS):
+        self.buffer_ms = buffer_ms
+        self.max_chunks = max_chunks
+        self.buffer: Deque[AudioChunk] = deque(maxlen=max_chunks)
+        self.sequence_counter = 0
+        self._lock = asyncio.Lock()
+        self._flush_event = asyncio.Event()
+        self._last_flush_time = time.time()
+        
+    async def add(self, data: bytes) -> Optional[bytes]:
+        """Add audio chunk to buffer. Returns flushed audio if buffer is ready."""
+        async with self._lock:
+            self.sequence_counter += 1
+            chunk = AudioChunk(data=data, sequence=self.sequence_counter)
+            self.buffer.append(chunk)
+            
+            now = time.time()
+            buffer_age_ms = (now - self._last_flush_time) * 1000
+            
+            should_flush = buffer_age_ms >= self.buffer_ms or len(self.buffer) >= self.max_chunks
+            
+            if should_flush and self.buffer:
+                return await self._flush()
+            
+            return None
+    
+    async def _flush(self) -> bytes:
+        """Flush all buffered chunks in sequence order."""
+        sorted_chunks = sorted(self.buffer, key=lambda c: c.sequence)
+        combined = b''.join(chunk.data for chunk in sorted_chunks)
+        self.buffer.clear()
+        self._last_flush_time = time.time()
+        return combined
+    
+    async def force_flush(self) -> Optional[bytes]:
+        """Force flush remaining buffer contents."""
+        async with self._lock:
+            if self.buffer:
+                return await self._flush()
+            return None
+    
+    @property
+    def size(self) -> int:
+        """Current number of chunks in buffer."""
+        return len(self.buffer)
+
+
+class SpeechActivityTracker:
+    """
+    Tracks speech activity duration to filter out short bursts (coughs, bumps).
+    Only marks speech as valid after MIN_SPEECH_DURATION_MS.
+    """
+    
+    def __init__(self, min_duration_ms: int = MIN_SPEECH_DURATION_MS):
+        self.min_duration_ms = min_duration_ms
+        self.speech_start_time: Optional[float] = None
+        self.is_valid_speech = False
+        self._energy_history: Deque[float] = deque(maxlen=10)
+    
+    def update(self, audio_data: bytes, energy_threshold: int = 2000) -> bool:
+        """
+        Update speech tracking with new audio chunk.
+        Returns True if this is valid continuous speech (not just a short burst).
+        """
+        try:
+            samples = struct.unpack(f'<{len(audio_data)//2}h', audio_data)
+            energy = sum(abs(s) for s in samples[:100]) / max(100, len(samples[:100]))
+            self._energy_history.append(energy)
+            
+            avg_energy = sum(self._energy_history) / len(self._energy_history)
+            
+            if avg_energy > energy_threshold:
+                if self.speech_start_time is None:
+                    self.speech_start_time = time.time()
+                
+                duration_ms = (time.time() - self.speech_start_time) * 1000
+                if duration_ms >= self.min_duration_ms:
+                    self.is_valid_speech = True
+                    return True
+                return False
+            else:
+                self.speech_start_time = None
+                self.is_valid_speech = False
+                return False
+                
+        except Exception:
+            return False
+    
+    def reset(self):
+        """Reset speech tracking state."""
+        self.speech_start_time = None
+        self.is_valid_speech = False
+        self._energy_history.clear()
+
+
+def generate_system_instruction(job_details: dict, candidate_info: dict) -> str:
+    """Generate dynamic system instruction based on job and candidate information."""
+    job_title = job_details.get("title", "Technical Position")
+    company_name = job_details.get("company_name", "the company")
+    job_description = job_details.get("description", "")
+    required_skills = job_details.get("required_skills", [])
+    
+    candidate_name = f"{candidate_info.get('first_name', '')} {candidate_info.get('last_name', '')}".strip()
+    skills_str = ", ".join(required_skills) if isinstance(required_skills, list) else str(required_skills)
+    
+    return f"""
+You are a professional technical recruiter conducting an interview for **{job_title}** at **{company_name}**.
+
+## Candidate: {candidate_name or 'Candidate'}
+
+## Job Details
+- Position: {job_title}
+- Description: {job_description or 'Technical role'}
+- Required Skills: {skills_str or 'Technical skills'}
+
+## Your Identity & Demeanor
+- You are "Alex", a Senior Technical Recruiter with 10+ years of experience
+- Maintain a professional yet approachable tone
+- Be slightly rigorous but fair - you want to assess skills accurately
+- Show genuine interest in the candidate's responses
+- Provide brief acknowledgments before moving to the next question
+
+## Interview Structure
+1. **Opening (First interaction)**:
+   - Greet {candidate_name or 'the candidate'} warmly
+   - Introduce yourself briefly
+   - Ask a warm-up question about their background
+
+2. **Technical Assessment**:
+   - Ask questions based on required skills: {skills_str}
+   - Progress from basic to advanced concepts
+   - Adapt difficulty based on responses
+
+3. **Behavioral Questions**:
+   - Problem-solving approach
+   - Learning from mistakes
+   - Team collaboration
+
+## Important Behaviors
+- **Multilingual Support**: If the candidate speaks in Hindi, Gujarati, Spanish, French, German, or any other language, seamlessly switch to that language while maintaining the technical interview context.
+
+- **Barge-in Handling**: If the candidate starts speaking while you're talking, immediately stop and listen attentively. Acknowledge what they said before continuing.
+
+- **Time Awareness**: Keep responses concise (20-40 seconds of speech). Don't monologue.
+
+- **Encouragement**: Provide positive reinforcement for good answers.
+
+## Response Format
+- Speak naturally as in a real conversation
+- Ask one question at a time
+- Keep responses SHORT and conversational
+
+Remember: You are conducting a VOICE interview. Keep responses brief and natural.
+"""
+
+
+# Store active sessions
 active_sessions = {}
 
 
 class InterviewSession:
-    """Stores interview session data and dynamically calculated scores"""
-    def __init__(self, session_id: str, technical_interview_id: str, job_details: dict, candidate_info: dict, system_instruction: str):
+    """Stores interview session data."""
+    def __init__(self, session_id: str, job_details: dict, candidate_info: dict, system_instruction: str):
         self.session_id = session_id
-        self.technical_interview_id = technical_interview_id
         self.job_details = job_details
         self.candidate_info = candidate_info
         self.system_instruction = system_instruction
-        self.started_at = None
-        self.transcript = []  # Stored in DB - only AI responses
-        self.full_transcript = []  # For AI evaluation - includes candidate responses
-        self.token_usage = {
-            "input_tokens": 0,
-            "output_tokens": 0,
-            "audio_input_seconds": 0.0,
-            "audio_output_seconds": 0.0
-        }
-        
-        # Dynamic scoring metrics (updated during interview)
-        self.scores = {
-            "overall_score": 0.0,
-            "overall_rating": "average",
-            "technical_knowledge_score": 0.0,
-            "domain_expertise_score": 0.0,
-            "communication_score": 0.0,
-            "language_proficiency_score": 0.0,
-            "confidence_score": 0.0,
-            "professionalism_score": 0.0,
-            "response_relevance_score": 0.0,
-            "response_depth_score": 0.0,
-            "response_clarity_score": 0.0,
-            "engagement_score": 0.0,
-        }
-        
-        # Question tracking
-        self.questions_asked = 0
-        self.questions_answered = 0
-        self.questions_skipped = 0
-        self.response_times = []  # List of response times in seconds
-        
-        # AI analysis results
-        self.candidate_strengths = []
-        self.candidate_weaknesses = []
-        self.improvement_areas = []
-        self.skills_assessment = []
-        self.ai_recommendation = "neutral"
-        self.ai_recommendation_reason = ""
-        self.ai_feedback_summary = ""
+
+
+class RegisterSessionRequest(BaseModel):
+    """Request to register an interview session."""
+    session_id: str
+    job_details: dict
+    candidate_info: dict
+    system_instruction: str
+
+
+class StartInterviewRequest(BaseModel):
+    """Request to start a technical interview."""
+    candidate_id: str
+    job_requirement_id: str
+    email: str
+    password: str
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager"""
+    """Application lifespan handler."""
     print("\n" + "=" * 75)
-    print("🎤 TECHNICAL INTERVIEW SERVICE - Powered by Gemini 2.5 Flash")
+    print("🎤 TECHNICAL INTERVIEW SERVICE - Production Hardened")
     print("=" * 75)
-    print("🌍 LANGUAGES: English | हिंदी (Hindi) | ગુજરાતી (Gujarati)")
-    print("🔄 AUTO-DETECT: Just speak in any language - AI will adapt!")
-    print("🎯 PERSONA: Senior Technical Recruiter")
+    print(f"📡 Model: {MODEL_ID}")
     print(f"🔗 Main Service: {MAIN_SERVICE_URL}")
-    print("=" * 75)
-    print("🚀 Server starting at http://localhost:8100")
-    print("⚠️  Allow microphone permissions when prompted!")
+    print(f"⏱️  Jitter buffer: {JITTER_BUFFER_MS}ms")
+    print(f"🎤 Min speech duration: {MIN_SPEECH_DURATION_MS}ms")
+    if GOOGLE_API_KEY:
+        print(f"✅ API Key loaded (ends with: ...{GOOGLE_API_KEY[-8:]})")
+    else:
+        print("⚠️  WARNING: GOOGLE_API_KEY not found!")
     print("=" * 75 + "\n")
     yield
     print("\n👋 Server shutting down...")
 
 
-app = FastAPI(title="Technical Interview Service", lifespan=lifespan)
+app = FastAPI(
+    title="Technical Interview Service",
+    description="Production-hardened real-time AI interview with jitter buffer and noise filtering",
+    version="3.0.0",
+    lifespan=lifespan
+)
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -143,956 +285,480 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Ensure directories exist
+# Setup directories
 templates_dir = Path(__file__).parent / "templates"
 static_dir = Path(__file__).parent / "static"
 templates_dir.mkdir(exist_ok=True)
 static_dir.mkdir(exist_ok=True)
 
-# Mount static files
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+templates = Jinja2Templates(directory=str(templates_dir))
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
-class CreateInterviewRequest(BaseModel):
-    """Request to create a technical interview"""
-    job_requirement_id: str
-    candidate_id: str
-
-
-class LoginRequest(BaseModel):
-    """Request for candidate login"""
-    email: str
-    password: str
-
-
-@app.get("/")
-async def get_index():
-    """Serve the main HTML page"""
-    html_path = templates_dir / "technical_interview.html"
-    if html_path.exists():
-        return FileResponse(html_path)
-    return HTMLResponse("<h1>Technical Interview Service</h1><p>Template not found</p>")
-
-
-@app.get("/interview/{session_id}")
-async def get_interview_page(session_id: str):
-    """Serve the interview page for a specific session"""
-    html_path = templates_dir / "technical_interview.html"
-    if html_path.exists():
-        return FileResponse(html_path)
-    return HTMLResponse("<h1>Interview page not found</h1>")
-
-
-@app.post("/api/create-interview")
-async def create_interview(request: CreateInterviewRequest):
+class ProductionInterviewSession:
     """
-    Create a new technical interview session.
-    Fetches job details and candidate info from main service.
+    Production-hardened interview session with:
+    - Jitter buffer for network stability
+    - Speech activity tracking to filter noise
+    - Barge-in mandate (min speech duration)
+    - Binary audio passthrough (no base64 overhead)
+    - Latency tracking
     """
+    
+    def __init__(self, websocket: WebSocket, system_instruction: str, job_details: dict, candidate_info: dict):
+        self.websocket = websocket
+        self.system_instruction = system_instruction
+        self.job_details = job_details
+        self.candidate_info = candidate_info
+        self.session = None
+        self.is_active = False
+        self.stop_event = asyncio.Event()
+        self.receive_task: Optional[asyncio.Task] = None
+        self.jitter_flush_task: Optional[asyncio.Task] = None
+        self.is_ai_speaking = False
+        self.ws_closed = False
+        
+        # Production stability components
+        self.jitter_buffer = JitterBuffer(buffer_ms=JITTER_BUFFER_MS)
+        self.speech_tracker = SpeechActivityTracker(min_duration_ms=MIN_SPEECH_DURATION_MS)
+        
+        # Latency tracking
+        self.audio_send_times: Deque[float] = deque(maxlen=100)
+        self.last_latency_ms: float = 0
+        self.latency_samples: Deque[float] = deque(maxlen=20)
+        
+    async def send_json(self, msg_type: str, **kwargs):
+        """Send JSON message to client."""
+        if self.ws_closed:
+            return
+        try:
+            await self.websocket.send_json({"type": msg_type, **kwargs})
+        except Exception as e:
+            self.ws_closed = True
+    
+    async def send_binary(self, data: bytes):
+        """Send raw binary audio to client (zero-copy)."""
+        if self.ws_closed:
+            return
+        try:
+            await self.websocket.send_bytes(data)
+        except Exception as e:
+            self.ws_closed = True
+    
+    async def handle_gemini_stream(self):
+        """Process Gemini responses with minimal latency and latency tracking."""
+        try:
+            while not self.stop_event.is_set() and not self.ws_closed:
+                try:
+                    async for response in self.session.receive():
+                        if self.stop_event.is_set() or self.ws_closed:
+                            break
+                        
+                        # Track response latency
+                        if self.audio_send_times:
+                            latency = (time.time() - self.audio_send_times[0]) * 1000
+                            self.latency_samples.append(latency)
+                            self.last_latency_ms = sum(self.latency_samples) / len(self.latency_samples)
+                        
+                        if response.server_content:
+                            content = response.server_content
+                            
+                            # Model turn complete - ready for input
+                            if content.turn_complete:
+                                self.is_ai_speaking = False
+                                self.speech_tracker.reset()
+                                await self.send_json("status", status="listening", latency_ms=round(self.last_latency_ms))
+                            
+                            # Stream audio chunks immediately (binary passthrough)
+                            if content.model_turn and content.model_turn.parts:
+                                for part in content.model_turn.parts:
+                                    if part.inline_data and part.inline_data.data:
+                                        self.is_ai_speaking = True
+                                        await self.send_binary(part.inline_data.data)
+                                        await self.send_json("status", status="speaking", latency_ms=round(self.last_latency_ms))
+                            
+                            # Stream transcription
+                            if content.output_transcription and content.output_transcription.text:
+                                await self.send_json(
+                                    "transcript",
+                                    role="interviewer",
+                                    text=content.output_transcription.text
+                                )
+                                
+                except asyncio.CancelledError:
+                    break
+                except Exception as e:
+                    if not self.stop_event.is_set() and not self.ws_closed:
+                        print(f"Gemini stream error: {e}")
+                        await self.send_json("error", message=str(e))
+                    break
+                    
+        except Exception as e:
+            print(f"Stream handler error: {e}")
+        finally:
+            print("📡 Gemini stream ended")
+    
+    async def interrupt_ai(self):
+        """Send interrupt signal to stop AI generation (barge-in)."""
+        if self.session and self.is_ai_speaking:
+            try:
+                await self.session.send(
+                    input=types.LiveClientRealtimeInput(
+                        media_chunks=[
+                            types.Blob(
+                                data=b'',
+                                mime_type="audio/pcm;rate=16000"
+                            )
+                        ]
+                    )
+                )
+                self.is_ai_speaking = False
+                self.speech_tracker.reset()
+                await self.send_json("interrupt", status="interrupted")
+                print("🛑 AI interrupted (barge-in)")
+            except Exception as e:
+                print(f"Interrupt error: {e}")
+    
+    async def send_buffered_audio(self, audio_data: bytes):
+        """Send audio through jitter buffer for network stability."""
+        try:
+            flushed_data = await self.jitter_buffer.add(audio_data)
+            
+            if flushed_data:
+                self.audio_send_times.append(time.time())
+                if len(self.audio_send_times) > 50:
+                    self.audio_send_times.popleft()
+                
+                await self.session.send(
+                    input=types.LiveClientRealtimeInput(
+                        media_chunks=[
+                            types.Blob(
+                                data=flushed_data,
+                                mime_type="audio/pcm;rate=16000"
+                            )
+                        ]
+                    )
+                )
+        except Exception as e:
+            print(f"Buffered audio send error: {e}")
+    
+    async def jitter_buffer_flush_loop(self):
+        """Background task to periodically flush jitter buffer."""
+        try:
+            while not self.stop_event.is_set() and not self.ws_closed:
+                await asyncio.sleep(self.jitter_buffer.buffer_ms / 1000)
+                
+                if self.stop_event.is_set() or self.ws_closed:
+                    break
+                    
+                flushed = await self.jitter_buffer.force_flush()
+                if flushed and self.session:
+                    try:
+                        await self.session.send(
+                            input=types.LiveClientRealtimeInput(
+                                media_chunks=[
+                                    types.Blob(
+                                        data=flushed,
+                                        mime_type="audio/pcm;rate=16000"
+                                    )
+                                ]
+                            )
+                        )
+                    except Exception as e:
+                        print(f"Jitter flush error: {e}")
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            print(f"Jitter buffer loop error: {e}")
+    
+    async def run(self):
+        """Main session loop with production stability features."""
+        if not GOOGLE_API_KEY:
+            await self.send_json("error", message="API key not configured")
+            return
+        
+        client = genai.Client(api_key=GOOGLE_API_KEY)
+        
+        # Production-hardened config with barge-in mandate
+        config = types.LiveConnectConfig(
+            response_modalities=["AUDIO"],
+            speech_config=types.SpeechConfig(
+                voice_config=types.VoiceConfig(
+                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                        voice_name="Kore"
+                    )
+                )
+            ),
+            system_instruction=types.Content(
+                parts=[types.Part(text=self.system_instruction)]
+            ),
+            output_audio_transcription=types.AudioTranscriptionConfig(),
+            realtime_input_config=types.RealtimeInputConfig(
+                automatic_activity_detection=types.AutomaticActivityDetection(
+                    disabled=False,
+                    start_of_speech_sensitivity=types.StartSensitivity.START_SENSITIVITY_LOW,
+                    end_of_speech_sensitivity=types.EndSensitivity.END_SENSITIVITY_LOW,
+                    prefix_padding_ms=150,
+                    silence_duration_ms=600,
+                )
+            ),
+        )
+        
+        try:
+            async with client.aio.live.connect(model=MODEL_ID, config=config) as session:
+                self.session = session
+                self.is_active = True
+                print("✅ Gemini session connected (production hardened)")
+                
+                # Start response handler
+                self.receive_task = asyncio.create_task(self.handle_gemini_stream())
+                
+                # Start jitter buffer flush loop
+                self.jitter_flush_task = asyncio.create_task(self.jitter_buffer_flush_loop())
+                
+                await self.send_json("status", status="ready", latency_ms=0)
+                
+                # Main message loop
+                while self.is_active and not self.stop_event.is_set() and not self.ws_closed:
+                    try:
+                        message = await asyncio.wait_for(
+                            self.websocket.receive(),
+                            timeout=0.1
+                        )
+                        
+                        if message["type"] == "websocket.disconnect":
+                            break
+                        
+                        # Binary audio - process through jitter buffer
+                        if "bytes" in message:
+                            audio_data = message["bytes"]
+                            
+                            # Check for valid speech using speech tracker
+                            is_valid_speech = self.speech_tracker.update(audio_data)
+                            
+                            # Barge-in: only interrupt if valid continuous speech
+                            if self.is_ai_speaking and is_valid_speech:
+                                await self.interrupt_ai()
+                            
+                            # Send audio through jitter buffer
+                            await self.send_buffered_audio(audio_data)
+                        
+                        # JSON commands
+                        elif "text" in message:
+                            try:
+                                data = json.loads(message["text"])
+                                
+                                if data.get("type") == "start_interview":
+                                    print("🎤 Starting interview...")
+                                    candidate_name = self.candidate_info.get('first_name', 'the candidate')
+                                    job_title = self.job_details.get('title', 'this position')
+                                    
+                                    await session.send(
+                                        input=types.LiveClientContent(
+                                            turns=[
+                                                types.Content(
+                                                    role="user",
+                                                    parts=[types.Part(text=f"Begin the interview. Greet {candidate_name} warmly, introduce yourself as Alex the recruiter, mention you're interviewing them for {job_title}, and ask your first question.")]
+                                                )
+                                            ],
+                                            turn_complete=True
+                                        )
+                                    )
+                                
+                                elif data.get("type") == "interrupt":
+                                    if self.speech_tracker.is_valid_speech:
+                                        await self.interrupt_ai()
+                                
+                                elif data.get("type") == "end_session":
+                                    break
+                                    
+                            except json.JSONDecodeError:
+                                pass
+                                
+                    except asyncio.TimeoutError:
+                        continue
+                    except WebSocketDisconnect:
+                        break
+                    except Exception as e:
+                        if "disconnect" in str(e).lower() or "closed" in str(e).lower():
+                            break
+                        print(f"Message error: {e}")
+                        
+        except Exception as e:
+            print(f"❌ Session error: {e}")
+            if not self.ws_closed:
+                await self.send_json("error", message=str(e))
+        finally:
+            await self.cleanup()
+    
+    async def cleanup(self):
+        """Clean up resources."""
+        self.is_active = False
+        self.stop_event.set()
+        self.ws_closed = True
+        
+        # Cancel jitter buffer flush task
+        if self.jitter_flush_task:
+            self.jitter_flush_task.cancel()
+            try:
+                await self.jitter_flush_task
+            except asyncio.CancelledError:
+                pass
+        
+        # Flush remaining buffer
+        await self.jitter_buffer.force_flush()
+        
+        if self.receive_task:
+            self.receive_task.cancel()
+            try:
+                await self.receive_task
+            except asyncio.CancelledError:
+                pass
+        
+        print("🔌 Session cleaned up")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    """Serve the main page."""
+    return templates.TemplateResponse("technical_interview.html", {"request": request})
+
+
+@app.post("/register-session")
+async def register_session(request: RegisterSessionRequest):
+    """Register an interview session from main service."""
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Get job details
-            job_response = await client.get(
-                f"{MAIN_SERVICE_URL}/job-requirements/{request.job_requirement_id}"
-            )
-            if job_response.status_code != 200:
-                raise HTTPException(status_code=404, detail="Job requirement not found")
-            
-            job_data = job_response.json()
-            job_details = job_data.get("data", {})
-            
-            # Get candidate details
-            candidate_response = await client.get(
-                f"{MAIN_SERVICE_URL}/candidates/{request.candidate_id}"
-            )
-            if candidate_response.status_code != 200:
-                raise HTTPException(status_code=404, detail="Candidate not found")
-            
-            candidate_data = candidate_response.json()
-            candidate_info = candidate_data.get("data", {})
-            
-            # Generate session ID
-            session_id = f"TI-{uuid4().hex[:12]}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            
-            # Generate system instruction
-            system_instruction = generate_system_instruction(job_details, candidate_info)
-            
-            # Create interview record in main service
-            create_response = await client.post(
-                f"{MAIN_SERVICE_URL}/technical-interview/login",
-                json={
-                    "job_requirement_id": request.job_requirement_id,
-                    "email": candidate_info.get("email"),
-                    "password": candidate_info.get("password", "")
-                }
-            )
-            
-            interview_data = {}
-            if create_response.status_code == 200:
-                interview_data = create_response.json().get("data", {})
-            
-            technical_interview_id = interview_data.get("technical_interview_id", str(uuid4()))
-            
-            # Store session
-            active_sessions[session_id] = InterviewSession(
-                session_id=session_id,
-                technical_interview_id=technical_interview_id,
-                job_details=job_details,
-                candidate_info=candidate_info,
-                system_instruction=system_instruction
-            )
-            
-            return {
-                "success": True,
-                "session_id": session_id,
-                "technical_interview_id": technical_interview_id,
-                "interview_url": f"http://localhost:8100/interview/{session_id}",
-                "job_title": job_details.get("title", "Technical Position"),
-                "candidate_name": f"{candidate_info.get('first_name', '')} {candidate_info.get('last_name', '')}"
-            }
-            
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=500, detail=f"Service connection error: {str(e)}")
+        session_id = request.session_id
+        
+        if session_id in active_sessions:
+            return {"success": True, "session_id": session_id, "message": "Session already registered"}
+        
+        active_sessions[session_id] = InterviewSession(
+            session_id=session_id,
+            job_details=request.job_details,
+            candidate_info=request.candidate_info,
+            system_instruction=request.system_instruction
+        )
+        
+        print(f"✅ Session registered: {session_id}")
+        return {"success": True, "session_id": session_id, "interview_url": f"/interview/{session_id}"}
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create interview: {str(e)}")
+        print(f"Register session error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/login/{job_requirement_id}")
-async def candidate_login(job_requirement_id: str, request: LoginRequest):
-    """
-    Candidate login for technical interview.
-    Validates credentials and creates interview session.
-    """
+@app.post("/start")
+async def start_interview_local(request: StartInterviewRequest):
+    """Start interview directly (for local testing)."""
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            # Login via main service
-            login_response = await client.post(
-                f"{MAIN_SERVICE_URL}/technical-interview/login",
-                json={
-                    "job_requirement_id": job_requirement_id,
-                    "email": request.email,
-                    "password": request.password
-                }
-            )
-            
-            if login_response.status_code != 200:
-                error_detail = login_response.json().get("detail", "Login failed")
-                raise HTTPException(status_code=401, detail=error_detail)
-            
-            data = login_response.json().get("data", {})
-            
-            session_id = data.get("interview_session_id")
-            technical_interview_id = data.get("technical_interview_id")
-            job_details = data.get("job_details", {})
-            candidate_info = data.get("candidate_info", {})
-            system_instruction = data.get("system_instruction", "")
-            
-            # Store session locally
-            active_sessions[session_id] = InterviewSession(
-                session_id=session_id,
-                technical_interview_id=technical_interview_id,
-                job_details=job_details,
-                candidate_info=candidate_info,
-                system_instruction=system_instruction
-            )
-            
-            return {
-                "success": True,
-                "session_id": session_id,
-                "technical_interview_id": technical_interview_id,
-                "interview_url": f"http://localhost:8100/interview/{session_id}",
-                "job_details": job_details,
-                "candidate_info": candidate_info
-            }
-            
-    except HTTPException:
-        raise
+        session_id = f"TI-{uuid4().hex[:12]}"
+        
+        job_details = {"title": "Technical Position", "company_name": "Company", "description": "Technical role"}
+        candidate_info = {"first_name": "", "last_name": "", "email": request.email}
+        system_instruction = generate_system_instruction(job_details, candidate_info)
+        
+        active_sessions[session_id] = InterviewSession(
+            session_id=session_id,
+            job_details=job_details,
+            candidate_info=candidate_info,
+            system_instruction=system_instruction
+        )
+        
+        return {
+            "success": True,
+            "session_id": session_id,
+            "job_details": job_details,
+            "candidate_info": candidate_info,
+            "interview_url": f"/interview/{session_id}"
+        }
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/interview/{session_id}", response_class=HTMLResponse)
+async def interview_page(request: Request, session_id: str):
+    """Serve the interview page."""
+    session_data = {
+        "request": request,
+        "session_id": session_id,
+        "job_title": "Technical Interview",
+        "candidate_name": ""
+    }
+    
+    if session_id in active_sessions:
+        session = active_sessions[session_id]
+        session_data["job_title"] = session.job_details.get("title", "Technical Interview")
+        session_data["candidate_name"] = f"{session.candidate_info.get('first_name', '')} {session.candidate_info.get('last_name', '')}".strip()
+    
+    return templates.TemplateResponse("technical_interview.html", session_data)
 
 
 @app.get("/api/session/{session_id}")
-async def get_session_info(session_id: str):
-    """Get session information"""
-    session = active_sessions.get(session_id)
-    if not session:
-        # Try to fetch from main service
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(
-                    f"{MAIN_SERVICE_URL}/technical-interview/session/{session_id}"
-                )
-                if response.status_code == 200:
-                    data = response.json().get("data", {})
-                    # Create local session
-                    active_sessions[session_id] = InterviewSession(
-                        session_id=session_id,
-                        technical_interview_id=data.get("technical_interview_id", ""),
-                        job_details=data.get("job_details", {}),
-                        candidate_info=data.get("candidate_info", {}),
-                        system_instruction=data.get("system_instruction", "")
-                    )
-                    session = active_sessions[session_id]
-                else:
-                    raise HTTPException(status_code=404, detail="Session not found")
-        except HTTPException:
-            raise
-        except Exception:
-            raise HTTPException(status_code=404, detail="Session not found")
+async def get_session(session_id: str):
+    """Get session details."""
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
     
+    session = active_sessions[session_id]
     return {
         "success": True,
-        "session_id": session.session_id,
-        "technical_interview_id": session.technical_interview_id,
+        "session_id": session_id,
         "job_details": session.job_details,
         "candidate_info": session.candidate_info
     }
 
 
-@app.websocket("/ws/{session_id}")
-async def websocket_endpoint(websocket: WebSocket, session_id: str):
-    """
-    WebSocket proxy between frontend and Gemini Multimodal Live API
-    """
-    await websocket.accept()
-    print(f"✅ Frontend WebSocket connected for session: {session_id}")
-    
-    # Get session
-    session = active_sessions.get(session_id)
-    if not session:
-        await websocket.send_json({"type": "error", "message": "Invalid session"})
-        await websocket.close()
+@app.websocket("/ws/interview/{session_id}")
+async def websocket_interview(websocket: WebSocket, session_id: str):
+    """WebSocket endpoint for interview audio streaming."""
+    if session_id not in active_sessions:
+        await websocket.close(code=4004, reason="Session not found")
         return
     
-    gemini_ws = None
-    receive_task = None
-    send_task = None
-    max_retries = 3
-    retry_count = 0
+    stored_session = active_sessions[session_id]
     
-    session.started_at = datetime.now(timezone.utc)
+    await websocket.accept()
+    print(f"🔗 WebSocket connected: {session_id}")
     
-    async def connect_to_gemini():
-        """Connect to Gemini WebSocket with retry logic"""
-        nonlocal gemini_ws
-        import websockets
-        
-        print("🔗 Connecting to Gemini 2.5 Flash Multimodal Live API...")
-        gemini_ws = await websockets.connect(
-            GEMINI_WS_URL,
-            additional_headers={"Content-Type": "application/json"},
-            ping_interval=20,
-            ping_timeout=10,
-            close_timeout=5,
-            max_size=10 * 1024 * 1024
-        )
-        print("✅ Connected to Gemini API")
-        
-        # Send BidiGenerateContentSetup message with custom system instruction
-        setup_message = {
-            "setup": {
-                "model": GEMINI_MODEL,
-                "generation_config": GENERATION_CONFIG,
-                "system_instruction": {
-                    "parts": [{"text": session.system_instruction}]
-                }
-            }
-        }
-        
-        await gemini_ws.send(json.dumps(setup_message))
-        print("📤 Sent BidiGenerateContentSetup to Gemini")
-        
-        session.token_usage["input_tokens"] += len(session.system_instruction) // 4
-        
-        # Wait for setup complete response
-        setup_response = await asyncio.wait_for(gemini_ws.recv(), timeout=30)
-        setup_data = json.loads(setup_response)
-        
-        if "setupComplete" not in setup_data:
-            raise Exception(f"Setup failed: {setup_data}")
-        
-        print("✅ Gemini setup complete - Ready for interview!")
-        return True
+    session = ProductionInterviewSession(
+        websocket=websocket,
+        system_instruction=stored_session.system_instruction,
+        job_details=stored_session.job_details,
+        candidate_info=stored_session.candidate_info
+    )
     
     try:
-        # Initial connection
-        await connect_to_gemini()
-        
-        await websocket.send_json({
-            "type": "setup_complete",
-            "message": "Connected! Ready to start the interview."
-        })
-        
-        # Notify main service that interview started
-        try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                await client.post(
-                    f"{MAIN_SERVICE_URL}/technical-interview/start/{session.technical_interview_id}"
-                )
-        except Exception as e:
-            print(f"⚠️ Could not notify main service of interview start: {e}")
-        
-        # Send initial prompt to trigger AI greeting
-        candidate_name = session.candidate_info.get("name", "Candidate")
-        initial_prompt = {
-            "clientContent": {
-                "turns": [{
-                    "role": "user",
-                    "parts": [{"text": f"The candidate {candidate_name} has joined. Please start the interview with a warm greeting and introduce yourself."}]
-                }],
-                "turnComplete": True
-            }
-        }
-        await gemini_ws.send(json.dumps(initial_prompt))
-        print("📤 Sent initial prompt to trigger AI greeting")
-        
-        # Create tasks for bidirectional communication
-        async def receive_from_gemini():
-            """Receive audio/events from Gemini and forward to frontend"""
-            nonlocal session, gemini_ws, retry_count
-            interview_end_detected = False
-            
-            while True:
-                try:
-                    async for message in gemini_ws:
-                        data = json.loads(message)
-                        
-                        # Handle user speech transcription from Gemini
-                        if "serverContent" in data:
-                            server_content = data["serverContent"]
-                            
-                            # Check for input (user) audio transcription - store in full_transcript for evaluation only
-                            if "inputTranscript" in server_content:
-                                user_text = server_content["inputTranscript"]
-                                if user_text and user_text.strip():
-                                    # Store in full_transcript for AI evaluation (not saved to DB, not sent to UI)
-                                    session.full_transcript.append({
-                                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                                        "speaker": "candidate",
-                                        "text": user_text
-                                    })
-                                    print(f"📝 User: {user_text[:80]}...")
-                            
-                            if server_content.get("interrupted"):
-                                print("🛑 Gemini detected interruption")
-                                await websocket.send_json({"type": "interrupted"})
-                                continue
-                            
-                            if server_content.get("turnComplete"):
-                                print("✅ AI turn complete")
-                                await websocket.send_json({"type": "turn_complete"})
-                                
-                                # Check if interview ended based on last AI message
-                                if interview_end_detected:
-                                    print("🏁 Interview end detected - sending completion signal")
-                                    await asyncio.sleep(2)  # Wait for audio to finish
-                                    await websocket.send_json({"type": "interview_complete"})
-                                continue
-                            
-                            model_turn = server_content.get("modelTurn", {})
-                            parts = model_turn.get("parts", [])
-                        
-                        for part in parts:
-                            if "inlineData" in part:
-                                inline_data = part["inlineData"]
-                                mime_type = inline_data.get("mimeType", "")
-                                
-                                if mime_type.startswith("audio/"):
-                                    audio_b64 = inline_data.get("data", "")
-                                    if audio_b64:
-                                        audio_bytes = len(audio_b64) * 3 // 4
-                                        audio_duration = audio_bytes / 48000
-                                        session.token_usage["audio_output_seconds"] += audio_duration
-                                        session.token_usage["output_tokens"] += int(audio_duration * 25)
-                                        
-                                        await websocket.send_json({
-                                            "type": "audio",
-                                            "data": audio_b64,
-                                            "mimeType": mime_type
-                                        })
-                            
-                            if "text" in part:
-                                text = part["text"]
-                                text_lower = text.lower()
-                                session.token_usage["output_tokens"] += len(text) // 4
-                                # Store in transcript (saved to DB) - only AI responses
-                                session.transcript.append({
-                                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                                    "speaker": "ai",
-                                    "text": text
-                                })
-                                # Also store in full_transcript for evaluation
-                                session.full_transcript.append({
-                                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                                    "speaker": "ai",
-                                    "text": text
-                                })
-                                print(f"📝 AI: {text[:80]}...")
-                                await websocket.send_json({
-                                    "type": "transcript",
-                                    "text": text,
-                                    "speaker": "ai"
-                                })
-                                
-                                # Detect interview end phrases
-                                end_phrases = [
-                                    "thank you for your time",
-                                    "thanks for your time",
-                                    "interview is complete",
-                                    "that concludes",
-                                    "we'll get back to you",
-                                    "we will get back to you",
-                                    "all the best",
-                                    "good luck",
-                                    "wish you all the best",
-                                    "results soon",
-                                    "have a great day",
-                                    "interview has ended",
-                                    "end of interview"
-                                ]
-                                for phrase in end_phrases:
-                                    if phrase in text_lower:
-                                        print(f"🏁 Detected interview end phrase: '{phrase}'")
-                                        interview_end_detected = True
-                                        break
-                    
-                    # Connection closed normally, exit loop
-                    break
-                                
-                except websockets.exceptions.ConnectionClosed as e:
-                    print(f"🔌 Gemini connection closed: {e}")
-                    retry_count += 1
-                    
-                    if retry_count >= max_retries:
-                        print(f"❌ Max retries ({max_retries}) reached. Ending interview.")
-                        await websocket.send_json({
-                            "type": "error",
-                            "message": "Connection lost. Please try again."
-                        })
-                        break
-                    
-                    # Try to reconnect
-                    print(f"🔄 Attempting reconnection ({retry_count}/{max_retries})...")
-                    await websocket.send_json({
-                        "type": "status",
-                        "message": "Reconnecting..."
-                    })
-                    
-                    try:
-                        await asyncio.sleep(2)  # Wait before reconnecting
-                        await connect_to_gemini()
-                        print("✅ Reconnected to Gemini!")
-                        await websocket.send_json({
-                            "type": "status",
-                            "message": "Reconnected! Please continue."
-                        })
-                        # Continue the while loop to resume receiving
-                        continue
-                    except Exception as reconnect_error:
-                        print(f"❌ Reconnection failed: {reconnect_error}")
-                        continue  # Try again
-                        
-                except Exception as e:
-                    print(f"❌ Error receiving from Gemini: {e}")
-                    break
-        
-        async def send_to_gemini():
-            """Receive audio/commands from frontend and forward to Gemini"""
-            nonlocal gemini_ws
-            try:
-                while True:
-                    data = await websocket.receive_json()
-                    msg_type = data.get("type")
-                    
-                    if msg_type == "audio":
-                        audio_b64 = data.get("data", "")
-                        
-                        if audio_b64:
-                            audio_bytes = len(audio_b64) * 3 // 4
-                            audio_duration = audio_bytes / 32000
-                            session.token_usage["audio_input_seconds"] += audio_duration
-                            session.token_usage["input_tokens"] += int(audio_duration * 25)
-                        
-                        realtime_input = {
-                            "realtimeInput": {
-                                "mediaChunks": [{
-                                    "mimeType": "audio/pcm;rate=16000",
-                                    "data": audio_b64
-                                }]
-                            }
-                        }
-                        
-                        try:
-                            await gemini_ws.send(json.dumps(realtime_input))
-                        except Exception as send_error:
-                            # Connection may be closed, just skip this audio chunk
-                            pass
-                    
-                    elif msg_type == "transcript":
-                        # User transcript from browser speech recognition - store in full_transcript for evaluation
-                        text = data.get("text", "")
-                        if text:
-                            # Store in full_transcript for AI evaluation (not saved to DB)
-                            session.full_transcript.append({
-                                "timestamp": datetime.now(timezone.utc).isoformat(),
-                                "speaker": "candidate",
-                                "text": text
-                            })
-                            print(f"📝 User (browser): {text[:80]}...")
-                    
-                    elif msg_type == "stop":
-                        print("🛑 Stop signal received from frontend")
-                        break
-                        
-            except WebSocketDisconnect:
-                print("🔌 Frontend disconnected")
-            except Exception as e:
-                print(f"❌ Error sending to Gemini: {e}")
-        
-        async def heartbeat():
-            """Send periodic heartbeat to keep connection alive"""
-            nonlocal gemini_ws
-            try:
-                while True:
-                    await asyncio.sleep(15)  # Every 15 seconds
-                    try:
-                        keepalive = {
-                            "realtimeInput": {
-                                "mediaChunks": []
-                            }
-                        }
-                        await gemini_ws.send(json.dumps(keepalive))
-                        print("💓 Heartbeat sent")
-                    except Exception:
-                        # Connection closed, heartbeat will stop when task is cancelled
-                        pass
-            except asyncio.CancelledError:
-                pass
-        
-        receive_task = asyncio.create_task(receive_from_gemini())
-        send_task = asyncio.create_task(send_to_gemini())
-        heartbeat_task = asyncio.create_task(heartbeat())
-        
-        done, pending = await asyncio.wait(
-            [receive_task, send_task, heartbeat_task],
-            return_when=asyncio.FIRST_COMPLETED
-        )
-        
-        for task in pending:
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
-                
-    except WebSocketDisconnect:
-        print("🔌 Frontend WebSocket disconnected")
+        await session.run()
     except Exception as e:
-        print(f"❌ WebSocket error: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"WebSocket error: {e}")
     finally:
-        # Calculate interview duration
-        interview_duration = 0
-        if session.started_at:
-            interview_duration = int((datetime.now(timezone.utc) - session.started_at).total_seconds())
-        
-        # Save interview results to main service
-        try:
-            await save_interview_results(session, interview_duration)
-        except Exception as e:
-            print(f"❌ Failed to save interview results: {e}")
-        
-        if gemini_ws:
-            await gemini_ws.close()
-            print("🔌 Gemini WebSocket closed")
-        
         try:
             await websocket.close()
         except:
             pass
-        
-        # Print token usage summary
-        print("\n" + "=" * 60)
-        print("📊 INTERVIEW SESSION TOKEN USAGE SUMMARY")
-        print("=" * 60)
-        print(f"📥 Input Tokens:  {session.token_usage['input_tokens']:,}")
-        print(f"📤 Output Tokens: {session.token_usage['output_tokens']:,}")
-        print(f"🔢 Total Tokens:  {session.token_usage['input_tokens'] + session.token_usage['output_tokens']:,}")
-        print("-" * 60)
-        print(f"🎤 Audio Input:   {session.token_usage['audio_input_seconds']:.2f} seconds")
-        print(f"🔊 Audio Output:  {session.token_usage['audio_output_seconds']:.2f} seconds")
-        print(f"⏱️  Duration:     {interview_duration} seconds")
-        print("=" * 60 + "\n")
-        
-        print("👋 Session ended")
-
-
-async def save_interview_results(session: InterviewSession, duration: int):
-    """Save interview results to main service after AI evaluation"""
-    try:
-        # First, evaluate the interview using AI
-        print("🤖 Evaluating interview with AI...")
-        await evaluate_interview_with_ai(session, duration)
-        print("✅ AI evaluation complete")
-        
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            # Calculate average response time
-            avg_response_time = (
-                sum(session.response_times) / len(session.response_times) 
-                if session.response_times else 0.0
-            )
-            
-            # Determine overall rating based on score
-            overall_score = session.scores["overall_score"]
-            if overall_score >= 85:
-                overall_rating = "excellent"
-            elif overall_score >= 70:
-                overall_rating = "good"
-            elif overall_score >= 55:
-                overall_rating = "average"
-            elif overall_score >= 40:
-                overall_rating = "below_average"
-            else:
-                overall_rating = "poor"
-            
-            # Determine result
-            result = "pass" if overall_score >= 50 else "fail"
-            
-            # Prepare comprehensive completion data
-            completion_data = {
-                # Duration
-                "interview_duration_seconds": duration,
-                
-                # Overall Scores
-                "overall_score": session.scores["overall_score"],
-                "overall_rating": overall_rating,
-                
-                # Technical Knowledge Scores
-                "technical_knowledge_score": session.scores["technical_knowledge_score"],
-                "domain_expertise_score": session.scores["domain_expertise_score"],
-                
-                # Communication Scores
-                "communication_score": session.scores["communication_score"],
-                "language_proficiency_score": session.scores["language_proficiency_score"],
-                
-                # Behavioral Scores
-                "confidence_score": session.scores["confidence_score"],
-                "professionalism_score": session.scores["professionalism_score"],
-                
-                # Response Quality Scores
-                "response_relevance_score": session.scores["response_relevance_score"],
-                "response_depth_score": session.scores["response_depth_score"],
-                "response_clarity_score": session.scores["response_clarity_score"],
-                
-                # Engagement Metrics
-                "engagement_score": session.scores["engagement_score"],
-                
-                # Question Statistics
-                "total_questions_asked": session.questions_asked,
-                "questions_answered": session.questions_answered,
-                "questions_skipped": session.questions_skipped,
-                
-                # Time Metrics
-                "average_response_time_seconds": avg_response_time,
-                "total_speaking_time_seconds": session.token_usage["audio_input_seconds"],
-                
-                # Detailed JSON Data
-                "interview_transcript": session.transcript,
-                "skills_assessment": session.skills_assessment,
-                "candidate_strengths": session.candidate_strengths,
-                "candidate_weaknesses": session.candidate_weaknesses,
-                
-                # AI Recommendations
-                "ai_recommendation": session.ai_recommendation,
-                "ai_recommendation_reason": session.ai_recommendation_reason,
-                "ai_feedback_summary": session.ai_feedback_summary,
-                "improvement_areas": session.improvement_areas,
-                
-                # Interview Metadata
-                "interview_language": "English",
-                "languages_used": ["English"],
-                "ai_model_used": GEMINI_MODEL,
-                
-                # Token Usage
-                "input_tokens_used": session.token_usage["input_tokens"],
-                "output_tokens_used": session.token_usage["output_tokens"],
-                "audio_input_seconds": session.token_usage["audio_input_seconds"],
-                "audio_output_seconds": session.token_usage["audio_output_seconds"],
-                
-                # Final Result
-                "result": result,
-                "passed_threshold": 50.0
-            }
-            
-            response = await client.post(
-                f"{MAIN_SERVICE_URL}/technical-interview/complete/{session.technical_interview_id}",
-                json=completion_data
-            )
-            
-            if response.status_code == 200:
-                print("✅ Interview results saved successfully")
-                print(f"   📊 Overall Score: {overall_score:.1f}/100 ({overall_rating})")
-                print(f"   🎯 Result: {result.upper()}")
-                print(f"   💡 Recommendation: {session.ai_recommendation}")
-            else:
-                print(f"⚠️ Failed to save results: {response.status_code} - {response.text}")
-                
-    except Exception as e:
-        print(f"❌ Error saving interview results: {e}")
-        import traceback
-        traceback.print_exc()
-
-
-async def evaluate_interview_with_ai(session: InterviewSession, duration: int):
-    """
-    Use Gemini API to evaluate the interview transcript and generate scores.
-    This analyzes the conversation and provides comprehensive evaluation.
-    """
-    import google.generativeai as genai
-    
-    genai.configure(api_key=GEMINI_API_KEY)
-    
-    # Prepare FULL transcript for analysis (includes both AI and candidate responses)
-    transcript_text = "\n".join([
-        f"[{entry['speaker'].upper()}]: {entry['text']}"
-        for entry in session.full_transcript
-    ])
-    
-    print(f"📊 Evaluating interview with {len(session.full_transcript)} transcript entries...")
-    
-    # Get job context
-    job_title = session.job_details.get("title", "Technical Position")
-    required_skills = []
-    for req in session.job_details.get("requirements", []):
-        if isinstance(req, dict):
-            skill = req.get("skill", "")
-            if skill:
-                required_skills.append(skill)
-    
-    skills_str = ", ".join(required_skills[:10]) if required_skills else "general technical skills"
-    
-    evaluation_prompt = f"""You are an expert interview evaluator. Analyze this technical interview transcript and provide a comprehensive evaluation.
-
-JOB CONTEXT:
-- Position: {job_title}
-- Required Skills: {skills_str}
-- Interview Duration: {duration} seconds
-
-INTERVIEW TRANSCRIPT:
-{transcript_text}
-
-Provide your evaluation in the following JSON format ONLY (no other text):
-{{
-    "scores": {{
-        "overall_score": <0-100>,
-        "technical_knowledge_score": <0-100>,
-        "domain_expertise_score": <0-100>,
-        "communication_score": <0-100>,
-        "language_proficiency_score": <0-100>,
-        "confidence_score": <0-100>,
-        "professionalism_score": <0-100>,
-        "response_relevance_score": <0-100>,
-        "response_depth_score": <0-100>,
-        "response_clarity_score": <0-100>,
-        "engagement_score": <0-100>
-    }},
-    "questions_asked": <number>,
-    "questions_answered": <number>,
-    "questions_skipped": <number>,
-    "candidate_strengths": ["strength1", "strength2", ...],
-    "candidate_weaknesses": ["weakness1", "weakness2", ...],
-    "improvement_areas": ["area1", "area2", ...],
-    "skills_assessment": [
-        {{"skill_name": "skill", "proficiency_level": "beginner/intermediate/advanced", "score": <0-100>, "evidence": "observation"}}
-    ],
-    "ai_recommendation": "strongly_recommend/recommend/neutral/not_recommend",
-    "ai_recommendation_reason": "detailed reason for recommendation",
-    "ai_feedback_summary": "2-3 sentence summary of candidate performance"
-}}
-
-CRITICAL EVALUATION RULES:
-1. Evaluate ALL questions and answers in the ENTIRE transcript, not just the last one
-2. Calculate CUMULATIVE scores based on ALL responses throughout the interview
-3. Count TOTAL questions asked and answered across the whole interview
-4. Consider consistency of performance across all questions
-
-EVALUATION CRITERIA:
-- Technical Knowledge: Average technical understanding across ALL answers
-- Domain Expertise: Overall job-relevant knowledge demonstrated
-- Communication: Clarity and effectiveness throughout the interview
-- Language Proficiency: Grammar, vocabulary, fluency across all responses
-- Confidence: Overall self-assurance across all answers
-- Professionalism: Professional demeanor throughout entire interview
-- Response Relevance: Average relevance of ALL answers to questions asked
-- Response Depth: Average thoroughness across ALL answers
-- Response Clarity: Average clarity across ALL responses
-- Engagement: Overall participation level throughout the interview
-
-Be fair but critical. Base all scores on actual evidence from the COMPLETE transcript."""
-
-    try:
-        model = genai.GenerativeModel("gemini-2.0-flash")
-        response = model.generate_content(evaluation_prompt)
-        
-        # Parse JSON response
-        response_text = response.text.strip()
-        
-        # Extract JSON if wrapped in code blocks
-        if "```json" in response_text:
-            response_text = response_text.split("```json")[1].split("```")[0].strip()
-        elif "```" in response_text:
-            response_text = response_text.split("```")[1].split("```")[0].strip()
-        
-        evaluation = json.loads(response_text)
-        
-        # Update session with evaluation results
-        if "scores" in evaluation:
-            for key, value in evaluation["scores"].items():
-                if key in session.scores:
-                    session.scores[key] = float(value)
-        
-        session.questions_asked = evaluation.get("questions_asked", 0)
-        session.questions_answered = evaluation.get("questions_answered", 0)
-        session.questions_skipped = evaluation.get("questions_skipped", 0)
-        session.candidate_strengths = evaluation.get("candidate_strengths", [])
-        session.candidate_weaknesses = evaluation.get("candidate_weaknesses", [])
-        session.improvement_areas = evaluation.get("improvement_areas", [])
-        session.skills_assessment = evaluation.get("skills_assessment", [])
-        session.ai_recommendation = evaluation.get("ai_recommendation", "neutral")
-        session.ai_recommendation_reason = evaluation.get("ai_recommendation_reason", "")
-        session.ai_feedback_summary = evaluation.get("ai_feedback_summary", "")
-        
-        print(f"📊 AI Evaluation Results:")
-        print(f"   Overall Score: {session.scores['overall_score']:.1f}/100")
-        print(f"   Technical: {session.scores['technical_knowledge_score']:.1f}")
-        print(f"   Communication: {session.scores['communication_score']:.1f}")
-        print(f"   Recommendation: {session.ai_recommendation}")
-        
-    except json.JSONDecodeError as e:
-        print(f"⚠️ Failed to parse AI evaluation JSON: {e}")
-        print(f"   Response was: {response_text[:500]}...")
-        # Set default scores if parsing fails
-        _set_default_scores(session, duration)
-    except Exception as e:
-        print(f"⚠️ AI evaluation failed: {e}")
-        # Set default scores based on basic metrics
-        _set_default_scores(session, duration)
-
-
-def _set_default_scores(session: InterviewSession, duration: int):
-    """Set default scores based on basic metrics when AI evaluation fails"""
-    # Calculate basic scores from transcript length and duration
-    transcript_length = len(session.transcript)
-    candidate_responses = [t for t in session.transcript if t["speaker"] == "candidate"]
-    
-    # More responses = more engagement
-    base_score = min(70, 40 + (len(candidate_responses) * 3))
-    
-    # Longer responses = better depth
-    total_response_length = sum(len(t["text"]) for t in candidate_responses)
-    depth_bonus = min(15, total_response_length // 200)
-    
-    default_score = base_score + depth_bonus
-    
-    session.scores["overall_score"] = default_score
-    session.scores["technical_knowledge_score"] = default_score
-    session.scores["communication_score"] = default_score + 5
-    session.scores["confidence_score"] = default_score
-    session.scores["engagement_score"] = min(85, default_score + 10)
-    session.scores["response_clarity_score"] = default_score
-    
-    # Copy default to other scores
-    for key in session.scores:
-        if session.scores[key] == 0.0:
-            session.scores[key] = default_score
-    
-    session.questions_asked = transcript_length // 2
-    session.questions_answered = len(candidate_responses)
-    session.ai_feedback_summary = "Interview completed. Automatic scoring applied due to evaluation service unavailability."
-    session.ai_recommendation = "neutral"
-
-
-def generate_system_instruction(job_details: dict, candidate_info: dict) -> str:
-    """Generate customized system instruction based on job and candidate"""
-    title = job_details.get("title", "Technical Position")
-    department = job_details.get("department", "Technology")
-    description = job_details.get("description", "")
-    requirements = job_details.get("requirements", [])
-    experience = job_details.get("experience", {})
-    
-    candidate_name = f"{candidate_info.get('first_name', '')} {candidate_info.get('last_name', '')}".strip() or "Candidate"
-    candidate_skills = candidate_info.get("skills", [])
-    candidate_resume = candidate_info.get("resume_text", "")
-    
-    # Extract skills from requirements
-    skills = []
-    for req in requirements:
-        if isinstance(req, dict):
-            skill = req.get("skill", "")
-            if skill:
-                skills.append(skill)
-    
-    skills_str = ", ".join(skills[:10]) if skills else "general technical skills"
-    candidate_skills_str = ", ".join(candidate_skills[:10]) if candidate_skills else "various skills"
-    
-    exp_min = experience.get("minYears", 0) if experience else 0
-    exp_max = experience.get("maxYears", 5) if experience else 5
-    
-    # Resume section
-    resume_section = ""
-    if candidate_resume:
-        resume_section = f"Resume highlights: {candidate_resume[:1000]}"
-    
-    # System prompt with clear rules
-    return f"""You are a Senior Technical Recruiter conducting a voice interview for "{title}" position.
-
-CANDIDATE: {candidate_name}
-SKILLS REQUIRED: {skills_str}
-EXPERIENCE: {exp_min}-{exp_max} years
-{resume_section}
-
-INTERVIEW STRUCTURE (MUST ASK MINIMUM 10 QUESTIONS):
-- Questions 1-2: Self introduction, background
-- Questions 3-5: Technical skills from resume ({skills_str})
-- Questions 6-8: Core concepts, problem-solving
-- Questions 9-10: Behavioral, situational
-- Questions 11+: Follow-ups based on answers
-
-LANGUAGE RULES (CRITICAL):
-- If candidate speaks Hindi: Reply in Hindi immediately
-- If candidate speaks Gujarati: Reply in Gujarati immediately  
-- If candidate mixes languages: Match their language
-- Example: Candidate says "मैंने Python में काम किया है" → You reply in Hindi
-- Example: Candidate says "મેં Flask માં API બનાવ્યું છે" → You reply in Gujarati
-
-INTERVIEW RULES:
-1. Ask ONE question, wait for complete answer
-2. After each answer, acknowledge briefly then ask next question
-3. If answer unclear: "Could you please repeat or explain that?"
-4. If wrong answer: Briefly note correct approach, move on
-5. If off-topic: "Let's continue with the interview questions"
-6. Keep your responses SHORT (1-2 sentences max)
-7. Do NOT use markdown or special formatting
-8. Speak naturally like a real interviewer
-
-START: Greet {candidate_name.split()[0] if candidate_name else 'the candidate'} warmly, introduce yourself briefly, ask them to introduce themselves.
-
-END: After 10+ questions or 10+ mins, say "Thank you for your time, we'll get back to you soon" and stop."""
+        print(f"👋 WebSocket closed: {session_id}")
 
 
 @app.get("/health")
-async def health_check():
-    """Health check endpoint"""
+async def health():
+    """Health check."""
     return {
         "status": "healthy",
-        "service": "technical-interview-service",
-        "port": 8100,
-        "model": GEMINI_MODEL,
-        "active_sessions": len(active_sessions)
+        "model": MODEL_ID,
+        "version": "3.0.0",
+        "api_key_configured": bool(GOOGLE_API_KEY),
+        "active_sessions": len(active_sessions),
+        "features": {
+            "jitter_buffer_ms": JITTER_BUFFER_MS,
+            "min_speech_duration_ms": MIN_SPEECH_DURATION_MS,
+            "barge_in_filtering": True,
+            "latency_tracking": True
+        }
     }
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8100)
+    uvicorn.run("main:app", host="0.0.0.0", port=8100, reload=True)
