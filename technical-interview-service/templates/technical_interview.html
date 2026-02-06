@@ -927,8 +927,10 @@
             constructor() {
                 // Session data
                 this.sessionId = null;
+                this.technicalInterviewId = null;  // Store technical interview ID for completion
                 this.jobDetails = null;
                 this.candidateInfo = null;
+                this.generatedScores = null;  // Store AI-generated scores
                 
                 // WebSocket
                 this.ws = null;
@@ -1145,6 +1147,7 @@
 
                     if (data.success) {
                         this.sessionId = data.session_id;
+                        this.technicalInterviewId = data.technical_interview_id;  // Store for completion
                         this.jobDetails = data.job_details;
                         this.candidateInfo = data.candidate_info;
                         window.history.pushState({}, '', `/interview/${this.sessionId}`);
@@ -1166,6 +1169,7 @@
                     const data = await response.json();
                     this.jobDetails = data.job_details;
                     this.candidateInfo = data.candidate_info;
+                    this.technicalInterviewId = data.technical_interview_id;  // Store for completion
                     this.showInterviewScreen();
                 } catch (error) {
                     console.error('Load session error:', error);
@@ -1263,6 +1267,14 @@
                             break;
                         case 'error':
                             this.showToast(msg.message, 'error');
+                            break;
+                        case 'scores_generated':
+                            // Scores received - store them for completion
+                            this.generatedScores = msg.scores;
+                            console.log('✅ AI Scores generated:', msg.scores);
+                            if (msg.error) {
+                                console.warn('Score generation had error:', msg.error);
+                            }
                             break;
                     }
                 } catch (e) {
@@ -1632,10 +1644,66 @@
                 }
             }
             
-            endInterview() {
+            async endInterview() {
                 this.isActive = false;
+                this.setStatus('processing', 'Generating scores...');
+                this.el.aiStatusText.textContent = 'Processing results...';
+                this.el.endBtn.disabled = true;
+                
+                // Send end_session to WebSocket - this triggers score generation
                 this.send({ type: 'end_session' });
                 
+                // Wait for scores_generated message or timeout
+                const waitForScores = new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        console.log('Score generation timeout, fetching from API...');
+                        resolve(null);
+                    }, 30000);  // 30 second timeout
+                    
+                    // Store the original onmessage handler
+                    const originalHandler = this.ws ? this.ws.onmessage : null;
+                    
+                    if (this.ws) {
+                        this.ws.onmessage = (event) => {
+                            // Call original handler first
+                            if (originalHandler) {
+                                originalHandler.call(this.ws, event);
+                            }
+                            
+                            // Check for scores
+                            if (typeof event.data === 'string') {
+                                try {
+                                    const data = JSON.parse(event.data);
+                                    if (data.type === 'scores_generated') {
+                                        clearTimeout(timeout);
+                                        this.generatedScores = data.scores;
+                                        console.log('Scores received:', data.scores);
+                                        resolve(data.scores);
+                                    }
+                                } catch (e) {}
+                            }
+                        };
+                    }
+                });
+                
+                // Wait for scores
+                let scores = await waitForScores;
+                
+                // If no scores received via WebSocket, fetch from API
+                if (!scores && this.sessionId) {
+                    try {
+                        const response = await fetch(`/api/session/${this.sessionId}/scores`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            scores = data.scores;
+                            this.generatedScores = scores;
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch scores:', e);
+                    }
+                }
+                
+                // Close WebSocket
                 if (this.ws) {
                     this.ws.close();
                     this.ws = null;
@@ -1644,14 +1712,67 @@
                 this.stopAudio();
                 this.stopCapture();
                 this.stopTimer();
-                
                 this.domManager.cleanupAllAudioSources();
                 
+                // Call complete endpoint with scores
+                if (this.technicalInterviewId && scores) {
+                    try {
+                        this.setStatus('processing', 'Saving results...');
+                        
+                        const completeData = {
+                            interview_session_id: this.sessionId,
+                            interview_duration_seconds: scores.interview_duration_seconds || Math.floor((Date.now() - this.startTime) / 1000),
+                            overall_score: scores.overall_score || 50,
+                            overall_rating: scores.overall_rating || 'average',
+                            technical_knowledge_score: scores.technical_knowledge_score,
+                            domain_expertise_score: scores.domain_expertise_score,
+                            communication_score: scores.communication_score,
+                            language_proficiency_score: scores.language_proficiency_score,
+                            confidence_score: scores.confidence_score,
+                            professionalism_score: scores.professionalism_score,
+                            response_relevance_score: scores.response_relevance_score,
+                            response_depth_score: scores.response_depth_score,
+                            response_clarity_score: scores.response_clarity_score,
+                            engagement_score: scores.engagement_score,
+                            total_questions_asked: scores.total_questions_asked,
+                            questions_answered: scores.questions_answered,
+                            interview_transcript: scores.interview_transcript,
+                            skills_assessment: scores.skills_assessment,
+                            candidate_strengths: scores.candidate_strengths,
+                            candidate_weaknesses: scores.candidate_weaknesses,
+                            ai_recommendation: scores.ai_recommendation,
+                            ai_recommendation_reason: scores.ai_recommendation_reason,
+                            ai_feedback_summary: scores.ai_feedback_summary,
+                            improvement_areas: scores.improvement_areas,
+                            result: scores.result || 'fail',
+                            passed_threshold: scores.passed_threshold || 60
+                        };
+                        
+                        const response = await fetch(`/complete/${this.technicalInterviewId}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(completeData)
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            this.showToast(`Interview completed! Score: ${scores.overall_score || 'N/A'}`, 'success');
+                            this.el.aiStatusText.textContent = `Result: ${scores.result?.toUpperCase() || 'COMPLETED'} - Score: ${scores.overall_score || 'N/A'}`;
+                        } else {
+                            this.showToast('Interview saved locally', 'warning');
+                        }
+                    } catch (error) {
+                        console.error('Complete interview error:', error);
+                        this.showToast('Interview completed (results pending sync)', 'warning');
+                    }
+                } else {
+                    this.showToast('Interview ended', 'info');
+                }
+                
                 this.el.startBtn.disabled = false;
-                this.el.endBtn.disabled = true;
                 this.el.visualizerCore.classList.remove('active');
                 this.setStatus('ready', 'Interview Ended');
-                this.el.aiStatusText.textContent = 'Interview Complete';
             }
             
             // ==================

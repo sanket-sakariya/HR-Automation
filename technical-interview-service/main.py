@@ -17,17 +17,19 @@ import struct
 from collections import deque
 from pathlib import Path
 from contextlib import asynccontextmanager
-from typing import Optional, Deque
+from typing import Optional, Deque, List, Dict, Any
 from dataclasses import dataclass, field
 from uuid import uuid4
+from datetime import datetime, timezone
 
+import httpx
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 from google import genai
@@ -218,6 +220,13 @@ You are a professional technical recruiter conducting an interview for **{job_ti
 - Ask one question at a time
 - Keep responses SHORT and conversational
 
+## Interview Closure (VERY IMPORTANT)
+When you have completed the interview (after asking sufficient questions, typically 8-12 questions or 10-15 minutes):
+1. Thank the candidate for their time and responses
+2. Summarize that you've gathered enough information
+3. **IMPORTANT**: Say clearly "Thank you for completing this interview. Please click the 'End Session' button on your screen to submit your interview for evaluation. We will get back to you with the results soon."
+4. Do NOT continue asking questions after this closing statement
+
 Remember: You are conducting a VOICE interview. Keep responses brief and natural.
 """
 
@@ -228,11 +237,24 @@ active_sessions = {}
 
 class InterviewSession:
     """Stores interview session data."""
-    def __init__(self, session_id: str, job_details: dict, candidate_info: dict, system_instruction: str):
+    def __init__(
+        self, 
+        session_id: str, 
+        job_details: dict, 
+        candidate_info: dict, 
+        system_instruction: str,
+        technical_interview_id: str = None
+    ):
         self.session_id = session_id
         self.job_details = job_details
         self.candidate_info = candidate_info
         self.system_instruction = system_instruction
+        self.technical_interview_id = technical_interview_id
+        self.transcript: List[Dict[str, Any]] = []  # Store conversation transcript
+        self.started_at: datetime = None
+        self.ended_at: datetime = None
+        self.generated_scores: Dict[str, Any] = {}  # Store AI-generated scores
+        self.interview_duration_seconds: int = 0
 
 
 class RegisterSessionRequest(BaseModel):
@@ -241,14 +263,81 @@ class RegisterSessionRequest(BaseModel):
     job_details: dict
     candidate_info: dict
     system_instruction: str
+    technical_interview_id: Optional[str] = None
 
 
 class StartInterviewRequest(BaseModel):
     """Request to start a technical interview."""
-    candidate_id: str
     job_requirement_id: str
     email: str
     password: str
+
+
+class CompleteInterviewRequest(BaseModel):
+    """Request to complete a technical interview with AI-generated scores."""
+    interview_session_id: str
+    interview_duration_seconds: int = Field(..., description="Total interview duration in seconds")
+    
+    # Overall Scores (AI will generate these)
+    overall_score: float = Field(..., ge=0, le=100)
+    overall_rating: str = Field(..., description="excellent, good, average, below_average, poor")
+    
+    # Technical Knowledge Scores
+    technical_knowledge_score: Optional[float] = Field(None, ge=0, le=100)
+    domain_expertise_score: Optional[float] = Field(None, ge=0, le=100)
+    
+    # Communication Scores
+    communication_score: Optional[float] = Field(None, ge=0, le=100)
+    language_proficiency_score: Optional[float] = Field(None, ge=0, le=100)
+    
+    # Behavioral Scores
+    confidence_score: Optional[float] = Field(None, ge=0, le=100)
+    professionalism_score: Optional[float] = Field(None, ge=0, le=100)
+    
+    # Response Quality Scores
+    response_relevance_score: Optional[float] = Field(None, ge=0, le=100)
+    response_depth_score: Optional[float] = Field(None, ge=0, le=100)
+    response_clarity_score: Optional[float] = Field(None, ge=0, le=100)
+    
+    # Question Statistics
+    total_questions_asked: Optional[int] = None
+    questions_answered: Optional[int] = None
+    questions_skipped: Optional[int] = None
+    
+    # Time Metrics
+    average_response_time_seconds: Optional[float] = None
+    total_speaking_time_seconds: Optional[float] = None
+    
+    # Engagement Metrics
+    engagement_score: Optional[float] = Field(None, ge=0, le=100)
+    follow_up_questions_asked: Optional[int] = None
+    
+    # Detailed JSON Data
+    interview_transcript: Optional[List[Dict[str, Any]]] = None
+    question_analysis: Optional[List[Dict[str, Any]]] = None
+    skills_assessment: Optional[List[Dict[str, Any]]] = None
+    candidate_strengths: Optional[List[str]] = None
+    candidate_weaknesses: Optional[List[str]] = None
+    
+    # AI Recommendations
+    ai_recommendation: Optional[str] = Field(None, description="strongly_recommend, recommend, neutral, not_recommend")
+    ai_recommendation_reason: Optional[str] = None
+    ai_feedback_summary: Optional[str] = None
+    improvement_areas: Optional[List[str]] = None
+    
+    # Interview Metadata
+    interview_language: Optional[str] = None
+    languages_used: Optional[List[str]] = None
+    
+    # Token Usage
+    input_tokens_used: Optional[int] = None
+    output_tokens_used: Optional[int] = None
+    audio_input_seconds: Optional[float] = None
+    audio_output_seconds: Optional[float] = None
+    
+    # Final Result
+    result: str = Field(..., description="'pass' or 'fail'")
+    passed_threshold: Optional[float] = Field(None, description="Threshold score used for pass/fail")
 
 
 @asynccontextmanager
@@ -303,13 +392,15 @@ class ProductionInterviewSession:
     - Barge-in mandate (min speech duration)
     - Binary audio passthrough (no base64 overhead)
     - Latency tracking
+    - Transcript storage for score generation
     """
     
-    def __init__(self, websocket: WebSocket, system_instruction: str, job_details: dict, candidate_info: dict):
+    def __init__(self, websocket: WebSocket, system_instruction: str, job_details: dict, candidate_info: dict, parent_session: InterviewSession = None):
         self.websocket = websocket
         self.system_instruction = system_instruction
         self.job_details = job_details
         self.candidate_info = candidate_info
+        self.parent_session = parent_session  # Reference to InterviewSession for storing transcript
         self.session = None
         self.is_active = False
         self.stop_event = asyncio.Event()
@@ -326,6 +417,45 @@ class ProductionInterviewSession:
         self.audio_send_times: Deque[float] = deque(maxlen=100)
         self.last_latency_ms: float = 0
         self.latency_samples: Deque[float] = deque(maxlen=20)
+        
+        # Local transcript storage (synced to parent session)
+        self.transcript: List[Dict[str, Any]] = []
+        self.interview_start_time: float = None
+        self.questions_count: int = 0
+        self.answers_count: int = 0
+    
+    def add_transcript_entry(self, speaker: str, text: str):
+        """Add a transcript entry and sync to parent session."""
+        if not text or not text.strip():
+            return
+        
+        timestamp = ""
+        if self.interview_start_time:
+            elapsed = time.time() - self.interview_start_time
+            minutes = int(elapsed // 60)
+            seconds = int(elapsed % 60)
+            timestamp = f"{minutes:02d}:{seconds:02d}"
+        
+        entry = {
+            "timestamp": timestamp,
+            "speaker": speaker,
+            "text": text.strip(),
+            "time": time.time()
+        }
+        
+        self.transcript.append(entry)
+        
+        # Track question/answer counts
+        if speaker == "interviewer":
+            # Count questions (simple heuristic: ends with ?)
+            if "?" in text:
+                self.questions_count += 1
+        else:
+            self.answers_count += 1
+        
+        # Sync to parent session
+        if self.parent_session:
+            self.parent_session.transcript = self.transcript
         
     async def send_json(self, msg_type: str, **kwargs):
         """Send JSON message to client."""
@@ -379,11 +509,14 @@ class ProductionInterviewSession:
                             
                             # Stream transcription
                             if content.output_transcription and content.output_transcription.text:
+                                text = content.output_transcription.text
                                 await self.send_json(
                                     "transcript",
                                     role="interviewer",
-                                    text=content.output_transcription.text
+                                    text=text
                                 )
+                                # Store in transcript
+                                self.add_transcript_entry("interviewer", text)
                                 
                 except asyncio.CancelledError:
                     break
@@ -397,6 +530,117 @@ class ProductionInterviewSession:
             print(f"Stream handler error: {e}")
         finally:
             print("📡 Gemini stream ended")
+    
+    async def generate_and_store_scores(self):
+        """Generate AI-based evaluation scores and store in parent session."""
+        try:
+            if not self.transcript:
+                print("⚠️ No transcript available for scoring")
+                return
+            
+            print("🧠 Generating AI evaluation scores...")
+            
+            # Build the transcript text
+            transcript_text = "\n".join([
+                f"{turn.get('speaker', 'Unknown')}: {turn.get('text', '')}"
+                for turn in self.transcript
+            ])
+            
+            # Generate evaluation prompt
+            evaluation_prompt = f"""
+You are an expert technical interview evaluator. Analyze the following interview transcript and provide a comprehensive evaluation.
+
+## Interview Context
+- Position: {self.job_details.get('title', 'Technical Position')}
+- Department: {self.job_details.get('department', 'Technology')}
+- Required Skills: {self.job_details.get('requirements', [])}
+- Candidate: {self.candidate_info.get('name', 'Candidate')}
+
+## Interview Transcript
+{transcript_text}
+
+## Interview Statistics
+- Total Questions Asked: {self.questions_count}
+- Total Answers Given: {self.answers_count}
+- Interview Duration: {self.parent_session.interview_duration_seconds if self.parent_session else 0} seconds
+
+## Evaluation Required
+Provide a JSON response with the following scores (0-100) and assessments:
+
+{{
+    "overall_score": <0-100>,
+    "overall_rating": "<excellent|good|average|below_average|poor>",
+    "technical_knowledge_score": <0-100>,
+    "domain_expertise_score": <0-100>,
+    "communication_score": <0-100>,
+    "language_proficiency_score": <0-100>,
+    "confidence_score": <0-100>,
+    "professionalism_score": <0-100>,
+    "response_relevance_score": <0-100>,
+    "response_depth_score": <0-100>,
+    "response_clarity_score": <0-100>,
+    "engagement_score": <0-100>,
+    "candidate_strengths": ["strength1", "strength2", ...],
+    "candidate_weaknesses": ["weakness1", "weakness2", ...],
+    "ai_recommendation": "<strongly_recommend|recommend|neutral|not_recommend>",
+    "ai_recommendation_reason": "<detailed reason>",
+    "ai_feedback_summary": "<comprehensive feedback summary>",
+    "improvement_areas": ["area1", "area2", ...],
+    "skills_assessment": [
+        {{"skill_name": "<skill>", "proficiency_level": "<advanced|intermediate|beginner>", "score": <0-100>}}
+    ],
+    "result": "<pass|fail>",
+    "passed_threshold": 60
+}}
+
+Be objective and fair in your evaluation. Consider the job requirements when scoring.
+A score of 60 or above should result in "pass", below 60 should be "fail".
+"""
+            
+            # Call Gemini API for evaluation
+            client = genai.Client(api_key=GOOGLE_API_KEY)
+            
+            response = await client.aio.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=evaluation_prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json"
+                )
+            )
+            
+            # Parse the response
+            scores = json.loads(response.text)
+            
+            # Add additional data
+            scores["interview_duration_seconds"] = self.parent_session.interview_duration_seconds if self.parent_session else 0
+            scores["total_questions_asked"] = self.questions_count
+            scores["questions_answered"] = self.answers_count
+            scores["interview_transcript"] = self.transcript
+            
+            # Store in parent session
+            if self.parent_session:
+                self.parent_session.generated_scores = scores
+                print(f"✅ Scores generated - Overall: {scores.get('overall_score', 'N/A')}, Result: {scores.get('result', 'N/A')}")
+            
+            # Send scores to client
+            await self.send_json("scores_generated", scores=scores)
+            
+        except Exception as e:
+            print(f"❌ Score generation error: {e}")
+            # Store default scores on error
+            default_scores = {
+                "overall_score": 50,
+                "overall_rating": "average",
+                "result": "fail",
+                "error": str(e),
+                "interview_duration_seconds": self.parent_session.interview_duration_seconds if self.parent_session else 0,
+                "total_questions_asked": self.questions_count,
+                "questions_answered": self.answers_count,
+                "interview_transcript": self.transcript
+            }
+            if self.parent_session:
+                self.parent_session.generated_scores = default_scores
+            await self.send_json("scores_generated", scores=default_scores, error=str(e))
     
     async def interrupt_ai(self):
         """Send interrupt signal to stop AI generation (barge-in)."""
@@ -550,6 +794,12 @@ class ProductionInterviewSession:
                                 
                                 if data.get("type") == "start_interview":
                                     print("🎤 Starting interview...")
+                                    self.interview_start_time = time.time()
+                                    
+                                    # Record start time in parent session
+                                    if self.parent_session:
+                                        self.parent_session.started_at = datetime.now(timezone.utc)
+                                    
                                     candidate_name = self.candidate_info.get('first_name', 'the candidate')
                                     job_title = self.job_details.get('title', 'this position')
                                     
@@ -570,6 +820,15 @@ class ProductionInterviewSession:
                                         await self.interrupt_ai()
                                 
                                 elif data.get("type") == "end_session":
+                                    # Calculate interview duration and generate scores
+                                    if self.interview_start_time:
+                                        duration = int(time.time() - self.interview_start_time)
+                                        if self.parent_session:
+                                            self.parent_session.interview_duration_seconds = duration
+                                            self.parent_session.ended_at = datetime.now(timezone.utc)
+                                    
+                                    # Generate and store scores before ending
+                                    await self.generate_and_store_scores()
                                     break
                                     
                             except json.JSONDecodeError:
@@ -637,7 +896,8 @@ async def register_session(request: RegisterSessionRequest):
             session_id=session_id,
             job_details=request.job_details,
             candidate_info=request.candidate_info,
-            system_instruction=request.system_instruction
+            system_instruction=request.system_instruction,
+            technical_interview_id=request.technical_interview_id
         )
         
         print(f"✅ Session registered: {session_id}")
@@ -648,32 +908,94 @@ async def register_session(request: RegisterSessionRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/start")
-async def start_interview_local(request: StartInterviewRequest):
-    """Start interview directly (for local testing)."""
+@app.post("/start/{candidate_id}")
+async def start_interview(candidate_id: str, request: StartInterviewRequest):
+    """
+    Start Technical Interview for a Candidate.
+    
+    Flow:
+    1. Call main service API to validate candidate and get interview session
+    2. Main service checks:
+       - Candidate exists and credentials match
+       - Candidate passed aptitude test (aptitude_test_result == 'pass')
+       - Technical test not already taken (technical_test == False)
+       - Extracts resume text and generates dynamic prompt
+    3. Register session locally with system instruction
+    4. Return interview URL
+    """
     try:
-        session_id = f"TI-{uuid4().hex[:12]}"
-        
-        job_details = {"title": "Technical Position", "company_name": "Company", "description": "Technical role"}
-        candidate_info = {"first_name": "", "last_name": "", "email": request.email}
-        system_instruction = generate_system_instruction(job_details, candidate_info)
-        
-        active_sessions[session_id] = InterviewSession(
-            session_id=session_id,
-            job_details=job_details,
-            candidate_info=candidate_info,
-            system_instruction=system_instruction
+        # Call the main service to start the interview
+        # This handles all validation: aptitude test pass, technical_test check, resume extraction
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{MAIN_SERVICE_URL}/technical-interview/start/{candidate_id}",
+                json={
+                    "job_requirement_id": request.job_requirement_id,
+                    "email": request.email,
+                    "password": request.password
+                }
+            )
+            
+            if response.status_code != 200:
+                error_detail = response.json().get("detail", "Failed to start interview")
+                raise HTTPException(status_code=response.status_code, detail=error_detail)
+            
+            result = response.json()
+            
+            if not result.get("success"):
+                raise HTTPException(status_code=400, detail=result.get("message", "Failed to start interview"))
+            
+            data = result.get("data", {})
+            
+            session_id = data.get("interview_session_id")
+            job_details = data.get("job_details", {})
+            candidate_info = data.get("candidate_info", {})
+            system_instruction = data.get("system_instruction", "")
+            
+            # If system instruction not provided by main service, generate locally
+            if not system_instruction:
+                system_instruction = generate_system_instruction(job_details, candidate_info)
+            
+            technical_interview_id = data.get("technical_interview_id")
+            
+            # Register session locally
+            active_sessions[session_id] = InterviewSession(
+                session_id=session_id,
+                job_details=job_details,
+                candidate_info=candidate_info,
+                system_instruction=system_instruction,
+                technical_interview_id=technical_interview_id
+            )
+            
+            print(f"✅ Interview session started: {session_id}")
+            print(f"   Technical Interview ID: {technical_interview_id}")
+            print(f"   Candidate: {candidate_info.get('name', 'Unknown')}")
+            print(f"   Job: {job_details.get('title', 'Unknown')}")
+            
+            return {
+                "success": True,
+                "technical_interview_id": technical_interview_id,
+                "session_id": session_id,
+                "interview_url": f"/interview/{session_id}",
+                "websocket_url": f"ws://localhost:8100/ws/interview/{session_id}",
+                "job_details": job_details,
+                "candidate_info": candidate_info,
+                "interview_config": data.get("interview_config", {
+                    "min_duration_minutes": 5,
+                    "max_duration_minutes": 15
+                }),
+                "instructions": data.get("instructions", {})
+            }
+            
+    except httpx.ConnectError:
+        raise HTTPException(
+            status_code=503,
+            detail="Could not connect to main interview service. Please ensure it's running."
         )
-        
-        return {
-            "success": True,
-            "session_id": session_id,
-            "job_details": job_details,
-            "candidate_info": candidate_info,
-            "interview_url": f"/interview/{session_id}"
-        }
-        
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"Start interview error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -705,8 +1027,30 @@ async def get_session(session_id: str):
     return {
         "success": True,
         "session_id": session_id,
+        "technical_interview_id": session.technical_interview_id,
         "job_details": session.job_details,
         "candidate_info": session.candidate_info
+    }
+
+
+@app.get("/api/session/{session_id}/scores")
+async def get_session_scores(session_id: str):
+    """Get generated scores for a session."""
+    if session_id not in active_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    session = active_sessions[session_id]
+    
+    if not session.generated_scores:
+        raise HTTPException(status_code=404, detail="Scores not yet generated. Please end the interview first.")
+    
+    return {
+        "success": True,
+        "session_id": session_id,
+        "technical_interview_id": session.technical_interview_id,
+        "scores": session.generated_scores,
+        "interview_duration_seconds": session.interview_duration_seconds,
+        "transcript": session.transcript
     }
 
 
@@ -726,7 +1070,8 @@ async def websocket_interview(websocket: WebSocket, session_id: str):
         websocket=websocket,
         system_instruction=stored_session.system_instruction,
         job_details=stored_session.job_details,
-        candidate_info=stored_session.candidate_info
+        candidate_info=stored_session.candidate_info,
+        parent_session=stored_session  # Pass parent session for transcript/score storage
     )
     
     try:
@@ -739,6 +1084,196 @@ async def websocket_interview(websocket: WebSocket, session_id: str):
         except:
             pass
         print(f"👋 WebSocket closed: {session_id}")
+
+
+@app.post("/complete/{technical_interview_id}")
+async def complete_interview(technical_interview_id: str, request: CompleteInterviewRequest):
+    """
+    Complete the technical interview with AI-generated scores.
+    
+    This endpoint is called when the interview ends (either naturally or by user action).
+    It:
+    1. Validates the session exists
+    2. Forwards the completion data to the main service
+    3. Main service stores all scores and updates candidate's technical_test fields
+    4. Cleans up the local session
+    
+    The AI generates scores based on the interview conversation for:
+    - Technical knowledge
+    - Communication skills
+    - Confidence level
+    - Response quality
+    - Overall assessment
+    """
+    try:
+        session_id = request.interview_session_id
+        
+        # Verify session exists locally
+        if session_id not in active_sessions:
+            print(f"⚠️ Session {session_id} not found locally, but proceeding with completion")
+        
+        # Prepare completion data for main service
+        completion_data = request.model_dump(exclude_none=True)
+        completion_data.pop("interview_session_id", None)  # Remove session_id, not needed in main service
+        
+        # Call main service to complete the interview and store in DB
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{MAIN_SERVICE_URL}/technical-interview/complete/{technical_interview_id}",
+                json=completion_data
+            )
+            
+            if response.status_code != 200:
+                error_detail = response.json().get("detail", "Failed to complete interview")
+                raise HTTPException(status_code=response.status_code, detail=error_detail)
+            
+            result = response.json()
+            
+            # Clean up local session
+            if session_id in active_sessions:
+                del active_sessions[session_id]
+                print(f"🧹 Session cleaned up: {session_id}")
+            
+            print(f"✅ Interview completed: {technical_interview_id}")
+            print(f"   Overall Score: {request.overall_score}")
+            print(f"   Result: {request.result}")
+            print(f"   AI Recommendation: {request.ai_recommendation}")
+            
+            return {
+                "success": True,
+                "message": "Technical interview completed successfully",
+                "technical_interview_id": technical_interview_id,
+                "overall_score": request.overall_score,
+                "overall_rating": request.overall_rating,
+                "result": request.result,
+                "ai_recommendation": request.ai_recommendation,
+                "ai_feedback_summary": request.ai_feedback_summary,
+                "stored_in_db": True
+            }
+            
+    except httpx.ConnectError:
+        # Even if main service is down, try to store locally and return success
+        print(f"⚠️ Could not connect to main service, interview completion not persisted")
+        
+        # Clean up local session
+        if request.interview_session_id in active_sessions:
+            del active_sessions[request.interview_session_id]
+        
+        return {
+            "success": True,
+            "message": "Interview completed locally (main service unavailable)",
+            "technical_interview_id": technical_interview_id,
+            "overall_score": request.overall_score,
+            "result": request.result,
+            "stored_in_db": False,
+            "warning": "Results not persisted to database - main service unavailable"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Complete interview error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/generate-scores/{session_id}")
+async def generate_ai_scores(session_id: str, transcript: List[Dict[str, Any]]):
+    """
+    Generate AI-based evaluation scores from interview transcript.
+    
+    This endpoint can be called by the frontend to get AI-generated scores
+    before completing the interview. It uses the Gemini API to analyze
+    the transcript and generate scores for various parameters.
+    
+    Args:
+        session_id: The interview session ID
+        transcript: List of conversation turns with speaker and text
+    
+    Returns:
+        Dictionary with all evaluation scores and recommendations
+    """
+    try:
+        if session_id not in active_sessions:
+            raise HTTPException(status_code=404, detail="Session not found")
+        
+        stored_session = active_sessions[session_id]
+        job_details = stored_session.job_details
+        candidate_info = stored_session.candidate_info
+        
+        # Build the transcript text
+        transcript_text = "\n".join([
+            f"{turn.get('speaker', 'Unknown')}: {turn.get('text', '')}"
+            for turn in transcript
+        ])
+        
+        # Generate evaluation prompt
+        evaluation_prompt = f"""
+You are an expert technical interview evaluator. Analyze the following interview transcript and provide a comprehensive evaluation.
+
+## Interview Context
+- Position: {job_details.get('title', 'Technical Position')}
+- Department: {job_details.get('department', 'Technology')}
+- Required Skills: {job_details.get('requirements', [])}
+- Candidate: {candidate_info.get('name', 'Candidate')}
+
+## Interview Transcript
+{transcript_text}
+
+## Evaluation Required
+Provide a JSON response with the following scores (0-100) and assessments:
+
+{{
+    "overall_score": <0-100>,
+    "overall_rating": "<excellent|good|average|below_average|poor>",
+    "technical_knowledge_score": <0-100>,
+    "domain_expertise_score": <0-100>,
+    "communication_score": <0-100>,
+    "language_proficiency_score": <0-100>,
+    "confidence_score": <0-100>,
+    "professionalism_score": <0-100>,
+    "response_relevance_score": <0-100>,
+    "response_depth_score": <0-100>,
+    "response_clarity_score": <0-100>,
+    "engagement_score": <0-100>,
+    "candidate_strengths": ["strength1", "strength2", ...],
+    "candidate_weaknesses": ["weakness1", "weakness2", ...],
+    "ai_recommendation": "<strongly_recommend|recommend|neutral|not_recommend>",
+    "ai_recommendation_reason": "<detailed reason>",
+    "ai_feedback_summary": "<comprehensive feedback summary>",
+    "improvement_areas": ["area1", "area2", ...],
+    "skills_assessment": [
+        {{"skill_name": "<skill>", "proficiency_level": "<advanced|intermediate|beginner>", "score": <0-100>}}
+    ],
+    "result": "<pass|fail>",
+    "passed_threshold": 60
+}}
+
+Be objective and fair in your evaluation. Consider the job requirements when scoring.
+"""
+        
+        # Call Gemini API for evaluation
+        client = genai.Client(api_key=GOOGLE_API_KEY)
+        
+        response = await client.aio.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=evaluation_prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+        )
+        
+        # Parse the response
+        import json as json_module
+        scores = json_module.loads(response.text)
+        
+        return {
+            "success": True,
+            "session_id": session_id,
+            "evaluation": scores
+        }
+        
+    except Exception as e:
+        print(f"Generate scores error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/health")

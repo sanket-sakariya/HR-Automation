@@ -96,6 +96,13 @@ async def start_technical_interview(
                 detail="Candidate must pass aptitude test before technical interview"
             )
         
+        # Step 4.5: Check if candidate has already taken technical test
+        if candidate.technical_test and candidate.technical_test_result:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail=f"Candidate has already completed technical interview with result: {candidate.technical_test_result}"
+            )
+        
         # Step 5: Get job details
         job = await job_repo.get_by_id(candidate.job_requirement_id)
         if not job:
@@ -159,7 +166,8 @@ async def start_technical_interview(
                         "session_id": interview.interview_session_id,
                         "job_details": job_details,
                         "candidate_info": candidate_info,
-                        "system_instruction": system_instruction
+                        "system_instruction": system_instruction,
+                        "technical_interview_id": str(interview.technical_interview_id)
                     }
                 )
                 if register_response.status_code != 200:
