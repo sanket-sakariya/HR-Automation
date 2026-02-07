@@ -1,0 +1,2922 @@
+openapi: 3.0.3
+info:
+  title: HR Automation API
+  description: |
+    Complete HR Automation Platform API for managing the entire recruitment lifecycle including:
+    - Company Management
+    - Job Requirements
+    - Candidate Applications & Resume Analysis
+    - Aptitude Testing
+    - Technical Interviews (AI-powered)
+    - HR Interviews (AI-powered)
+    
+    **Authentication:** All endpoints require `workspace-id` and `user-id` headers.
+  version: 1.0.0
+  contact:
+    name: HR Automation Team
+    email: support@hrautomation.com
+
+servers:
+  - url: http://localhost:8888/interview-management-service/api/v1
+    description: Main API Server
+  - url: http://localhost:8100
+    description: Technical Interview Service
+  - url: http://localhost:8200
+    description: HR Interview Service
+  - url: http://localhost:8889
+    description: Dynamic Form Service
+  - url: http://localhost:8890
+    description: Aptitude Test Service
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Company Management
+    description: Company registration and management
+  - name: Job Requirements
+    description: Job posting and requirements management
+  - name: Candidate Management
+    description: Candidate applications and resume management
+  - name: Aptitude Management
+    description: Aptitude test creation and management
+  - name: Technical Interview Management
+    description: AI-powered technical interviews
+  - name: HR Interview Management
+    description: AI-powered HR interviews
+
+paths:
+  # ==================== HEALTH ====================
+  /health/:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Check if the service is running
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                success: true
+                data:
+                  status: "ok"
+                message: "Workspace Management Service healthy"
+
+  # ==================== COMPANY MANAGEMENT ====================
+  /companies/register/:
+    post:
+      tags:
+        - Company Management
+      summary: Register a new company
+      description: Register a new company on the HR Automation platform
+      operationId: createCompany
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyCreateRequest'
+            example:
+              company_name: "TechCorp Solutions"
+              email: "hr@techcorp.com"
+              password: "SecurePass123!"
+              industry: "Technology"
+              size: "51-200"
+              website: "https://techcorp.com"
+              address:
+                street: "123 Business St"
+                city: "New York"
+                state: "NY"
+                country: "USA"
+                zip_code: "10001"
+              phone: "+1-555-0123"
+              logo: "https://techcorp.com/logo.png"
+              subscription_plan: "professional"
+      responses:
+        '201':
+          description: Company created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data:
+                  company_id: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+                  company_name: "TechCorp Solutions"
+                  email: "hr@techcorp.com"
+                  industry: "Technology"
+                  size: "51-200"
+                  website: "https://techcorp.com"
+                  address:
+                    street: "123 Business St"
+                    city: "New York"
+                    state: "NY"
+                    country: "USA"
+                    zip_code: "10001"
+                  phone: "+1-555-0123"
+                  logo: "https://techcorp.com/logo.png"
+                  subscription_plan: "professional"
+                  is_active: true
+                  created_at: "2024-01-15T10:30:00Z"
+                  updated_at: "2024-01-15T10:30:00Z"
+                message: "Company registered successfully"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Company already exists
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "Company with this email already exists"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /companies/{company_id}/:
+    get:
+      tags:
+        - Company Management
+      summary: Get company by ID
+      description: Retrieve company details by company ID
+      operationId: getCompany
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Company retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data:
+                  company_id: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+                  company_name: "TechCorp Solutions"
+                  email: "hr@techcorp.com"
+                  industry: "Technology"
+                  size: "51-200"
+                  is_active: true
+                message: "Company retrieved successfully"
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Company Management
+      summary: Delete company
+      description: Soft delete a company from the platform
+      operationId: deleteCompany
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Company deleted successfully
+          content:
+            application/json:
+              example:
+                success: true
+                data: {}
+                message: "Company deleted successfully"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Company Management
+      summary: Update company
+      description: Update company details
+      operationId: updateCompany
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyUpdateRequest'
+            example:
+              company_name: "Updated TechCorp"
+              industry: "Software Development"
+              size: "201-500"
+              website: "https://updated-techcorp.com"
+              phone: "+1-555-0124"
+              subscription_plan: "enterprise"
+      responses:
+        '200':
+          description: Company updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data:
+                  company_id: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+                  company_name: "Updated TechCorp"
+                  email: "hr@techcorp.com"
+                  industry: "Software Development"
+                  size: "201-500"
+                  website: "https://updated-techcorp.com"
+                  phone: "+1-555-0124"
+                  subscription_plan: "enterprise"
+                  is_active: true
+                  created_at: "2024-01-15T10:30:00Z"
+                  updated_at: "2024-01-16T14:30:00Z"
+                message: "Company updated successfully"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /companies/:
+    get:
+      tags:
+        - Company Management
+      summary: List all companies
+      description: Retrieve a paginated list of all companies
+      operationId: listCompanies
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/OrderBy'
+        - $ref: '#/components/parameters/Search'
+      responses:
+        '200':
+          description: Companies retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+              example:
+                success: true
+                data:
+                  - company_id: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+                    company_name: "TechCorp Solutions"
+                    email: "hr@techcorp.com"
+                    industry: "Technology"
+                    size: "51-200"
+                    is_active: true
+                    created_at: "2024-01-15T10:30:00Z"
+                  - company_id: "b4d9f7c2-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                    company_name: "InnovateTech Inc"
+                    email: "careers@innovatetech.com"
+                    industry: "Software"
+                    size: "201-500"
+                    is_active: true
+                    created_at: "2024-01-10T08:00:00Z"
+                pagination:
+                  total_count: 25
+                  offset: 0
+                  limit: 20
+                  total_pages: 2
+                message: "Companies retrieved successfully"
+
+  # ==================== JOB REQUIREMENTS ====================
+  /companies/{company_id}/job-requirements/:
+    post:
+      tags:
+        - Job Requirements
+      summary: Create job requirement
+      description: Create a new job requirement for a company. Also posts to LinkedIn automatically.
+      operationId: createJobRequirement
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobRequirementCreateRequest'
+            example:
+              title: "Senior Python Developer"
+              department: "Engineering"
+              description: "We are looking for a Senior Python Developer to join our team. You will be responsible for designing, developing, and maintaining high-quality Python applications."
+              requirements:
+                - skill: "Python"
+                  level: "advanced"
+                  required: true
+                - skill: "FastAPI"
+                  level: "intermediate"
+                  required: true
+                - skill: "PostgreSQL"
+                  level: "intermediate"
+                  required: false
+                - skill: "Docker"
+                  level: "beginner"
+                  required: false
+              experience:
+                min_years: 3
+                max_years: 7
+                preferred: 5
+              location: "New York, NY"
+              job_type: "full-time"
+              salary_range:
+                min: 80000
+                max: 120000
+                currency: "USD"
+              benefits:
+                - "Health Insurance"
+                - "401k"
+                - "Remote Work Options"
+                - "Flexible Hours"
+      responses:
+        '201':
+          description: Job requirement created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  company_id: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+                  title: "Senior Python Developer"
+                  department: "Engineering"
+                  description: "We are looking for a Senior Python Developer..."
+                  requirements:
+                    - skill: "Python"
+                      level: "advanced"
+                      required: true
+                    - skill: "FastAPI"
+                      level: "intermediate"
+                      required: true
+                  experience:
+                    min_years: 3
+                    max_years: 7
+                    preferred: 5
+                  location: "New York, NY"
+                  job_type: "full-time"
+                  salary_range:
+                    min: 80000
+                    max: 120000
+                    currency: "USD"
+                  benefits:
+                    - "Health Insurance"
+                    - "401k"
+                    - "Remote Work Options"
+                  status: "draft"
+                  is_active: true
+                  created_at: "2024-01-15T10:30:00Z"
+                  updated_at: "2024-01-15T10:30:00Z"
+                message: "Job requirement created successfully. LinkedIn posting initiated."
+
+    get:
+      tags:
+        - Job Requirements
+      summary: List job requirements by company
+      description: List all job requirements for a specific company
+      operationId: listJobRequirementsByCompany
+      parameters:
+        - $ref: '#/components/parameters/CompanyId'
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, active, closed]
+          description: Filter by job status
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Job requirements retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  - job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                    company_id: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+                    title: "Senior Python Developer"
+                    department: "Engineering"
+                    status: "active"
+                    location: "New York, NY"
+                    job_type: "full-time"
+                pagination:
+                  total_count: 5
+                  offset: 0
+                  limit: 20
+                  total_pages: 1
+                message: "Job requirements retrieved successfully"
+
+  /job-requirements/{job_requirement_id}/:
+    get:
+      tags:
+        - Job Requirements
+      summary: Get job requirement by ID
+      description: Retrieve job requirement details
+      operationId: getJobRequirement
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Job requirement retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  company_id: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+                  title: "Senior Python Developer"
+                  department: "Engineering"
+                  description: "We are looking for a Senior Python Developer..."
+                  requirements:
+                    - skill: "Python"
+                      level: "advanced"
+                      required: true
+                  experience:
+                    min_years: 3
+                    max_years: 7
+                    preferred: 5
+                  location: "New York, NY"
+                  job_type: "full-time"
+                  salary_range:
+                    min: 80000
+                    max: 120000
+                    currency: "USD"
+                  benefits:
+                    - "Health Insurance"
+                    - "401k"
+                  status: "active"
+                  is_active: true
+                  created_at: "2024-01-15T10:30:00Z"
+                  updated_at: "2024-01-15T10:30:00Z"
+                message: "Job requirement retrieved successfully"
+
+    put:
+      tags:
+        - Job Requirements
+      summary: Update job requirement
+      description: Update an existing job requirement
+      operationId: updateJobRequirement
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JobRequirementUpdateRequest'
+            example:
+              title: "Lead Python Developer"
+              description: "Updated job description for lead position..."
+              experience:
+                min_years: 5
+                max_years: 10
+                preferred: 7
+              salary_range:
+                min: 100000
+                max: 150000
+                currency: "USD"
+              status: "active"
+      responses:
+        '200':
+          description: Job requirement updated
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  title: "Lead Python Developer"
+                  status: "active"
+                  updated_at: "2024-01-16T14:30:00Z"
+                message: "Job requirement updated successfully"
+
+    delete:
+      tags:
+        - Job Requirements
+      summary: Delete job requirement
+      description: Soft delete a job requirement
+      operationId: deleteJobRequirement
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Job requirement deleted
+          content:
+            application/json:
+              example:
+                success: true
+                data: {}
+                message: "Job requirement deleted successfully"
+
+  /job-requirements/{job_requirement_id}/status/:
+    patch:
+      tags:
+        - Job Requirements
+      summary: Update job requirement status
+      description: Update only the status of a job requirement
+      operationId: updateJobRequirementStatus
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum: [draft, active, closed]
+            example:
+              status: "active"
+      responses:
+        '200':
+          description: Status updated
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  status: "active"
+                message: "Job requirement status updated successfully"
+
+  /job-requirements/:
+    get:
+      tags:
+        - Job Requirements
+      summary: List all job requirements
+      description: Retrieve all job requirements across companies
+      operationId: listJobRequirements
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/UserId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, active, closed]
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Search'
+      responses:
+        '200':
+          description: Job requirements list
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  - job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                    title: "Senior Python Developer"
+                    department: "Engineering"
+                    status: "active"
+                  - job_requirement_id: "c5d0f8c2-5e3d-6g8h-0c4f-1e0g9h8d7f6g"
+                    title: "Frontend React Developer"
+                    department: "Engineering"
+                    status: "active"
+                pagination:
+                  total_count: 15
+                  offset: 0
+                  limit: 20
+                  total_pages: 1
+                message: "Job requirements retrieved successfully"
+
+  # ==================== CANDIDATE MANAGEMENT ====================
+  /candidates/apply/{job_requirement_id}:
+    get:
+      tags:
+        - Candidate Management
+      summary: Get application form
+      description: Get job details and generate application form URL for a job requirement
+      operationId: getApplicationForm
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+      responses:
+        '200':
+          description: Application form generated
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_details:
+                    job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                    title: "Senior Python Developer"
+                    department: "Engineering"
+                    description: "We are looking for a Senior Python Developer..."
+                    requirements:
+                      - skill: "Python"
+                        level: "advanced"
+                        required: true
+                    location: "New York, NY"
+                    job_type: "full-time"
+                    salary_range:
+                      min: 80000
+                      max: 120000
+                      currency: "USD"
+                  form_url: "http://localhost:8889/forms/b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f.html"
+                  form_path: "/forms/b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f.html"
+                message: "Job details retrieved and form generated successfully"
+
+  /candidates/apply:
+    post:
+      tags:
+        - Candidate Management
+      summary: Submit job application
+      description: Submit a job application with resume upload. The resume is analyzed by AI for scoring.
+      operationId: submitApplication
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CandidateApplicationRequest'
+            example:
+              job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+              first_name: "John"
+              last_name: "Doe"
+              email: "john.doe@email.com"
+              phone: "+1-555-0199"
+              linkedin_url: "https://linkedin.com/in/johndoe"
+              portfolio_url: "https://github.com/johndoe"
+              current_location: "San Francisco, CA"
+              willing_to_relocate: "true"
+              skills: "Python, FastAPI, PostgreSQL, Docker, AWS"
+              expected_salary: "95000"
+              notice_period: "2 weeks"
+              resume: "(binary file)"
+      responses:
+        '200':
+          description: Application submitted successfully
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  first_name: "John"
+                  last_name: "Doe"
+                  email: "john.doe@email.com"
+                  password: "Abc12345"
+                  phone: "+1-555-0199"
+                  linkedin_url: "https://linkedin.com/in/johndoe"
+                  portfolio_url: "https://github.com/johndoe"
+                  current_location: "San Francisco, CA"
+                  willing_to_relocate: true
+                  skills:
+                    - "Python"
+                    - "FastAPI"
+                    - "PostgreSQL"
+                    - "Docker"
+                    - "AWS"
+                  expected_salary: 95000.0
+                  notice_period: "2 weeks"
+                  resume_url: "/resumes/d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h/resume.pdf"
+                  candidate_resume_score: 85.5
+                  status: "active"
+                  aptitude_test: null
+                  technical_test: null
+                  hr_test: null
+                  aptitude_test_result: null
+                  technical_test_result: null
+                  hr_test_result: null
+                  resume_selected: null
+                message: "Application submitted successfully"
+        '409':
+          description: Duplicate application
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "You have already applied to this job position."
+
+  /candidates/{candidate_id}:
+    get:
+      tags:
+        - Candidate Management
+      summary: Get candidate by ID
+      description: Retrieve candidate details by candidate ID
+      operationId: getCandidate
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      responses:
+        '200':
+          description: Candidate retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  first_name: "John"
+                  last_name: "Doe"
+                  email: "john.doe@email.com"
+                  password: "Abc12345"
+                  phone: "+1-555-0199"
+                  skills:
+                    - "Python"
+                    - "FastAPI"
+                  resume_url: "/resumes/d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h/resume.pdf"
+                  candidate_resume_score: 85.5
+                  status: "active"
+                  aptitude_test: true
+                  technical_test: true
+                  hr_test: false
+                  aptitude_test_result: "pass"
+                  technical_test_result: "pass"
+                  hr_test_result: null
+                  resume_selected: true
+                message: "Candidate retrieved successfully"
+
+  /candidates/:
+    get:
+      tags:
+        - Candidate Management
+      summary: List candidates
+      description: List candidates filtered by job requirement with pagination
+      operationId: listCandidates
+      parameters:
+        - name: job_requirement_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, inactive]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Candidates list
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  success: true
+                  data:
+                    - candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                      first_name: "John"
+                      last_name: "Doe"
+                      email: "john.doe@email.com"
+                      candidate_resume_score: 85.5
+                      aptitude_test_result: "pass"
+                      technical_test_result: "pass"
+                    - candidate_id: "e7f2h0e4-7g5f-8i0j-2e6h-3g2i1j0f9h8i"
+                      first_name: "Jane"
+                      last_name: "Smith"
+                      email: "jane.smith@email.com"
+                      candidate_resume_score: 78.2
+                      aptitude_test_result: "pass"
+                      technical_test_result: null
+                  pagination:
+                    total_count: 12
+                    offset: 0
+                    limit: 20
+                    total_pages: 1
+                message: "Candidates retrieved successfully"
+
+  /candidates/select-top-resumes/{job_requirement_id}:
+    post:
+      tags:
+        - Candidate Management
+      summary: Select top resumes
+      description: Select top N candidates based on their resume scores for a job requirement
+      operationId: selectTopResumes
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+        - name: top_n
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Number of top candidates to select
+          example: 5
+      responses:
+        '200':
+          description: Top resumes selected
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  top_n_requested: 5
+                  total_candidates: 12
+                  selected_count: 5
+                  rejected_count: 7
+                  selected_candidates:
+                    - candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                      email: "john.doe@email.com"
+                      name: "John Doe"
+                      resume_score: 92.5
+                    - candidate_id: "e7f2h0e4-7g5f-8i0j-2e6h-3g2i1j0f9h8i"
+                      email: "jane.smith@email.com"
+                      name: "Jane Smith"
+                      resume_score: 88.3
+                  rejected_candidates:
+                    - candidate_id: "f8g3i1f5-8h6g-9j1k-3f7i-4h3j2k1g0i9j"
+                      email: "bob.wilson@email.com"
+                      name: "Bob Wilson"
+                      resume_score: 65.0
+                message: "Successfully selected top 5 resumes out of 12 candidates"
+
+  # ==================== APTITUDE TEST ====================
+  /aptitude/create/{job_requirement_id}:
+    post:
+      tags:
+        - Aptitude Management
+      summary: Create aptitude test
+      description: Create a new AI-generated aptitude test with 30 questions for a job requirement
+      operationId: createAptitudeTest
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+      responses:
+        '200':
+          description: Aptitude test created
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  aptitude_test_id: "c5d0f8c2-5e3d-6g8h-0c4f-1e0g9h8d7f6g"
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  test_title: "Aptitude Test for Senior Python Developer"
+                  total_questions: 30
+                  questions_generated: 30
+                  already_exists: false
+                  public_url: "http://localhost:8888/interview-management-service/api/v1/aptitude/test/b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f/c5d0f8c2-5e3d-6g8h-0c4f-1e0g9h8d7f6g"
+                  test_access_url: "http://localhost:8888/interview-management-service/api/v1/aptitude/test/b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f/c5d0f8c2-5e3d-6g8h-0c4f-1e0g9h8d7f6g/start"
+                message: "Aptitude test created successfully"
+
+  /aptitude/generate-test-form/{job_requirement_id}/{aptitude_test_id}:
+    get:
+      tags:
+        - Aptitude Management
+      summary: Generate test form
+      description: Generate aptitude test form for a specific test
+      operationId: generateAptitudeTestForm
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+        - $ref: '#/components/parameters/AptitudeTestId'
+      responses:
+        '200':
+          description: Test form generated
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  test_details:
+                    aptitude_test_id: "c5d0f8c2-5e3d-6g8h-0c4f-1e0g9h8d7f6g"
+                    job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                    test_title: "Aptitude Test for Senior Python Developer"
+                    total_questions: 30
+                    total_time_minutes: 45
+                    passing_score_percentage: 60
+                  questions_count: 30
+                  form_url: "http://localhost:8890/tests/b4c9f7c1_c5d0f8c2.html"
+                  form_path: "/tests/b4c9f7c1_c5d0f8c2.html"
+                message: "Aptitude test form generated successfully"
+
+  /aptitude/generate-login-form/{job_requirement_id}/{aptitude_test_id}:
+    get:
+      tags:
+        - Aptitude Management
+      summary: Generate login form
+      description: Generate login form for aptitude test access
+      operationId: generateLoginForm
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+        - $ref: '#/components/parameters/AptitudeTestId'
+      responses:
+        '200':
+          description: Login form generated
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  login_data:
+                    job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                    aptitude_test_id: "c5d0f8c2-5e3d-6g8h-0c4f-1e0g9h8d7f6g"
+                    test_title: "Aptitude Test for Senior Python Developer"
+                    login_instructions: "Please enter your email and password to access the aptitude test."
+                  form_url: "http://localhost:8890/login/b4c9f7c1_c5d0f8c2.html"
+                  login_url: "http://localhost:8890/login/b4c9f7c1_c5d0f8c2.html/login"
+                message: "Login form generated successfully"
+
+  /aptitude/validate-login/{job_requirement_id}/{aptitude_test_id}:
+    post:
+      tags:
+        - Aptitude Management
+      summary: Validate login
+      description: Validate candidate login credentials and provide test access
+      operationId: validateLogin
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+        - $ref: '#/components/parameters/AptitudeTestId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+            example:
+              email: "john.doe@email.com"
+              password: "Abc12345"
+      responses:
+        '200':
+          description: Login validated
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  candidate_info:
+                    candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                    email: "john.doe@email.com"
+                    first_name: "John"
+                    last_name: "Doe"
+                  attempt_info:
+                    attempt_id: "g9h4j2g6-9i7h-0k2l-4g8j-5i4k3l2h1j0k"
+                    status: "pending"
+                    user_attempt: 1
+                    message: "New test attempt created"
+                  test_form_url: "http://localhost:8890/tests/b4c9f7c1_c5d0f8c2.html"
+                  session_token: "abc123xyz789token"
+                  action: "new_attempt"
+                message: "Login successful - new test attempt created"
+        '403':
+          description: Attempt already used
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "Your chance has gone"
+
+  /aptitude/submit-test:
+    post:
+      tags:
+        - Aptitude Management
+      summary: Submit test answers
+      description: Submit test answers and get results
+      operationId: submitTest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestAnswerSubmit'
+            example:
+              attempt_id: "g9h4j2g6-9i7h-0k2l-4g8j-5i4k3l2h1j0k"
+              answers:
+                0: "A"
+                1: "C"
+                2: "B"
+                3: "D"
+                4: "A"
+                5: "B"
+                6: "C"
+                7: "A"
+                8: "D"
+                9: "B"
+              time_taken_seconds: 2580
+              tab_switches: 2
+              keyboard_violations: 0
+      responses:
+        '200':
+          description: Test submitted successfully
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  attempt_id: "g9h4j2g6-9i7h-0k2l-4g8j-5i4k3l2h1j0k"
+                  candidate_email: "john.doe@email.com"
+                  candidate_name: "John Doe"
+                  score: 73.33
+                  correct_answers_count: 22
+                  total_questions_attempted: 30
+                  total_questions: 30
+                  passed: true
+                  time_taken_seconds: 2580
+                  submitted_at: "2024-01-15T11:15:00Z"
+                message: "Test submitted successfully"
+
+  # ==================== APTITUDE SELECT TOP CANDIDATES ====================
+  /aptitude/select-top-candidates:
+    post:
+      tags:
+        - Aptitude Management
+      summary: Select top N candidates
+      description: Select top N candidates based on their aptitude test scores. Updates candidate records with pass/fail results.
+      operationId: selectTopCandidatesAptitude
+      parameters:
+        - name: job_requirement_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+        - name: aptitude_test_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "c5d0f8c2-5e3d-6g8h-0c4f-1e0g9h8d7f6g"
+        - name: top_n
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          description: Number of top candidates to select as passed
+          example: 5
+      responses:
+        '200':
+          description: Top candidates selected
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  aptitude_test_id: "c5d0f8c2-5e3d-6g8h-0c4f-1e0g9h8d7f6g"
+                  total_attempts: 15
+                  top_n_requested: 5
+                  candidates_passed: 5
+                  candidates_failed: 10
+                  selected_candidates:
+                    - candidate_email: "john.doe@email.com"
+                      candidate_name: "John Doe"
+                      score: 86.67
+                      rank: 1
+                      status: "passed"
+                    - candidate_email: "jane.smith@email.com"
+                      candidate_name: "Jane Smith"
+                      score: 83.33
+                      rank: 2
+                      status: "passed"
+                  rejected_candidates:
+                    - candidate_email: "bob.wilson@email.com"
+                      candidate_name: "Bob Wilson"
+                      score: 53.33
+                      rank: 6
+                      status: "failed"
+                  update_summary:
+                    candidates_updated_as_passed: 5
+                    candidates_updated_as_failed: 10
+                    candidates_not_found: []
+                message: "Successfully selected top 5 candidates out of 15"
+        '404':
+          description: No completed attempts found
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "No completed test attempts found for this job and test"
+
+  # ==================== TECHNICAL INTERVIEW ====================
+  /technical-interview/start/{candidate_id}:
+    post:
+      tags:
+        - Technical Interview Management
+      summary: Start technical interview
+      description: |
+        Start an AI-powered technical interview for a candidate.
+        
+        **Prerequisites:**
+        - Candidate must have passed the aptitude test
+        - Candidate credentials must be valid
+        
+        **Interview Duration:** 5-15 minutes
+      operationId: startTechnicalInterview
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TechnicalInterviewLoginRequest'
+            example:
+              job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+              email: "john.doe@email.com"
+              password: "Abc12345"
+      responses:
+        '200':
+          description: Technical interview started
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  technical_interview_id: "h0i5k3h7-0j8i-1l3m-5h9k-6j5l4m3i2k1l"
+                  interview_session_id: "tech_int_abc123xyz789"
+                  interview_status: "pending"
+                  is_existing_session: false
+                  websocket_url: "ws://localhost:8100/ws/interview/tech_int_abc123xyz789"
+                  interview_url: "http://localhost:8100/interview/tech_int_abc123xyz789"
+                  job_details:
+                    title: "Senior Python Developer"
+                    department: "Engineering"
+                    requirements:
+                      - skill: "Python"
+                        level: "advanced"
+                    company_name: "TechCorp Solutions"
+                  candidate_info:
+                    name: "John Doe"
+                    email: "john.doe@email.com"
+                    skills:
+                      - "Python"
+                      - "FastAPI"
+                  system_instruction: "You are an AI technical interviewer..."
+                  interview_config:
+                    min_duration_minutes: 5
+                    max_duration_minutes: 15
+                    auto_end_after_minutes: 15
+                  instructions:
+                    "1": "Open the interview_url in your browser"
+                    "2": "Allow microphone and camera permissions"
+                    "3": "Click 'Start Interview' to begin"
+                    "4": "Speak clearly - the AI supports English, Hindi, and Gujarati"
+                    "5": "Interview will last between 5-15 minutes"
+                message: "Technical interview started successfully. Interview duration: 5-15 minutes."
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "Invalid password"
+        '403':
+          description: Prerequisites not met
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "Candidate must pass aptitude test before technical interview"
+
+  /technical-interview/complete/{technical_interview_id}:
+    post:
+      tags:
+        - Technical Interview Management
+      summary: Complete technical interview
+      description: Complete the technical interview with all scores and analysis (called by AI system)
+      operationId: completeTechnicalInterview
+      parameters:
+        - $ref: '#/components/parameters/TechnicalInterviewId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteInterviewRequest'
+            example:
+              interview_duration_seconds: 720
+              overall_score: 82.5
+              overall_rating: "good"
+              technical_knowledge_score: 85.0
+              domain_expertise_score: 80.0
+              communication_score: 78.0
+              language_proficiency_score: 82.0
+              confidence_score: 85.0
+              professionalism_score: 88.0
+              response_relevance_score: 80.0
+              response_depth_score: 75.0
+              response_clarity_score: 82.0
+              total_questions_asked: 8
+              questions_answered: 8
+              questions_skipped: 0
+              average_response_time_seconds: 45.5
+              total_speaking_time_seconds: 364.0
+              engagement_score: 85.0
+              follow_up_questions_asked: 3
+              interview_transcript:
+                - role: "interviewer"
+                  content: "Tell me about your experience with Python and FastAPI."
+                  timestamp: "2024-01-15T10:30:15Z"
+                - role: "candidate"
+                  content: "I have been working with Python for 5 years..."
+                  timestamp: "2024-01-15T10:30:45Z"
+              question_analysis:
+                - question: "Tell me about your experience with Python"
+                  response_quality: "excellent"
+                  technical_accuracy: 90
+                  confidence_level: "high"
+              skills_assessment:
+                - skill: "Python"
+                  level: "advanced"
+                  evidence: "Demonstrated deep knowledge of decorators, generators"
+                - skill: "FastAPI"
+                  level: "advanced"
+                  evidence: "Strong understanding of async programming and dependency injection"
+              candidate_strengths:
+                - "Strong Python fundamentals"
+                - "Good communication skills"
+                - "Problem-solving ability"
+              candidate_weaknesses:
+                - "Could improve on system design explanations"
+              ai_recommendation: "recommend"
+              ai_recommendation_reason: "Candidate demonstrated strong technical skills and good communication"
+              ai_feedback_summary: "John performed well in the technical interview..."
+              improvement_areas:
+                - "System design"
+                - "Scalability concepts"
+              interview_language: "English"
+              languages_used:
+                - "English"
+              input_tokens_used: 12500
+              output_tokens_used: 8500
+              audio_input_seconds: 300.0
+              audio_output_seconds: 180.0
+              result: "pass"
+              passed_threshold: 70.0
+      responses:
+        '200':
+          description: Interview completed
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  technical_interview_id: "h0i5k3h7-0j8i-1l3m-5h9k-6j5l4m3i2k1l"
+                  interview_status: "completed"
+                  overall_score: 82.5
+                  overall_rating: "good"
+                  result: "pass"
+                  ai_recommendation: "recommend"
+                  ai_feedback_summary: "John performed well in the technical interview..."
+                  candidate_strengths:
+                    - "Strong Python fundamentals"
+                    - "Good communication skills"
+                  candidate_weaknesses:
+                    - "Could improve on system design explanations"
+                  improvement_areas:
+                    - "System design"
+                    - "Scalability concepts"
+                  interview_duration_seconds: 720
+                message: "Technical interview completed successfully"
+
+  /technical-interview/session/{session_id}:
+    get:
+      tags:
+        - Technical Interview Management
+      summary: Get interview by session ID
+      description: Get technical interview by session ID. Useful for the interview frontend to fetch interview context.
+      operationId: getTechnicalInterviewBySession
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Interview session ID
+          example: "tech_int_abc123xyz789"
+      responses:
+        '200':
+          description: Interview session retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  technical_interview_id: "h0i5k3h7-0j8i-1l3m-5h9k-6j5l4m3i2k1l"
+                  interview_session_id: "tech_int_abc123xyz789"
+                  interview_status: "pending"
+                  job_details:
+                    title: "Senior Python Developer"
+                    department: "Engineering"
+                  candidate_info:
+                    name: "John Doe"
+                    email: "john.doe@email.com"
+                  system_instruction: "You are an AI technical interviewer..."
+                  interview_config:
+                    min_duration_minutes: 5
+                    max_duration_minutes: 15
+                    auto_end_after_minutes: 15
+                message: "Interview session retrieved"
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /technical-interview/job/{job_requirement_id}/interviews:
+    get:
+      tags:
+        - Technical Interview Management
+      summary: Get interviews by job
+      description: Get all technical interviews for a job requirement. Optionally filter by status.
+      operationId: getTechnicalInterviewsByJob
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, interrupted, expired]
+          description: Filter by interview status
+      responses:
+        '200':
+          description: Interviews retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  total_interviews: 8
+                  status_filter: null
+                  interviews:
+                    - technical_interview_id: "h0i5k3h7-0j8i-1l3m-5h9k-6j5l4m3i2k1l"
+                      candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                      interview_status: "completed"
+                      overall_score: 82.5
+                      overall_rating: "good"
+                      result: "pass"
+                      ai_recommendation: "recommend"
+                      interview_duration_seconds: 720
+                      created_at: "2024-01-15T10:30:00Z"
+                    - technical_interview_id: "i1j6l4i8-1k9j-2m4n-6i0l-7k6m5n4j3l2m"
+                      candidate_id: "e7f2h0e4-7g5f-8i0j-2e6h-3g2i1j0f9h8i"
+                      interview_status: "completed"
+                      overall_score: 75.0
+                      overall_rating: "average"
+                      result: "pass"
+                      ai_recommendation: "neutral"
+                      interview_duration_seconds: 600
+                      created_at: "2024-01-15T11:00:00Z"
+                message: "Retrieved 8 interviews"
+
+  /technical-interview/job/{job_requirement_id}/statistics:
+    get:
+      tags:
+        - Technical Interview Management
+      summary: Get interview statistics
+      description: Get interview statistics for a job requirement
+      operationId: getTechnicalInterviewStatistics
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+      responses:
+        '200':
+          description: Statistics retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  total_interviews: 15
+                  completed_interviews: 12
+                  pending_interviews: 2
+                  in_progress_interviews: 1
+                  passed_count: 8
+                  failed_count: 4
+                  average_score: 72.5
+                  highest_score: 92.0
+                  lowest_score: 45.0
+                  average_duration_seconds: 680
+                message: "Interview statistics retrieved"
+
+  /technical-interview/select-top-candidates:
+    post:
+      tags:
+        - Technical Interview Management
+      summary: Select top N candidates
+      description: Select top N candidates based on their technical interview scores
+      operationId: selectTopCandidatesTechnical
+      parameters:
+        - name: job_requirement_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+        - name: top_n
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          example: 5
+      responses:
+        '200':
+          description: Top candidates selected
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  top_n_requested: 5
+                  total_interviews: 12
+                  candidates_passed: 5
+                  candidates_failed: 7
+                  selected_candidates:
+                    - candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                      candidate_email: "john.doe@email.com"
+                      candidate_name: "John Doe"
+                      overall_score: 85.0
+                      rank: 1
+                    - candidate_id: "e7f2h0e4-7g5f-8i0j-2e6h-3g2i1j0f9h8i"
+                      candidate_email: "jane.smith@email.com"
+                      candidate_name: "Jane Smith"
+                      overall_score: 82.0
+                      rank: 2
+                  rejected_candidates:
+                    - candidate_id: "f8g3i1f5-8h6g-9j1k-3f7i-4h3j2k1g0i9j"
+                      candidate_email: "bob.wilson@email.com"
+                      candidate_name: "Bob Wilson"
+                      overall_score: 58.0
+                      rank: 6
+                message: "Successfully selected top 5 candidates out of 12"
+        '404':
+          description: No completed interviews found
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "No completed technical interviews found for this job requirement"
+
+  /technical-interview/candidate/{candidate_id}/status:
+    get:
+      tags:
+        - Technical Interview Management
+      summary: Get candidate interview status
+      description: Check if a candidate is eligible for technical interview
+      operationId: getCandidateTechnicalInterviewStatus
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      responses:
+        '200':
+          description: Status retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                  candidate_name: "John Doe"
+                  candidate_email: "john.doe@email.com"
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  aptitude_test_passed: true
+                  eligible_for_technical_interview: true
+                  interview_status: "not_started"
+                  interview_url: null
+                  technical_test_result: null
+                  message: "Eligible for technical interview"
+                message: "Candidate interview status retrieved"
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /technical-interview/{technical_interview_id}:
+    get:
+      tags:
+        - Technical Interview Management
+      summary: Get technical interview
+      description: Get complete technical interview data by ID
+      operationId: getTechnicalInterview
+      parameters:
+        - $ref: '#/components/parameters/TechnicalInterviewId'
+      responses:
+        '200':
+          description: Interview data retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  technical_interview_id: "h0i5k3h7-0j8i-1l3m-5h9k-6j5l4m3i2k1l"
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                  interview_session_id: "tech_int_abc123xyz789"
+                  interview_started_at: "2024-01-15T10:30:00Z"
+                  interview_ended_at: "2024-01-15T10:42:00Z"
+                  interview_duration_seconds: 720
+                  interview_status: "completed"
+                  overall_score: 82.5
+                  overall_rating: "good"
+                  technical_knowledge_score: 85.0
+                  domain_expertise_score: 80.0
+                  communication_score: 78.0
+                  language_proficiency_score: 82.0
+                  confidence_score: 85.0
+                  professionalism_score: 88.0
+                  response_relevance_score: 80.0
+                  response_depth_score: 75.0
+                  response_clarity_score: 82.0
+                  total_questions_asked: 8
+                  questions_answered: 8
+                  questions_skipped: 0
+                  average_response_time_seconds: 45.5
+                  longest_response_time_seconds: 90.0
+                  shortest_response_time_seconds: 15.0
+                  total_speaking_time_seconds: 364.0
+                  engagement_score: 85.0
+                  follow_up_questions_asked: 3
+                  interview_transcript:
+                    - role: "interviewer"
+                      content: "Tell me about your experience with Python"
+                  question_analysis:
+                    - question: "Python experience"
+                      response_quality: "excellent"
+                  skills_assessment:
+                    - skill: "Python"
+                      level: "advanced"
+                  candidate_strengths:
+                    - "Strong Python fundamentals"
+                  candidate_weaknesses:
+                    - "System design"
+                  ai_recommendation: "recommend"
+                  ai_recommendation_reason: "Strong candidate"
+                  ai_feedback_summary: "John performed well..."
+                  improvement_areas:
+                    - "System design"
+                  interview_language: "English"
+                  languages_used:
+                    - "English"
+                  ai_model_used: "gemini-2.5-flash-native-audio-preview"
+                  video_enabled: true
+                  input_tokens_used: 12500
+                  output_tokens_used: 8500
+                  audio_input_seconds: 300.0
+                  audio_output_seconds: 180.0
+                  result: "pass"
+                  passed_threshold: 70.0
+                  created_at: "2024-01-15T10:30:00Z"
+                  updated_at: "2024-01-15T10:42:00Z"
+                message: "Interview retrieved successfully"
+
+  # ==================== HR INTERVIEW ====================
+  /hr-interview/start/{candidate_id}:
+    post:
+      tags:
+        - HR Interview Management
+      summary: Start HR interview
+      description: |
+        Start an AI-powered HR interview for a candidate.
+        
+        **Prerequisites:**
+        - Candidate must have passed the technical interview
+        - Candidate credentials must be valid
+        
+        **Interview Duration:** 5-12 minutes
+      operationId: startHRInterview
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HRInterviewLoginRequest'
+            example:
+              job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+              email: "john.doe@email.com"
+              password: "Abc12345"
+      responses:
+        '200':
+          description: HR interview started
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  hr_interview_id: "i1j6l4i8-1k9j-2m4n-6i0l-7k6m5n4j3l2m"
+                  interview_session_id: "hr_int_def456uvw012"
+                  interview_status: "pending"
+                  is_existing_session: false
+                  websocket_url: "ws://localhost:8200/ws/interview/hr_int_def456uvw012"
+                  interview_url: "http://localhost:8200/interview/hr_int_def456uvw012"
+                  job_details:
+                    title: "Senior Python Developer"
+                    department: "Engineering"
+                    company_name: "TechCorp Solutions"
+                  candidate_info:
+                    name: "John Doe"
+                    email: "john.doe@email.com"
+                  system_instruction: "You are an AI HR interviewer..."
+                  interview_config:
+                    min_duration_minutes: 5
+                    max_duration_minutes: 12
+                    auto_end_after_minutes: 12
+                  instructions:
+                    "1": "Open the interview_url in your browser"
+                    "2": "Allow microphone and camera permissions"
+                    "3": "Click 'Start Interview' to begin"
+                    "4": "Speak clearly - the AI supports English, Hindi, and Gujarati"
+                    "5": "Interview will last between 5-12 minutes"
+                message: "HR interview started successfully. Interview duration: 5-12 minutes."
+        '403':
+          description: Prerequisites not met
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "Candidate must pass technical interview before HR interview"
+
+  /hr-interview/complete/{hr_interview_id}:
+    post:
+      tags:
+        - HR Interview Management
+      summary: Complete HR interview
+      description: Complete the HR interview with all scores and analysis (called by AI system)
+      operationId: completeHRInterview
+      parameters:
+        - $ref: '#/components/parameters/HRInterviewId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteHRInterviewRequest'
+            example:
+              interview_duration_seconds: 540
+              overall_score: 85.0
+              overall_rating: "good"
+              communication_score: 88.0
+              language_proficiency_score: 85.0
+              articulation_score: 82.0
+              confidence_score: 90.0
+              professionalism_score: 92.0
+              attitude_score: 88.0
+              teamwork_score: 85.0
+              leadership_score: 78.0
+              problem_solving_score: 82.0
+              adaptability_score: 85.0
+              cultural_fit_score: 88.0
+              motivation_score: 90.0
+              response_relevance_score: 85.0
+              response_depth_score: 80.0
+              response_clarity_score: 85.0
+              total_questions_asked: 6
+              questions_answered: 6
+              questions_skipped: 0
+              average_response_time_seconds: 50.0
+              total_speaking_time_seconds: 300.0
+              engagement_score: 88.0
+              follow_up_questions_asked: 2
+              interview_transcript:
+                - role: "interviewer"
+                  content: "Tell me about a time when you had to work in a team."
+                  timestamp: "2024-01-15T11:00:15Z"
+                - role: "candidate"
+                  content: "In my previous role, I led a team of 5 developers..."
+                  timestamp: "2024-01-15T11:00:45Z"
+              question_analysis:
+                - question: "Teamwork experience"
+                  response_quality: "excellent"
+                  confidence_level: "high"
+              soft_skills_assessment:
+                - skill: "Communication"
+                  level: "excellent"
+                  evidence: "Clear and articulate responses"
+                - skill: "Teamwork"
+                  level: "good"
+                  evidence: "Good examples of collaboration"
+              candidate_strengths:
+                - "Excellent communication"
+                - "Strong leadership potential"
+                - "Highly motivated"
+              candidate_weaknesses:
+                - "Could be more specific in examples"
+              ai_recommendation: "strongly_recommend"
+              ai_recommendation_reason: "Candidate demonstrated excellent soft skills and cultural fit"
+              ai_feedback_summary: "John showed excellent communication skills..."
+              improvement_areas:
+                - "Provide more quantified results in examples"
+              interview_language: "English"
+              languages_used:
+                - "English"
+              input_tokens_used: 10000
+              output_tokens_used: 7000
+              audio_input_seconds: 250.0
+              audio_output_seconds: 150.0
+              result: "pass"
+              passed_threshold: 70.0
+      responses:
+        '200':
+          description: Interview completed
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  hr_interview_id: "i1j6l4i8-1k9j-2m4n-6i0l-7k6m5n4j3l2m"
+                  interview_status: "completed"
+                  overall_score: 85.0
+                  overall_rating: "good"
+                  result: "pass"
+                  ai_recommendation: "strongly_recommend"
+                  ai_feedback_summary: "John showed excellent communication skills..."
+                  candidate_strengths:
+                    - "Excellent communication"
+                    - "Strong leadership potential"
+                  candidate_weaknesses:
+                    - "Could be more specific in examples"
+                  improvement_areas:
+                    - "Provide more quantified results"
+                  interview_duration_seconds: 540
+                message: "HR interview completed successfully"
+
+  /hr-interview/session/{session_id}:
+    get:
+      tags:
+        - HR Interview Management
+      summary: Get interview by session ID
+      description: Get HR interview by session ID. Useful for the interview frontend to fetch interview context.
+      operationId: getHRInterviewBySession
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Interview session ID
+          example: "hr_int_def456uvw012"
+      responses:
+        '200':
+          description: Interview session retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  hr_interview_id: "i1j6l4i8-1k9j-2m4n-6i0l-7k6m5n4j3l2m"
+                  interview_session_id: "hr_int_def456uvw012"
+                  interview_status: "pending"
+                  job_details:
+                    title: "Senior Python Developer"
+                    department: "Engineering"
+                  candidate_info:
+                    name: "John Doe"
+                    email: "john.doe@email.com"
+                  system_instruction: "You are an AI HR interviewer..."
+                  interview_config:
+                    min_duration_minutes: 5
+                    max_duration_minutes: 12
+                    auto_end_after_minutes: 12
+                message: "Interview session retrieved"
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /hr-interview/job/{job_requirement_id}/interviews:
+    get:
+      tags:
+        - HR Interview Management
+      summary: Get interviews by job
+      description: Get all HR interviews for a job requirement. Optionally filter by status.
+      operationId: getHRInterviewsByJob
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, interrupted, expired]
+          description: Filter by interview status
+      responses:
+        '200':
+          description: Interviews retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  total_interviews: 6
+                  status_filter: null
+                  interviews:
+                    - hr_interview_id: "i1j6l4i8-1k9j-2m4n-6i0l-7k6m5n4j3l2m"
+                      candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                      interview_status: "completed"
+                      overall_score: 85.0
+                      overall_rating: "good"
+                      result: "pass"
+                      ai_recommendation: "strongly_recommend"
+                      interview_duration_seconds: 540
+                      created_at: "2024-01-15T11:00:00Z"
+                    - hr_interview_id: "j2k7m5j9-2l0k-3n5o-7j1m-8l7n6o5k4m3n"
+                      candidate_id: "e7f2h0e4-7g5f-8i0j-2e6h-3g2i1j0f9h8i"
+                      interview_status: "completed"
+                      overall_score: 78.0
+                      overall_rating: "good"
+                      result: "pass"
+                      ai_recommendation: "recommend"
+                      interview_duration_seconds: 480
+                      created_at: "2024-01-15T11:30:00Z"
+                message: "Retrieved 6 interviews"
+
+  /hr-interview/job/{job_requirement_id}/statistics:
+    get:
+      tags:
+        - HR Interview Management
+      summary: Get interview statistics
+      description: Get HR interview statistics for a job requirement
+      operationId: getHRInterviewStatistics
+      parameters:
+        - $ref: '#/components/parameters/JobRequirementId'
+      responses:
+        '200':
+          description: Statistics retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  total_interviews: 10
+                  completed_interviews: 8
+                  pending_interviews: 1
+                  in_progress_interviews: 1
+                  passed_count: 6
+                  failed_count: 2
+                  average_score: 76.5
+                  highest_score: 92.0
+                  lowest_score: 55.0
+                  average_duration_seconds: 520
+                message: "Interview statistics retrieved"
+
+  /hr-interview/select-top-candidates:
+    post:
+      tags:
+        - HR Interview Management
+      summary: Select top N candidates
+      description: Select top N candidates based on their HR interview scores
+      operationId: selectTopCandidatesHR
+      parameters:
+        - name: job_requirement_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+        - name: top_n
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+          example: 3
+      responses:
+        '200':
+          description: Top candidates selected
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  top_n_requested: 3
+                  total_interviews: 8
+                  candidates_passed: 3
+                  candidates_failed: 5
+                  selected_candidates:
+                    - candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                      candidate_email: "john.doe@email.com"
+                      candidate_name: "John Doe"
+                      overall_score: 88.0
+                      rank: 1
+                    - candidate_id: "e7f2h0e4-7g5f-8i0j-2e6h-3g2i1j0f9h8i"
+                      candidate_email: "jane.smith@email.com"
+                      candidate_name: "Jane Smith"
+                      overall_score: 85.0
+                      rank: 2
+                  rejected_candidates:
+                    - candidate_id: "f8g3i1f5-8h6g-9j1k-3f7i-4h3j2k1g0i9j"
+                      candidate_email: "bob.wilson@email.com"
+                      candidate_name: "Bob Wilson"
+                      overall_score: 62.0
+                      rank: 4
+                message: "Successfully selected top 3 candidates out of 8"
+        '404':
+          description: No completed interviews found
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "No completed HR interviews found for this job requirement"
+
+  /hr-interview/candidate/{candidate_id}/status:
+    get:
+      tags:
+        - HR Interview Management
+      summary: Get candidate interview status
+      description: Check if a candidate is eligible for HR interview
+      operationId: getCandidateHRInterviewStatus
+      parameters:
+        - $ref: '#/components/parameters/CandidateId'
+      responses:
+        '200':
+          description: Status retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                  candidate_name: "John Doe"
+                  candidate_email: "john.doe@email.com"
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  technical_interview_passed: true
+                  eligible_for_hr_interview: true
+                  interview_status: "not_started"
+                  interview_url: null
+                  hr_test_result: null
+                  message: "Eligible for HR interview"
+                message: "Candidate interview status retrieved"
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /hr-interview/{hr_interview_id}:
+    get:
+      tags:
+        - HR Interview Management
+      summary: Get HR interview
+      description: Get complete HR interview data by ID
+      operationId: getHRInterview
+      parameters:
+        - $ref: '#/components/parameters/HRInterviewId'
+      responses:
+        '200':
+          description: Interview data retrieved
+          content:
+            application/json:
+              example:
+                success: true
+                data:
+                  hr_interview_id: "i1j6l4i8-1k9j-2m4n-6i0l-7k6m5n4j3l2m"
+                  job_requirement_id: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+                  candidate_id: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+                  interview_session_id: "hr_int_def456uvw012"
+                  interview_started_at: "2024-01-15T11:00:00Z"
+                  interview_ended_at: "2024-01-15T11:09:00Z"
+                  interview_duration_seconds: 540
+                  interview_status: "completed"
+                  overall_score: 85.0
+                  overall_rating: "good"
+                  communication_score: 88.0
+                  language_proficiency_score: 85.0
+                  articulation_score: 82.0
+                  confidence_score: 90.0
+                  professionalism_score: 92.0
+                  attitude_score: 88.0
+                  teamwork_score: 85.0
+                  leadership_score: 78.0
+                  problem_solving_score: 82.0
+                  adaptability_score: 85.0
+                  cultural_fit_score: 88.0
+                  motivation_score: 90.0
+                  response_relevance_score: 85.0
+                  response_depth_score: 80.0
+                  response_clarity_score: 85.0
+                  total_questions_asked: 6
+                  questions_answered: 6
+                  questions_skipped: 0
+                  average_response_time_seconds: 50.0
+                  longest_response_time_seconds: 80.0
+                  shortest_response_time_seconds: 20.0
+                  total_speaking_time_seconds: 300.0
+                  engagement_score: 88.0
+                  follow_up_questions_asked: 2
+                  interview_transcript:
+                    - role: "interviewer"
+                      content: "Tell me about a time when you had to work in a team."
+                  question_analysis:
+                    - question: "Teamwork experience"
+                      response_quality: "excellent"
+                  soft_skills_assessment:
+                    - skill: "Communication"
+                      level: "excellent"
+                  candidate_strengths:
+                    - "Excellent communication"
+                  candidate_weaknesses:
+                    - "Could be more specific"
+                  ai_recommendation: "strongly_recommend"
+                  ai_recommendation_reason: "Excellent soft skills"
+                  ai_feedback_summary: "John showed excellent communication..."
+                  improvement_areas:
+                    - "Quantified results"
+                  interview_language: "English"
+                  languages_used:
+                    - "English"
+                  ai_model_used: "gemini-2.5-flash-native-audio-preview"
+                  video_enabled: true
+                  input_tokens_used: 10000
+                  output_tokens_used: 7000
+                  audio_input_seconds: 250.0
+                  audio_output_seconds: 150.0
+                  result: "pass"
+                  passed_threshold: 70.0
+                  created_at: "2024-01-15T11:00:00Z"
+                  updated_at: "2024-01-15T11:09:00Z"
+                message: "Interview retrieved successfully"
+
+components:
+  parameters:
+    WorkspaceId:
+      name: workspace-id
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Workspace ID
+      example: "12345678-1234-1234-1234-123456789012"
+
+    UserId:
+      name: user-id
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: User ID
+      example: "87654321-4321-4321-4321-210987654321"
+
+    CompanyId:
+      name: company_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Company ID
+      example: "a3d8f6b0-3c1b-4e6f-8a2d-9c8e7f6a5b4d"
+
+    JobRequirementId:
+      name: job_requirement_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Job Requirement ID
+      example: "b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
+
+    CandidateId:
+      name: candidate_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Candidate ID
+      example: "d6e1g9d3-6f4e-7h9i-1d5g-2f1h0i9e8g7h"
+
+    AptitudeTestId:
+      name: aptitude_test_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Aptitude Test ID
+      example: "c5d0f8c2-5e3d-6g8h-0c4f-1e0g9h8d7f6g"
+
+    TechnicalInterviewId:
+      name: technical_interview_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Technical Interview ID
+      example: "h0i5k3h7-0j8i-1l3m-5h9k-6j5l4m3i2k1l"
+
+    HRInterviewId:
+      name: hr_interview_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: HR Interview ID
+      example: "i1j6l4i8-1k9j-2m4n-6i0l-7k6m5n4j3l2m"
+
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+      description: Number of records to skip
+      example: 0
+
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: Number of items to return
+      example: 20
+
+    OrderBy:
+      name: order_by
+      in: query
+      schema:
+        type: string
+        default: "-created_at"
+      description: Field to order by (prefix with '-' for descending)
+      example: "-created_at"
+
+    Search:
+      name: search
+      in: query
+      schema:
+        type: string
+      description: Search query string
+      example: "Python Developer"
+
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              example: "ok"
+        message:
+          type: string
+          example: "Workspace Management Service healthy"
+
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether the operation was successful
+        data:
+          type: object
+          description: Response data
+        message:
+          type: string
+          description: Response message
+
+    PaginatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: array
+          items:
+            type: object
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+        message:
+          type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        total_count:
+          type: integer
+          description: Total number of records
+          example: 25
+        offset:
+          type: integer
+          description: Number of records skipped
+          example: 0
+        limit:
+          type: integer
+          description: Maximum records per page
+          example: 20
+        total_pages:
+          type: integer
+          description: Total number of pages
+          example: 2
+
+    AddressSchema:
+      type: object
+      properties:
+        street:
+          type: string
+          example: "123 Business St"
+        city:
+          type: string
+          example: "New York"
+        state:
+          type: string
+          example: "NY"
+        country:
+          type: string
+          example: "USA"
+        zip_code:
+          type: string
+          example: "10001"
+
+    CompanyCreateRequest:
+      type: object
+      required:
+        - company_name
+        - email
+        - password
+        - industry
+        - size
+      properties:
+        company_name:
+          type: string
+          minLength: 2
+          maxLength: 200
+          description: Company name
+        email:
+          type: string
+          format: email
+          description: Company email address
+        password:
+          type: string
+          minLength: 8
+          description: Password for company account
+        industry:
+          type: string
+          description: Industry sector
+        size:
+          type: string
+          enum: ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001+"]
+          description: Company size range
+        website:
+          type: string
+          format: uri
+          description: Company website URL
+        address:
+          $ref: '#/components/schemas/AddressSchema'
+        phone:
+          type: string
+          description: Company phone number
+        logo:
+          type: string
+          format: uri
+          description: Company logo URL
+        subscription_plan:
+          type: string
+          enum: [starter, professional, enterprise]
+          description: Subscription plan
+
+    CompanyUpdateRequest:
+      type: object
+      properties:
+        company_name:
+          type: string
+          minLength: 2
+          maxLength: 200
+        industry:
+          type: string
+        size:
+          type: string
+          enum: ["1-10", "11-50", "51-200", "201-500", "501-1000", "1001+"]
+        website:
+          type: string
+          format: uri
+        address:
+          $ref: '#/components/schemas/AddressSchema'
+        phone:
+          type: string
+        logo:
+          type: string
+          format: uri
+        subscription_plan:
+          type: string
+          enum: [starter, professional, enterprise]
+        is_active:
+          type: boolean
+
+    SkillRequirementSchema:
+      type: object
+      required:
+        - skill
+        - level
+      properties:
+        skill:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Skill name
+          example: "Python"
+        level:
+          type: string
+          enum: [beginner, intermediate, advanced, expert]
+          description: Skill proficiency level
+          example: "advanced"
+        required:
+          type: boolean
+          default: true
+          description: Whether the skill is required
+          example: true
+
+    ExperienceSchema:
+      type: object
+      properties:
+        min_years:
+          type: integer
+          minimum: 0
+          description: Minimum years of experience
+          example: 2
+        max_years:
+          type: integer
+          minimum: 0
+          description: Maximum years of experience
+          example: 5
+        preferred:
+          type: integer
+          minimum: 0
+          description: Preferred years of experience
+          example: 3
+
+    SalaryRangeSchema:
+      type: object
+      required:
+        - min
+        - max
+      properties:
+        min:
+          type: number
+          minimum: 0
+          description: Minimum salary
+          example: 50000
+        max:
+          type: number
+          minimum: 0
+          description: Maximum salary
+          example: 80000
+        currency:
+          type: string
+          default: "USD"
+          description: Currency code
+          example: "USD"
+
+    JobRequirementCreateRequest:
+      type: object
+      required:
+        - title
+        - department
+        - description
+        - requirements
+      properties:
+        title:
+          type: string
+          minLength: 5
+          maxLength: 200
+          description: Job title
+        department:
+          type: string
+          description: Department name
+        description:
+          type: string
+          minLength: 50
+          description: Job description
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkillRequirementSchema'
+          description: List of skill requirements
+        experience:
+          $ref: '#/components/schemas/ExperienceSchema'
+        location:
+          type: string
+          description: Job location
+        job_type:
+          type: string
+          enum: [full-time, part-time, contract, internship]
+          description: Type of employment
+        salary_range:
+          $ref: '#/components/schemas/SalaryRangeSchema'
+        benefits:
+          type: array
+          items:
+            type: string
+          description: List of benefits
+
+    JobRequirementUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 5
+          maxLength: 200
+        department:
+          type: string
+        description:
+          type: string
+          minLength: 50
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkillRequirementSchema'
+        experience:
+          $ref: '#/components/schemas/ExperienceSchema'
+        location:
+          type: string
+        job_type:
+          type: string
+          enum: [full-time, part-time, contract, internship]
+        salary_range:
+          $ref: '#/components/schemas/SalaryRangeSchema'
+        benefits:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, active, closed]
+
+    CandidateApplicationRequest:
+      type: object
+      required:
+        - job_requirement_id
+        - first_name
+        - last_name
+        - email
+        - resume
+      properties:
+        job_requirement_id:
+          type: string
+          format: uuid
+          description: Job requirement ID
+        first_name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Candidate's first name
+        last_name:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: Candidate's last name
+        email:
+          type: string
+          format: email
+          description: Candidate's email
+        phone:
+          type: string
+          description: Phone number
+        linkedin_url:
+          type: string
+          format: uri
+          description: LinkedIn profile URL
+        portfolio_url:
+          type: string
+          format: uri
+          description: Portfolio URL
+        current_location:
+          type: string
+          description: Current location
+        willing_to_relocate:
+          type: string
+          description: Whether willing to relocate (true/false)
+        skills:
+          type: string
+          description: Comma-separated skills
+        expected_salary:
+          type: string
+          description: Expected salary
+        notice_period:
+          type: string
+          description: Notice period
+        resume:
+          type: string
+          format: binary
+          description: Resume file (PDF)
+
+    TestAnswerSubmit:
+      type: object
+      required:
+        - attempt_id
+        - answers
+        - time_taken_seconds
+      properties:
+        attempt_id:
+          type: string
+          format: uuid
+          description: Test attempt ID
+        answers:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Map of question index to answer (e.g., {0: 'A', 1: 'C'})"
+        time_taken_seconds:
+          type: integer
+          description: Time taken to complete the test in seconds
+        tab_switches:
+          type: integer
+          default: 0
+          description: Number of tab switches during test
+        keyboard_violations:
+          type: integer
+          default: 0
+          description: Number of keyboard violations
+
+    TechnicalInterviewLoginRequest:
+      type: object
+      required:
+        - job_requirement_id
+        - email
+        - password
+      properties:
+        job_requirement_id:
+          type: string
+          format: uuid
+          description: Job requirement ID
+        email:
+          type: string
+          format: email
+          description: Candidate email
+        password:
+          type: string
+          description: Candidate password
+
+    HRInterviewLoginRequest:
+      type: object
+      required:
+        - job_requirement_id
+        - email
+        - password
+      properties:
+        job_requirement_id:
+          type: string
+          format: uuid
+          description: Job requirement ID
+        email:
+          type: string
+          format: email
+          description: Candidate email
+        password:
+          type: string
+          description: Candidate password
+
+    CompleteInterviewRequest:
+      type: object
+      required:
+        - interview_duration_seconds
+        - overall_score
+        - overall_rating
+        - result
+      properties:
+        interview_duration_seconds:
+          type: integer
+          description: Total interview duration in seconds
+        overall_score:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Overall interview score
+        overall_rating:
+          type: string
+          enum: [excellent, good, average, below_average, poor]
+          description: Overall rating
+        technical_knowledge_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        domain_expertise_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        communication_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        language_proficiency_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        confidence_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        professionalism_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        response_relevance_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        response_depth_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        response_clarity_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        total_questions_asked:
+          type: integer
+        questions_answered:
+          type: integer
+        questions_skipped:
+          type: integer
+        average_response_time_seconds:
+          type: number
+        total_speaking_time_seconds:
+          type: number
+        engagement_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        follow_up_questions_asked:
+          type: integer
+        interview_transcript:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [interviewer, candidate]
+              content:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+        question_analysis:
+          type: array
+          items:
+            type: object
+        skills_assessment:
+          type: array
+          items:
+            type: object
+        candidate_strengths:
+          type: array
+          items:
+            type: string
+        candidate_weaknesses:
+          type: array
+          items:
+            type: string
+        ai_recommendation:
+          type: string
+          enum: [strongly_recommend, recommend, neutral, not_recommend]
+        ai_recommendation_reason:
+          type: string
+        ai_feedback_summary:
+          type: string
+        improvement_areas:
+          type: array
+          items:
+            type: string
+        interview_language:
+          type: string
+        languages_used:
+          type: array
+          items:
+            type: string
+        input_tokens_used:
+          type: integer
+        output_tokens_used:
+          type: integer
+        audio_input_seconds:
+          type: number
+        audio_output_seconds:
+          type: number
+        result:
+          type: string
+          enum: [pass, fail]
+          description: Final result
+        passed_threshold:
+          type: number
+          description: Threshold score used for pass/fail
+
+    CompleteHRInterviewRequest:
+      type: object
+      required:
+        - interview_duration_seconds
+        - overall_score
+        - overall_rating
+        - result
+      properties:
+        interview_duration_seconds:
+          type: integer
+          description: Total interview duration in seconds
+        overall_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        overall_rating:
+          type: string
+          enum: [excellent, good, average, below_average, poor]
+        communication_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        language_proficiency_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        articulation_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        confidence_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        professionalism_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        attitude_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        teamwork_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        leadership_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        problem_solving_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        adaptability_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        cultural_fit_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        motivation_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        response_relevance_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        response_depth_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        response_clarity_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        total_questions_asked:
+          type: integer
+        questions_answered:
+          type: integer
+        questions_skipped:
+          type: integer
+        average_response_time_seconds:
+          type: number
+        total_speaking_time_seconds:
+          type: number
+        engagement_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        follow_up_questions_asked:
+          type: integer
+        interview_transcript:
+          type: array
+          items:
+            type: object
+        question_analysis:
+          type: array
+          items:
+            type: object
+        soft_skills_assessment:
+          type: array
+          items:
+            type: object
+        candidate_strengths:
+          type: array
+          items:
+            type: string
+        candidate_weaknesses:
+          type: array
+          items:
+            type: string
+        ai_recommendation:
+          type: string
+          enum: [strongly_recommend, recommend, neutral, not_recommend]
+        ai_recommendation_reason:
+          type: string
+        ai_feedback_summary:
+          type: string
+        improvement_areas:
+          type: array
+          items:
+            type: string
+        interview_language:
+          type: string
+        languages_used:
+          type: array
+          items:
+            type: string
+        input_tokens_used:
+          type: integer
+        output_tokens_used:
+          type: integer
+        audio_input_seconds:
+          type: number
+        audio_output_seconds:
+          type: number
+        result:
+          type: string
+          enum: [pass, fail]
+        passed_threshold:
+          type: number
+
+  responses:
+    BadRequest:
+      description: Bad request - Invalid input data
+      content:
+        application/json:
+          example:
+            success: false
+            error_message: "Invalid request data"
+            errors:
+              - type: "validation_error"
+                loc: ["body", "email"]
+                msg: "Invalid email format"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          example:
+            success: false
+            error_message: "Resource not found"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          example:
+            success: false
+            error_message: "An unexpected error occurred"
