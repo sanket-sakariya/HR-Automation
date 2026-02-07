@@ -1,0 +1,23 @@
+# HR Interview Service Requirements
+# Based on Google ADK architecture with Gemini 2.5 Flash Native Audio
+
+# FastAPI and ASGI server
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+
+# Google Generative AI SDK
+google-genai>=0.3.0
+
+# Templating and static files
+jinja2>=3.1.0
+python-multipart>=0.0.9
+aiofiles>=23.2.1
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# HTTP client
+httpx>=0.27.0
+
+# Data validation
+pydantic>=2.0.0
