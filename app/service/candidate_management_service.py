@@ -153,10 +153,10 @@ class CandidateManagementService(BaseAppService):
         filters = []
 
         if params.status:
-            filters.append({"field": "status", "operator": "is", "value": params.status.value})
+            filters.append({"column": "status", "operator": "is", "value": params.status.value})
 
         if params.job_requirement_id:
-            filters.append({"field": "job_requirement_id", "operator": "equal_to", "value": str(params.job_requirement_id)})
+            filters.append({"column": "job_requirement_id", "operator": "eq", "value": str(params.job_requirement_id)})
 
         return await self.candidate_repo.get_all(
             filters=filters,

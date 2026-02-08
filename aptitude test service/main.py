@@ -712,23 +712,24 @@ APTITUDE_TEST_TEMPLATE = """
 """
 
 
-@app.route('/interview-management-service/api/v1/aptitude/generate-test-form/<job_requirement_id>/<aptitude_test_id>', methods=['POST'])
-def generate_test_form(job_requirement_id, aptitude_test_id):
+@app.route('/interview-management-service/api/v1/aptitude/generate-test/<job_requirement_id>', methods=['POST'])
+def generate_test(job_requirement_id):
     """
-    Generate an aptitude test form for a specific test.
+    Generate both login form and aptitude test form for a specific test.
     
-    Accepts POST with test_data in request body containing:
-    - test_details: dict with test metadata
+    Accepts POST with combined data in request body containing:
+    - test_details: dict with test metadata (includes aptitude_test_id)
     - questions: list of question objects
+    - login_data: dict with login form data
     
     Returns JSON response with:
     - success: boolean
     - message: string
-    - form_url: string (URL to access the generated form)
-    - form_path: string (local file path)
+    - login_form_url: string (URL to access the login form - entry point)
+    - test_form_url: string (URL to access the test form)
     """
     try:
-        # Get test data from POST request body
+        # Get data from POST request body
         if not request.is_json:
             return jsonify({
                 "success": False,
@@ -737,28 +738,29 @@ def generate_test_form(job_requirement_id, aptitude_test_id):
             }), 400
 
         data = request.get_json()
-        test_data = data.get('test_data', {})
+        test_details = data.get('test_details', {})
+        questions = data.get('questions', [])
+        login_data = data.get('login_data', {})
         
-        if not test_data:
+        if not test_details or not questions:
             return jsonify({
                 "success": False,
                 "message": "No test data provided",
-                "error": "Missing test_data in request body"
+                "error": "Missing test_details or questions in request body"
             }), 400
         
-        test_details = test_data.get('test_details', {})
-        questions = test_data.get('questions', [])
+        # Get aptitude_test_id from test_details
+        aptitude_test_id = test_details.get('aptitude_test_id', 'unknown')
         
-        logger.info(f"Generating test form for job_requirement_id: {job_requirement_id}, test_id: {aptitude_test_id}")
+        logger.info(f"Generating test (login + test form) for job_requirement_id: {job_requirement_id}, test_id: {aptitude_test_id}")
         logger.info(f"Test details: {test_details}")
         logger.info(f"Number of questions: {len(questions)}")
         
-        # Sanitize the filename
-        safe_filename = f"{job_requirement_id}_{aptitude_test_id}.html"
-        form_file_path = TESTS_DIR / safe_filename
+        # === Generate Test Form ===
+        test_filename = f"{job_requirement_id}_{aptitude_test_id}.html"
+        test_file_path = TESTS_DIR / test_filename
 
-        # Prepare template variables
-        template_vars = {
+        test_template_vars = {
             'job_requirement_id': job_requirement_id,
             'aptitude_test_id': aptitude_test_id,
             'test_title': test_details.get('test_title', 'Aptitude Test'),
@@ -768,41 +770,63 @@ def generate_test_form(job_requirement_id, aptitude_test_id):
             'questions': questions
         }
 
-        # Create the HTML content
-        html_content = render_template_string(
+        test_html_content = render_template_string(
             APTITUDE_TEST_TEMPLATE,
-            **template_vars
+            **test_template_vars
         )
 
-        # Save the HTML file to the tests directory
-        with open(form_file_path, 'w', encoding='utf-8') as f:
-            f.write(html_content)
+        with open(test_file_path, 'w', encoding='utf-8') as f:
+            f.write(test_html_content)
 
-        # Generate the URL to access the form
-        form_url = f"http://{SERVICE_HOST}:{SERVICE_PORT}/tests/{safe_filename}"
+        test_form_url = f"http://{SERVICE_HOST}:{SERVICE_PORT}/tests/{test_filename}"
 
         logger.info(f"Generated test form for test ID: {aptitude_test_id}")
-        logger.info(f"Form saved at: {form_file_path}")
-        logger.info(f"Form URL: {form_url}")
+        logger.info(f"Test form saved at: {test_file_path}")
+        logger.info(f"Test form URL: {test_form_url}")
 
-        # Return JSON response with the form URL
+        # === Generate Login Form ===
+        login_filename = f"login_{job_requirement_id}_{aptitude_test_id}.html"
+        login_file_path = TESTS_DIR / login_filename
+
+        login_template_vars = {
+            'job_requirement_id': job_requirement_id,
+            'aptitude_test_id': aptitude_test_id,
+            'test_title': login_data.get('test_title', test_details.get('test_title', 'Aptitude Test')),
+            'login_instructions': login_data.get('login_instructions', 'Please enter your email and password to access the aptitude test.')
+        }
+
+        login_html_content = render_template_string(
+            LOGIN_FORM_TEMPLATE,
+            **login_template_vars
+        )
+
+        with open(login_file_path, 'w', encoding='utf-8') as f:
+            f.write(login_html_content)
+
+        login_form_url = f"http://{SERVICE_HOST}:{SERVICE_PORT}/tests/{login_filename}"
+
+        logger.info(f"Generated login form for test ID: {aptitude_test_id}")
+        logger.info(f"Login form saved at: {login_file_path}")
+        logger.info(f"Login form URL: {login_form_url}")
+
+        # Return JSON response with both form URLs
         return jsonify({
             "success": True,
-            "message": "Aptitude test form generated successfully",
+            "message": "Login form and test form generated successfully",
             "job_requirement_id": job_requirement_id,
             "aptitude_test_id": aptitude_test_id,
-            "form_url": form_url,
-            "form_path": str(form_file_path),
+            "login_form_url": login_form_url,
+            "test_form_url": test_form_url,
             "questions_count": len(questions)
         })
 
     except Exception as e:
-        logger.error(f"Error generating test form: {str(e)}")
+        logger.error(f"Error generating test: {str(e)}")
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({
             "success": False,
-            "message": f"Failed to generate aptitude test form: {str(e)}",
+            "message": f"Failed to generate aptitude test: {str(e)}",
             "error": str(e)
         }), 500
         
@@ -1003,90 +1027,6 @@ LOGIN_FORM_TEMPLATE = """
 """
 
 
-@app.route('/interview-management-service/api/v1/aptitude/generate-login-form/<job_requirement_id>/<aptitude_test_id>', methods=['POST'])
-def generate_login_form(job_requirement_id, aptitude_test_id):
-    """
-    Generate a login form for aptitude test access.
-
-    Accepts POST with login_data in request body to include test information on the form.
-
-    Returns JSON response with:
-    - success: boolean
-    - message: string
-    - form_url: string (URL to access the generated login form)
-    - form_path: string (local file path)
-    """
-    try:
-        # Get login data from POST request body
-        if not request.is_json:
-            return jsonify({
-                "success": False,
-                "message": "Request must be JSON",
-                "error": "Invalid content type"
-            }), 400
-        
-        data = request.get_json()
-        login_data = data.get('login_data', {})
-        
-        if not login_data:
-            return jsonify({
-                "success": False,
-                "message": "No login data provided",
-                "error": "Missing login_data in request body"
-            }), 400
-
-        logger.info(f"Generating login form for job_requirement_id: {job_requirement_id}, test_id: {aptitude_test_id}")
-
-        # Sanitize the filename
-        safe_filename = f"login_{job_requirement_id}_{aptitude_test_id}.html"
-        form_file_path = TESTS_DIR / safe_filename
-
-        # Prepare template variables
-        template_vars = {
-            'job_requirement_id': job_requirement_id,
-            'aptitude_test_id': aptitude_test_id,
-            'test_title': login_data.get('test_title', 'Aptitude Test'),
-            'login_instructions': login_data.get('login_instructions', 'Please enter your email and password to access the aptitude test.')
-        }
-
-        # Create the HTML content
-        html_content = render_template_string(
-            LOGIN_FORM_TEMPLATE,
-            **template_vars
-        )
-
-        # Save the HTML file to the tests directory
-        with open(form_file_path, 'w', encoding='utf-8') as f:
-            f.write(html_content)
-        
-        # Generate the URL to access the form
-        form_url = f"http://{SERVICE_HOST}:{SERVICE_PORT}/tests/{safe_filename}"
-        
-        logger.info(f"Generated login form for test ID: {aptitude_test_id}")
-        logger.info(f"Login form saved at: {form_file_path}")
-        logger.info(f"Login form URL: {form_url}")
-        
-        # Return JSON response with the form URL
-        return jsonify({
-            "success": True,
-            "message": "Login form generated successfully",
-            "job_requirement_id": job_requirement_id,
-            "aptitude_test_id": aptitude_test_id,
-            "form_url": form_url,
-            "form_path": str(form_file_path)
-        })
-        
-    except Exception as e:
-        logger.error(f"Error generating login form: {str(e)}")
-        import traceback
-        logger.error(f"Traceback: {traceback.format_exc()}")
-        return jsonify({
-            "success": False,
-            "message": f"Failed to generate login form: {str(e)}",
-            "error": str(e)
-        }), 500
-
-
 @app.route('/tests/<filename>')
 def serve_test(filename):
     """
@@ -1169,7 +1109,7 @@ def index():
             <h3 class="mt-4">📋 How to Use</h3>
             <div class="code-block">
                 <strong>Generate a test form:</strong><br>
-                <code>POST http://localhost:8890/interview-management-service/api/v1/aptitude/generate-test-form/{job_requirement_id}/{aptitude_test_id}</code>
+                <code>POST http://localhost:8890/interview-management-service/api/v1/aptitude/generate-test-form/{job_requirement_id}</code>
             </div>
             
             <h3 class="mt-4">📊 Generated Tests</h3>

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.logger_config import log_central
 from app.repository.aptitude_test_repository import AptitudeTestRepository
 from app.repository.job_requirement_repository import JobRequirementRepository
+from app.repository.candidate_repository import CandidateRepository
 from app.schema.aptitude_test_schema import (
     AptitudeTestRead,
     AptitudeQuestionRead,
@@ -33,6 +34,7 @@ class AptitudeTestService:
         self.db = db
         self.test_repo = AptitudeTestRepository(db)
         self.job_repo = JobRequirementRepository(db)
+        self.candidate_repo = CandidateRepository(db)
         
         # Initialize Gemini AI with JSON mode
         if GEMINI_AVAILABLE:
@@ -306,6 +308,25 @@ CRITICAL RULES:
                 'submitted_at': datetime.now().isoformat()
             })
 
+            # Update candidate's aptitude test status in candidates table
+            aptitude_test_result = 'pass' if passed else 'fail'
+            try:
+                await self.candidate_repo.update_aptitude_test_result(
+                    email=attempt.candidate_email,
+                    job_requirement_id=attempt.job_requirement_id,
+                    aptitude_test=True,
+                    aptitude_test_result=aptitude_test_result
+                )
+                log_central(
+                    f"Candidate aptitude test status updated: email={attempt.candidate_email}, result={aptitude_test_result}",
+                    level="info"
+                )
+            except Exception as candidate_update_error:
+                log_central(
+                    f"Warning: Failed to update candidate aptitude test status: {str(candidate_update_error)}",
+                    level="warning"
+                )
+
             log_central(
                 f"Test submitted: attempt_id={attempt_id}, score={score:.2f}%, passed={passed}",
                 level="info"
@@ -320,6 +341,7 @@ CRITICAL RULES:
                 "total_questions_attempted": len(answers),
                 "total_questions": total_questions,
                 "passed": passed,
+                "aptitude_test_result": aptitude_test_result,
                 "time_taken_seconds": time_taken_seconds,
                 "submitted_at": datetime.now().isoformat()
             }

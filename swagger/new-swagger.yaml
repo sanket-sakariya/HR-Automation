@@ -3,6 +3,7 @@ info:
   title: HR Automation API
   description: |
     Complete HR Automation Platform API for managing the entire recruitment lifecycle including:
+    - User Authentication (Signup, Login, Logout)
     - Company Management
     - Job Requirements
     - Candidate Applications & Resume Analysis
@@ -10,7 +11,7 @@ info:
     - Technical Interviews (AI-powered)
     - HR Interviews (AI-powered)
     
-    **Authentication:** All endpoints require `workspace-id` and `user-id` headers.
+    **Authentication:** Most endpoints require `workspace-id` and `user-id` headers (obtained after login).
   version: 1.0.0
   contact:
     name: HR Automation Team
@@ -29,6 +30,8 @@ servers:
     description: Aptitude Test Service
 
 tags:
+  - name: Authentication
+    description: User authentication endpoints (signup, login, logout)
   - name: Health
     description: Health check endpoints
   - name: Company Management
@@ -45,6 +48,153 @@ tags:
     description: AI-powered HR interviews
 
 paths:
+  # ==================== AUTHENTICATION ====================
+  /auth/signup/:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: |
+        Register a new user account on the HR Automation platform.
+        
+        A unique `workspace_id` will be automatically generated for the user upon registration.
+        The `user_id` and `workspace_id` returned should be used in headers for subsequent API calls.
+      operationId: userSignup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSignupRequest'
+            example:
+              username: "johndoe"
+              email: "john.doe@example.com"
+              password: "SecurePass123!"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data:
+                  user_id: "550e8400-e29b-41d4-a716-446655440000"
+                  username: "johndoe"
+                  email: "john.doe@example.com"
+                  workspace_id: "123e4567-e89b-12d3-a456-426614174000"
+                  is_active: true
+                  is_logged_in: false
+                  last_login_at: null
+                  created_at: "2026-02-08T10:30:00Z"
+                  updated_at: null
+                message: "User registered successfully"
+        '400':
+          description: User already exists or invalid data
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "User with this email 'john.doe@example.com' already exists."
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/login/:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: |
+        Authenticate user with email and password.
+        
+        Returns `user_id`, `workspace_id`, and `access_token` that should be used for subsequent API calls.
+        The `user_id` and `workspace_id` should be passed in headers for authenticated endpoints.
+      operationId: userLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+            example:
+              email: "john.doe@example.com"
+              password: "SecurePass123!"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data:
+                  user_id: "550e8400-e29b-41d4-a716-446655440000"
+                  username: "johndoe"
+                  email: "john.doe@example.com"
+                  workspace_id: "123e4567-e89b-12d3-a456-426614174000"
+                  access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  token_type: "bearer"
+                message: "User logged in successfully"
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "Invalid email or password."
+        '403':
+          description: User account inactive
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "User account is inactive."
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/logout/:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: |
+        Logout the currently authenticated user.
+        
+        Requires the `user-id` header to identify the user to logout.
+      operationId: userLogout
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                success: true
+                data:
+                  message: "Successfully logged out"
+                message: "User logged out successfully"
+        '401':
+          description: User not logged in
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "User is not logged in."
+        '404':
+          description: User not found
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "User not found."
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   # ==================== HEALTH ====================
   /health/:
     get:
@@ -72,7 +222,10 @@ paths:
       tags:
         - Company Management
       summary: Register a new company
-      description: Register a new company on the HR Automation platform
+      description: |
+        Register a new company on the HR Automation platform.
+        
+        Requires authenticated user headers (`user-id` and `workspace-id`) obtained after login.
       operationId: createCompany
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
@@ -86,7 +239,6 @@ paths:
             example:
               company_name: "TechCorp Solutions"
               email: "hr@techcorp.com"
-              password: "SecurePass123!"
               industry: "Technology"
               size: "51-200"
               website: "https://techcorp.com"
@@ -897,16 +1049,15 @@ paths:
                   test_access_url: "http://localhost:8888/interview-management-service/api/v1/aptitude/test/b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f/c5d0f8c2-5e3d-6g8h-0c4f-1e0g9h8d7f6g/start"
                 message: "Aptitude test created successfully"
 
-  /aptitude/generate-test-form/{job_requirement_id}/{aptitude_test_id}:
+  /aptitude/generate-test-form/{job_requirement_id}:
     get:
       tags:
         - Aptitude Management
       summary: Generate test form
-      description: Generate aptitude test form for a specific test
+      description: Generate aptitude test form for a job requirement. Automatically finds the active aptitude test for the given job.
       operationId: generateAptitudeTestForm
       parameters:
         - $ref: '#/components/parameters/JobRequirementId'
-        - $ref: '#/components/parameters/AptitudeTestId'
       responses:
         '200':
           description: Test form generated
@@ -926,17 +1077,23 @@ paths:
                   form_url: "http://localhost:8890/tests/b4c9f7c1_c5d0f8c2.html"
                   form_path: "/tests/b4c9f7c1_c5d0f8c2.html"
                 message: "Aptitude test form generated successfully"
+        '404':
+          description: No aptitude test found for job requirement
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "No aptitude test found for job requirement: b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
 
-  /aptitude/generate-login-form/{job_requirement_id}/{aptitude_test_id}:
+  /aptitude/generate-login-form/{job_requirement_id}:
     get:
       tags:
         - Aptitude Management
       summary: Generate login form
-      description: Generate login form for aptitude test access
+      description: Generate login form for aptitude test access. Automatically finds the active aptitude test for the given job.
       operationId: generateLoginForm
       parameters:
         - $ref: '#/components/parameters/JobRequirementId'
-        - $ref: '#/components/parameters/AptitudeTestId'
       responses:
         '200':
           description: Login form generated
@@ -953,6 +1110,13 @@ paths:
                   form_url: "http://localhost:8890/login/b4c9f7c1_c5d0f8c2.html"
                   login_url: "http://localhost:8890/login/b4c9f7c1_c5d0f8c2.html/login"
                 message: "Login form generated successfully"
+        '404':
+          description: No aptitude test found for job requirement
+          content:
+            application/json:
+              example:
+                success: false
+                error_message: "No aptitude test found for job requirement: b4c9f7c1-4d2c-5f7g-9b3e-0d9f8g7c6e5f"
 
   /aptitude/validate-login/{job_requirement_id}/{aptitude_test_id}:
     post:
@@ -2256,6 +2420,136 @@ components:
           description: Total number of pages
           example: 2
 
+    # ==================== USER SCHEMAS ====================
+    UserSignupRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 100
+          description: Unique username for the user
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          description: User's email address (must be unique)
+          example: "john.doe@example.com"
+        password:
+          type: string
+          minLength: 8
+          description: Password (minimum 8 characters)
+          example: "SecurePass123!"
+
+    UserLoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "john.doe@example.com"
+        password:
+          type: string
+          minLength: 8
+          description: User's password
+          example: "SecurePass123!"
+
+    UserReadResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Unique user identifier
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        username:
+          type: string
+          description: Username
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "john.doe@example.com"
+        workspace_id:
+          type: string
+          format: uuid
+          description: User's workspace identifier (auto-generated on signup)
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        is_active:
+          type: boolean
+          description: Whether the user account is active
+          example: true
+        is_logged_in:
+          type: boolean
+          description: Whether the user is currently logged in
+          example: false
+        last_login_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last login timestamp
+          example: "2026-02-08T10:30:00Z"
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: "2026-02-08T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last update timestamp
+          example: null
+
+    UserLoginResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          description: Unique user identifier (use in user-id header)
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        username:
+          type: string
+          description: Username
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "john.doe@example.com"
+        workspace_id:
+          type: string
+          format: uuid
+          description: User's workspace identifier (use in workspace-id header)
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        access_token:
+          type: string
+          description: JWT access token for authentication
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          description: Token type
+          example: "bearer"
+
+    UserLogoutResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Logout confirmation message
+          example: "Successfully logged out"
+
+    # ==================== ADDRESS SCHEMA ====================
     AddressSchema:
       type: object
       properties:
@@ -2280,7 +2574,6 @@ components:
       required:
         - company_name
         - email
-        - password
         - industry
         - size
       properties:
@@ -2293,10 +2586,6 @@ components:
           type: string
           format: email
           description: Company email address
-        password:
-          type: string
-          minLength: 8
-          description: Password for company account
         industry:
           type: string
           description: Industry sector

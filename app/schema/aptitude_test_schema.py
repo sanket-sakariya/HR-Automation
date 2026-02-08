@@ -94,6 +94,7 @@ class TestAttemptResult(BaseModel):
     total_questions_attempted: int
     total_questions: int
     passed: bool
+    aptitude_test_result: str  # 'pass' or 'fail'
     time_taken_seconds: int
     submitted_at: Optional[str]
 

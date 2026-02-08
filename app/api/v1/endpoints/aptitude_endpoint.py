@@ -86,34 +86,35 @@ async def create_aptitude_test(
         )
 
 
-@router.get("/generate-test-form/{job_requirement_id}/{aptitude_test_id}", response_model=ApiResponseSchema[dict])
-async def generate_aptitude_test_form(
+@router.get("/generate-test/{job_requirement_id}", response_model=ApiResponseSchema[dict])
+async def generate_aptitude_test(
     job_requirement_id: UUID,
-    aptitude_test_id: UUID,
     db: AsyncSession = Depends(get_async_db),
 ):
     """
-    Generate aptitude test form for a specific test.
-    This endpoint fetches test details and questions from the database and generates the test form via the Flask service.
+    Generate aptitude test (both login form and test form) for a job requirement.
+    
+    This endpoint:
+    1. Fetches test details and questions from the database
+    2. Generates both login form and test form via the Flask service
+    3. Returns URLs for both forms
+    
+    Candidates will first see the login form, and after successful login, they'll be redirected to the test form.
     """
     try:
         # Initialize services
         test_repo = AptitudeTestRepository(db)
         service = AptitudeTestService(db)
 
-        # Verify the test exists and belongs to the job requirement
-        test = await test_repo.get_test_by_id(aptitude_test_id)
+        # Get the test by job requirement ID
+        test = await test_repo.get_test_by_job_id(job_requirement_id)
         if not test:
             raise HTTPException(
                 status_code=http_status.HTTP_404_NOT_FOUND,
-                detail=f"Aptitude test not found: {aptitude_test_id}"
+                detail=f"No aptitude test found for job requirement: {job_requirement_id}"
             )
 
-        if test.job_requirement_id != job_requirement_id:
-            raise HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST,
-                detail=f"Test {aptitude_test_id} does not belong to job requirement {job_requirement_id}"
-            )
+        aptitude_test_id = test.aptitude_test_id
 
         # Fetch all questions for the test
         questions = await test_repo.get_questions_by_test_id(aptitude_test_id)
@@ -149,14 +150,21 @@ async def generate_aptitude_test_form(
                 "tags": q.tags
             })
 
-        test_data = {
+        # Prepare combined data for Flask service
+        combined_data = {
             "test_details": test_details,
-            "questions": questions_data
+            "questions": questions_data,
+            "login_data": {
+                "job_requirement_id": str(job_requirement_id),
+                "aptitude_test_id": str(aptitude_test_id),
+                "test_title": test.test_title,
+                "login_instructions": "Please enter your email and password to access the aptitude test."
+            }
         }
 
         # Print test details to terminal
         print("\n" + "="*80)
-        print("🧠 APTITUDE TEST FORM GENERATION")
+        print("🧠 APTITUDE TEST GENERATION (Login + Test Forms)")
         print("="*80)
         print(f"🆔 Test ID: {test_details['aptitude_test_id']}")
         print(f"💼 Job Req ID: {test_details['job_requirement_id']}")
@@ -167,14 +175,14 @@ async def generate_aptitude_test_form(
         print(f"🔒 Proctoring: {test_details.get('proctoring_settings', {}).get('tab_switch_detection', False)}")
         print("="*80 + "\n")
 
-        # Call the Flask dynamic form service to generate the test form
-        flask_service_url = f"http://localhost:8890/interview-management-service/api/v1/aptitude/generate-test-form/{job_requirement_id}/{aptitude_test_id}"
+        # Call the Flask service to generate both forms
+        flask_service_url = f"http://localhost:8890/interview-management-service/api/v1/aptitude/generate-test/{job_requirement_id}"
 
         async with httpx.AsyncClient() as client:
-            # Send test data via POST to Flask service
+            # Send combined data via POST to Flask service
             response = await client.post(
                 flask_service_url,
-                json={"test_data": test_data},
+                json=combined_data,
                 timeout=30.0
             )
 
@@ -182,22 +190,22 @@ async def generate_aptitude_test_form(
                 flask_response = response.json()
 
                 if flask_response.get("success"):              
-                    # Return test details and form URL
+                    # Return test details and both form URLs
                     return ApiResponseSchema(
                         success=True,
-                        message="Aptitude test form generated successfully",
+                        message="Aptitude test generated successfully (login + test forms)",
                         data={
                             "test_details": test_details,
                             "questions_count": len(questions_data),
-                            "form_url": flask_response.get("form_url"),
-                            "form_path": flask_response.get("form_path"),
-                            "test_access_url": f"{flask_response.get('form_url')}/start" if flask_response.get("form_url") else None
+                            "login_form_url": flask_response.get("login_form_url"),
+                            "test_form_url": flask_response.get("test_form_url"),
+                            "entry_url": flask_response.get("login_form_url"),  # Candidates start here
                         }
                     )
                 else:
                     raise HTTPException(
                         status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail=f"Failed to generate test form via Flask service: {flask_response.get('message')}"
+                        detail=f"Failed to generate test via Flask service: {flask_response.get('message')}"
                     )
             else:
                 raise HTTPException(
@@ -215,104 +223,7 @@ async def generate_aptitude_test_form(
     except Exception as e:
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate aptitude test form: {str(e)}"
-        )
-
-
-@router.get("/generate-login-form/{job_requirement_id}/{aptitude_test_id}", response_model=ApiResponseSchema[dict])
-async def generate_login_form(
-    job_requirement_id: UUID,
-    aptitude_test_id: UUID,
-    db: AsyncSession = Depends(get_async_db),
-):
-    """
-    Generate login form for aptitude test access.
-    This endpoint creates a login form on port 8890 where candidates can enter their email and password.
-    """
-    try:
-        # Initialize services
-        test_repo = AptitudeTestRepository(db)
-
-        # Verify the test exists and belongs to the job requirement
-        test = await test_repo.get_test_by_id(aptitude_test_id)
-        if not test:
-            raise HTTPException(
-                status_code=http_status.HTTP_404_NOT_FOUND,
-                detail=f"Aptitude test not found: {aptitude_test_id}"
-            )
-
-        if test.job_requirement_id != job_requirement_id:
-            raise HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST,
-                detail=f"Test {aptitude_test_id} does not belong to job requirement {job_requirement_id}"
-            )
-
-        # Prepare login data
-        login_data = {
-            "job_requirement_id": str(job_requirement_id),
-            "aptitude_test_id": str(aptitude_test_id),
-            "test_title": test.test_title,
-            "login_instructions": "Please enter your email and password to access the aptitude test."
-        }
-
-        # Print login form details to terminal
-        print("\n" + "="*80)
-        print("🔐 APTITUDE TEST LOGIN FORM GENERATION")
-        print("="*80)
-        print(f"🆔 Test ID: {login_data['aptitude_test_id']}")
-        print(f"💼 Job Req ID: {login_data['job_requirement_id']}")
-        print(f"📋 Test Title: {login_data['test_title']}")
-        print(f"🔑 Login Required: Email + Password")
-        print("="*80 + "\n")
-
-        # Call the Flask aptitude test service to generate the login form
-        flask_service_url = f"http://localhost:8890/interview-management-service/api/v1/aptitude/generate-login-form/{job_requirement_id}/{aptitude_test_id}"
-
-        async with httpx.AsyncClient() as client:
-            # Send login data via POST to Flask service
-            response = await client.post(
-                flask_service_url,
-                json={"login_data": login_data},
-                timeout=30.0
-            )
-
-            if response.status_code == 200:
-                flask_response = response.json()
-
-                if flask_response.get("success"):
-                    # Return login details and form URL
-                    return ApiResponseSchema(
-                        success=True,
-                        message="Login form generated successfully",
-                        data={
-                            "login_data": login_data,
-                            "form_url": flask_response.get("form_url"),
-                            "form_path": flask_response.get("form_path"),
-                            "login_url": f"{flask_response.get('form_url')}/login" if flask_response.get("form_url") else None
-                        }
-                    )
-                else:
-                    raise HTTPException(
-                        status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail=f"Failed to generate login form via Flask service: {flask_response.get('message')}"
-                    )
-            else:
-                raise HTTPException(
-                    status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail=f"Flask service returned status {response.status_code}: {response.text}"
-                )
-
-    except httpx.RequestError as e:
-        raise HTTPException(
-            status_code=http_status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Unable to connect to Flask login service: {str(e)}"
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate login form: {str(e)}"
+            detail=f"Failed to generate aptitude test: {str(e)}"
         )
 
 
