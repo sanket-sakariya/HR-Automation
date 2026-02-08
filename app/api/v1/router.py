@@ -50,6 +50,10 @@ if base_config.IS_RABBITMQ_ENABLED:
 
     api_router.include_router(router=rabbitmq_router, tags=["rabbitmq"])
 
+# Include user authentication endpoints
+from app.api.v1.endpoints.user_endpoint import router as user_router
+api_router.include_router(router=user_router, tags=["Authentication"])
+
 # Include company management endpoints
 from app.api.v1.endpoints.company_management_endpoint import router as company_management_router
 from app.api.v1.endpoints.job_requirement_endpoint import router as job_requirement_router

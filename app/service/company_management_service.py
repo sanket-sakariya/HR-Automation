@@ -50,9 +50,6 @@ class CompanyManagementService(BaseAppService):
         if company_data.get("logo"):
             company_data["logo"] = str(company_data["logo"])
 
-        # Remove password from data as it's handled separately (e.g., authentication service)
-        company_data.pop("password", None)
-
         company = await self.company_repo.insert(
             company_data=company_data, user_id=user_id, workspace_id=workspace_id
         )

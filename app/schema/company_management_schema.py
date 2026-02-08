@@ -91,7 +91,6 @@ class CompanyCreateSchema(BaseAppSchema):
 
     company_name: str = Field(..., min_length=2, max_length=200, example="TechCorp Solutions")
     email: EmailStr = Field(..., example="hr@techcorp.com")
-    password: str = Field(..., min_length=8, example="SecurePass123!")
     industry: str = Field(..., example="Technology")
     size: CompanySize = Field(..., example=CompanySize.SIZE_51_200)
     website: Optional[AnyHttpUrl] = Field(default=None, example="https://techcorp.com")

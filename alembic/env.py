@@ -23,6 +23,7 @@ from app.model.aptitude_question_model import AptitudeQuestionModel
 from app.model.aptitude_test_attempt_model import AptitudeTestAttemptModel
 from app.model.technical_interview_model import TechnicalInterviewModel
 from app.model.hr_interview_model import HRInterviewModel
+from app.model.user_model import UserModel
 
 # Import your app config
 

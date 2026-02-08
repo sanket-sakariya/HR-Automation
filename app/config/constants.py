@@ -132,6 +132,11 @@ class DatabaseErrorMessages:
         "Database error while counting demo users"
     )
 
+    # User-related database errors
+    USER_CREATION_ERROR: Final[str] = "Database error during user creation"
+    USER_RETRIEVAL_ERROR: Final[str] = "Database error while retrieving user"
+    USER_UPDATE_ERROR: Final[str] = "Database error during user update"
+
 
 class GeneralErrorMessages:
     """Constants for general error messages."""
@@ -231,6 +236,11 @@ class ApiErrorMessages:
     DEMO_B_RESPONSE_ACTIVE_STATUS_UPDATE_FAILED: Final[str] = (
         "Failed to update demo B response active status"
     )
+
+    # User operations
+    USER_CREATION_FAILED: Final[str] = "User registration failed"
+    USER_LOGIN_FAILED: Final[str] = "User login failed"
+    USER_LOGOUT_FAILED: Final[str] = "User logout failed"
 
 
 class ServiceMessages:
@@ -400,3 +410,8 @@ class SuccessMessages:
     DEMO_B_RESPONSE_ACTIVE_STATUS_UPDATED: Final[str] = (
         "Demo B response active status updated successfully"
     )
+
+    # User operations
+    USER_CREATED: Final[str] = "User registered successfully"
+    USER_LOGIN_SUCCESS: Final[str] = "User logged in successfully"
+    USER_LOGOUT_SUCCESS: Final[str] = "User logged out successfully"
