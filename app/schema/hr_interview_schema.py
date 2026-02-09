@@ -36,11 +36,9 @@ class AIRecommendation(str, Enum):
 
 # === Request Schemas ===
 
-class HRInterviewLoginRequest(BaseModel):
-    """Schema for candidate login to HR interview."""
+class HRInterviewStartRequest(BaseModel):
+    """Schema for starting an HR interview - only job_requirement_id needed."""
     job_requirement_id: UUID = Field(..., description="Job requirement ID")
-    email: str = Field(..., description="Candidate email")
-    password: str = Field(..., description="Candidate password")
 
 
 class StartHRInterviewRequest(BaseModel):

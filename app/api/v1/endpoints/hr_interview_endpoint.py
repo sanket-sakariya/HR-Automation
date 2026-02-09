@@ -14,7 +14,7 @@ from app.config.constants import SuccessMessages
 
 from app.schema.response_schema import ApiResponseSchema
 from app.schema.hr_interview_schema import (
-    HRInterviewLoginRequest,
+    HRInterviewStartRequest,
     CompleteHRInterviewRequest,
 )
 
@@ -40,14 +40,14 @@ router = APIRouter(
 @router.post("/start/{candidate_id}", response_model=ApiResponseSchema[dict])
 async def start_hr_interview(
     candidate_id: UUID,
-    payload: HRInterviewLoginRequest,
+    payload: HRInterviewStartRequest,
     db: AsyncSession = Depends(get_async_db),
 ):
     """
     Start HR Interview for a Candidate.
     
     Flow:
-    1. Verify candidate credentials (email + password)
+    1. Verify candidate exists and job requirement matches
     2. Check if candidate passed technical interview
     3. Get candidate details including resume
     4. Generate master AI prompt for HR interview
@@ -55,6 +55,11 @@ async def start_hr_interview(
     6. Return interview URL and details
     
     Interview Duration: Minimum 5 minutes, Maximum 12 minutes
+    
+    Request Body:
+    - job_requirement_id: UUID of the job requirement
+    
+    No email/password required - interview starts directly.
     """
     try:
         service = HRInterviewService(db)
@@ -69,34 +74,21 @@ async def start_hr_interview(
                 detail=f"Candidate not found: {candidate_id}"
             )
         
-        # Step 2: Verify credentials
-        if candidate.email != payload.email:
-            raise HTTPException(
-                status_code=http_status.HTTP_401_UNAUTHORIZED,
-                detail="Email does not match candidate record"
-            )
-        
-        if candidate.password != payload.password:
-            raise HTTPException(
-                status_code=http_status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid password"
-            )
-        
-        # Step 3: Verify job requirement matches
+        # Step 2: Verify job requirement matches
         if str(candidate.job_requirement_id) != str(payload.job_requirement_id):
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
                 detail="Job requirement does not match candidate's application"
             )
         
-        # Step 4: Check if candidate passed technical interview
+        # Step 3: Check if candidate passed technical interview
         if not candidate.technical_test or candidate.technical_test_result != "pass":
             raise HTTPException(
                 status_code=http_status.HTTP_403_FORBIDDEN,
                 detail="Candidate must pass technical interview before HR interview"
             )
         
-        # Step 4.5: Check if candidate has already taken HR interview
+        # Step 4: Check if candidate has already taken HR interview
         if candidate.hr_test and candidate.hr_test_result:
             raise HTTPException(
                 status_code=http_status.HTTP_400_BAD_REQUEST,
