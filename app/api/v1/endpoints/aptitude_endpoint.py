@@ -86,6 +86,88 @@ async def create_aptitude_test(
         )
 
 
+@router.get("/get-test-questions/{job_requirement_id}", response_model=ApiResponseSchema[dict])
+async def get_test_questions(
+    job_requirement_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Get aptitude test details and questions for a job requirement.
+
+    This endpoint returns:
+    - Test details (title, time limit, passing score, etc.)
+    - All questions (without correct answers for security)
+
+    Used by the frontend to display the test taking interface.
+    """
+    try:
+        test_repo = AptitudeTestRepository(db)
+
+        # Get the test by job requirement ID
+        test = await test_repo.get_test_by_job_id(job_requirement_id)
+        if not test:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"No aptitude test found for job requirement: {job_requirement_id}"
+            )
+
+        aptitude_test_id = test.aptitude_test_id
+
+        # Fetch all questions for the test
+        questions = await test_repo.get_questions_by_test_id(aptitude_test_id)
+        if not questions:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"No questions found for test {aptitude_test_id}"
+            )
+
+        # Prepare test details
+        test_details = {
+            "aptitude_test_id": str(test.aptitude_test_id),
+            "job_requirement_id": str(test.job_requirement_id),
+            "test_title": test.test_title,
+            "total_questions": len(questions),
+            "total_time_minutes": test.total_time_minutes,
+            "passing_score_percentage": test.passing_score_percentage,
+            "test_metadata": test.test_metadata,
+            "proctoring_settings": test.proctoring_settings,
+        }
+
+        # Prepare questions data (without answers for security)
+        questions_data = []
+        for q in questions:
+            questions_data.append({
+                "question_id": str(q.question_id),
+                "question_number": q.question_number,
+                "difficulty": q.difficulty,
+                "category": q.category,
+                "question_text": q.question_text,
+                "options": q.options,
+                "time_allocated_seconds": q.time_allocated_seconds,
+                "tags": q.tags
+            })
+
+        # Sort questions by question_number
+        questions_data.sort(key=lambda x: x["question_number"])
+
+        return ApiResponseSchema(
+            success=True,
+            message="Test questions retrieved successfully",
+            data={
+                "test_details": test_details,
+                "questions": questions_data
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get test questions: {str(e)}"
+        )
+
+
 @router.get("/generate-test/{job_requirement_id}", response_model=ApiResponseSchema[dict])
 async def generate_aptitude_test(
     job_requirement_id: UUID,
@@ -93,12 +175,12 @@ async def generate_aptitude_test(
 ):
     """
     Generate aptitude test (both login form and test form) for a job requirement.
-    
+
     This endpoint:
     1. Fetches test details and questions from the database
     2. Generates both login form and test form via the Flask service
     3. Returns URLs for both forms
-    
+
     Candidates will first see the login form, and after successful login, they'll be redirected to the test form.
     """
     try:
