@@ -436,24 +436,47 @@ async def get_interviews_by_job(
     """
     try:
         service = TechnicalInterviewService(db)
-        
+        candidate_repo = CandidateRepository(db)
+
         interviews = await service.get_interviews_by_job(job_requirement_id, status)
-        
+
+        # Get all unique candidate IDs
+        candidate_ids = list(set(interview.candidate_id for interview in interviews))
+
+        # Fetch all candidates in one query for efficiency
+        candidates_map = {}
+        for cid in candidate_ids:
+            candidate = await candidate_repo.get_by_id(cid)
+            if candidate:
+                candidates_map[str(cid)] = {
+                    "name": f"{candidate.first_name} {candidate.last_name}",
+                    "email": candidate.email
+                }
+
         # Format interviews for response
         interviews_data = []
         for interview in interviews:
+            candidate_info = candidates_map.get(str(interview.candidate_id), {})
             interviews_data.append({
                 "technical_interview_id": str(interview.technical_interview_id),
                 "candidate_id": str(interview.candidate_id),
+                "candidate_name": candidate_info.get("name", "Unknown"),
+                "candidate_email": candidate_info.get("email", ""),
+                "session_id": interview.interview_session_id,
                 "interview_status": interview.interview_status,
                 "overall_score": interview.overall_score,
                 "overall_rating": interview.overall_rating,
                 "result": interview.result,
                 "ai_recommendation": interview.ai_recommendation,
+                "ai_feedback_summary": interview.ai_feedback_summary,
+                "candidate_strengths": interview.candidate_strengths,
+                "candidate_weaknesses": interview.candidate_weaknesses,
                 "interview_duration_seconds": interview.interview_duration_seconds,
+                "technical_knowledge_score": interview.technical_knowledge_score,
+                "communication_score": interview.communication_score,
                 "created_at": interview.created_at.isoformat() if interview.created_at else None
             })
-        
+
         return ApiResponseSchema(
             success=True,
             message=f"Retrieved {len(interviews_data)} interviews",
