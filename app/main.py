@@ -155,6 +155,12 @@ def create_app() -> FastAPI:
     # Mount static files for media
     fastapi_app.mount("/media", StaticFiles(directory="app/media"), name="media")
 
+    # Mount uploaded resumes so they can be viewed/downloaded from the frontend.
+    # Files are written to ./resume/<candidate_id>.<ext> by CandidateManagementService.save_resume_file
+    resume_dir = Path("resume")
+    resume_dir.mkdir(parents=True, exist_ok=True)
+    fastapi_app.mount("/resume", StaticFiles(directory=str(resume_dir)), name="resume")
+
     # Custom Swagger UI with sidebar
     @fastapi_app.get(f"/{config.SERVICE_NAME}/docs", include_in_schema=False)
     async def custom_swagger_ui_html():

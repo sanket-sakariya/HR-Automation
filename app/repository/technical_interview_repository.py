@@ -5,7 +5,7 @@ from typing import Optional, List, Dict, Any
 from uuid import UUID
 from datetime import datetime, timezone
 
-from sqlalchemy import select, and_, desc
+from sqlalchemy import select, and_, desc, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -159,7 +159,7 @@ class TechnicalInterviewRepository(BaseAppRepository[TechnicalInterviewModel]):
         return result.scalars().all()
 
     async def get_interviews_by_candidate(
-        self, 
+        self,
         candidate_id: UUID
     ) -> List[TechnicalInterviewModel]:
         """Get all interviews for a candidate."""

@@ -498,6 +498,254 @@ async def submit_test(
         )
 
 
+@router.get("/attempt/by-candidate/{candidate_id}", response_model=ApiResponseSchema[dict])
+async def get_attempt_by_candidate(
+    candidate_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Return the candidate's latest aptitude test attempt (score, correct count,
+    passed flag, time taken, status). Used by the candidate detail page to
+    display the aptitude score the same way it shows the resume score.
+
+    Returns success=True with data={...} when an attempt exists,
+    success=True with data=null when the candidate has no attempt yet.
+    """
+    try:
+        candidate_repo = CandidateRepository(db)
+        test_repo = AptitudeTestRepository(db)
+
+        candidate = await candidate_repo.get_by_id(candidate_id)
+        if not candidate:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Candidate not found: {candidate_id}",
+            )
+        if not candidate.email or not candidate.job_requirement_id:
+            return ApiResponseSchema(
+                success=True,
+                message="Candidate has no email or job — no attempt available.",
+                data=None,
+            )
+
+        test = await test_repo.get_test_by_job_id(candidate.job_requirement_id)
+        if not test:
+            return ApiResponseSchema(
+                success=True,
+                message="No aptitude test exists for this candidate's job.",
+                data=None,
+            )
+
+        attempt = await test_repo.get_attempt_by_email_and_test(
+            candidate.email, test.aptitude_test_id
+        )
+        if not attempt:
+            return ApiResponseSchema(
+                success=True,
+                message="No attempt yet for this candidate.",
+                data=None,
+            )
+
+        return ApiResponseSchema(
+            success=True,
+            message="Attempt retrieved successfully",
+            data={
+                "attempt_id": str(attempt.attempt_id),
+                "aptitude_test_id": str(attempt.aptitude_test_id),
+                "job_requirement_id": str(attempt.job_requirement_id),
+                "candidate_email": attempt.candidate_email,
+                "candidate_name": attempt.candidate_name,
+                "user_attempt": attempt.user_attempt,
+                "started_at": attempt.started_at,
+                "submitted_at": attempt.submitted_at,
+                "time_taken_seconds": attempt.time_taken_seconds,
+                "score": attempt.score,
+                "correct_answers_count": attempt.correct_answers_count,
+                "total_questions_attempted": attempt.total_questions_attempted,
+                "passed": attempt.passed,
+                "tab_switches": attempt.tab_switches,
+                "status": attempt.status,
+                "passing_score_percentage": test.passing_score_percentage,
+                "total_questions": test.total_questions,
+                "total_time_minutes": test.total_time_minutes,
+            },
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch aptitude attempt: {str(e)}",
+        )
+
+
+@router.get("/answers/by-candidate/{candidate_id}", response_model=ApiResponseSchema[dict])
+async def get_answers_by_candidate(
+    candidate_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Return the candidate's aptitude attempt with full question/answer pairs.
+
+    For each question in the test, includes:
+      - question_text, options, category, difficulty
+      - correct_answer (A/B/C/D)
+      - candidate_answer (whatever they selected, or null)
+      - is_correct (bool)
+
+    Used by the detailed candidate report download.
+    """
+    try:
+        candidate_repo = CandidateRepository(db)
+        test_repo = AptitudeTestRepository(db)
+
+        candidate = await candidate_repo.get_by_id(candidate_id)
+        if not candidate:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Candidate not found: {candidate_id}",
+            )
+
+        if not candidate.email or not candidate.job_requirement_id:
+            return ApiResponseSchema(success=True, message="No attempt", data=None)
+
+        test = await test_repo.get_test_by_job_id(candidate.job_requirement_id)
+        if not test:
+            return ApiResponseSchema(success=True, message="No test", data=None)
+
+        attempt = await test_repo.get_attempt_by_email_and_test(
+            candidate.email, test.aptitude_test_id
+        )
+        if not attempt:
+            return ApiResponseSchema(success=True, message="No attempt", data=None)
+
+        questions = await test_repo.get_questions_by_test_id(test.aptitude_test_id)
+        candidate_answers = attempt.answers or {}
+
+        qa: list = []
+        for q in questions:
+            # answers dict keys are stored as either question_number (int) or string;
+            # try both shapes.
+            ans_key_candidates = [
+                str(q.question_number),
+                str(q.question_number - 1),
+                str(q.question_id),
+            ]
+            given = None
+            for k in ans_key_candidates:
+                if k in candidate_answers:
+                    given = candidate_answers[k]
+                    break
+            qa.append({
+                "question_number": q.question_number,
+                "category": q.category,
+                "difficulty": q.difficulty,
+                "question_text": q.question_text,
+                "options": q.options,
+                "correct_answer": q.correct_answer,
+                "candidate_answer": given,
+                "is_correct": (given is not None and str(given).upper() == str(q.correct_answer).upper()),
+                "explanation": q.explanation,
+            })
+
+        return ApiResponseSchema(
+            success=True,
+            message="Q&A retrieved",
+            data={
+                "score": attempt.score,
+                "correct_answers_count": attempt.correct_answers_count,
+                "total_questions_attempted": attempt.total_questions_attempted,
+                "passed": attempt.passed,
+                "submitted_at": attempt.submitted_at,
+                "questions": qa,
+            },
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch aptitude answers: {str(e)}",
+        )
+
+
+@router.post("/reset-attempts/{candidate_id}", response_model=ApiResponseSchema[dict])
+async def reset_candidate_aptitude_attempts(
+    candidate_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Reset (delete) all aptitude test attempts for a candidate.
+
+    HR uses this from the candidate detail page to allow a candidate
+    to retake the aptitude test — clears the attempt rows so
+    `user_attempt` effectively becomes 0 again, and clears the
+    aptitude_test / aptitude_test_result flags on the candidate so
+    the pipeline reopens for them.
+    """
+    try:
+        candidate_repo = CandidateRepository(db)
+        test_repo = AptitudeTestRepository(db)
+
+        candidate = await candidate_repo.get_by_id(candidate_id)
+        if not candidate:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Candidate not found: {candidate_id}"
+            )
+        if not candidate.email:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="Candidate has no email — cannot reset attempts."
+            )
+
+        # Best-effort: scope to this candidate's job's test, if one exists
+        aptitude_test_id = None
+        try:
+            test = await test_repo.get_test_by_job_id(candidate.job_requirement_id)
+            if test:
+                aptitude_test_id = test.aptitude_test_id
+        except Exception:
+            aptitude_test_id = None
+
+        deleted = await test_repo.delete_attempts_by_email(
+            email=candidate.email,
+            aptitude_test_id=aptitude_test_id,
+            job_requirement_id=candidate.job_requirement_id,
+        )
+
+        # Clear aptitude flags on the candidate so they can retake.
+        try:
+            candidate.aptitude_test = False
+            candidate.aptitude_test_result = None
+            await db.commit()
+            await db.refresh(candidate)
+        except Exception:
+            await db.rollback()
+
+        return ApiResponseSchema(
+            success=True,
+            message=(
+                f"Reset complete — {deleted} previous attempt(s) cleared. "
+                "Candidate can now log in and retake the aptitude test."
+            ),
+            data={
+                "candidate_id": str(candidate_id),
+                "email": candidate.email,
+                "deleted_attempts": deleted,
+                "aptitude_test_id": str(aptitude_test_id) if aptitude_test_id else None,
+                "job_requirement_id": str(candidate.job_requirement_id),
+            },
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to reset aptitude attempts: {str(e)}"
+        )
+
+
 @router.post("/select-top-candidates", response_model=ApiResponseSchema[dict])
 async def select_top_candidates(
     job_requirement_id: UUID,

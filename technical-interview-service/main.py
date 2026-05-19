@@ -317,10 +317,17 @@ class RegisterSessionRequest(BaseModel):
 
 
 class StartInterviewRequest(BaseModel):
-    """Request to start a technical interview."""
-    job_requirement_id: str
+    """Request to start a technical interview.
+
+    Only email + password are required from the candidate's login screen.
+    The technical service resolves candidate_id and job_requirement_id from
+    the main service by calling /technical-interview/login.
+    """
     email: str
     password: str
+    # Optional overrides — still supported for legacy/scripted calls.
+    candidate_id: Optional[str] = None
+    job_requirement_id: Optional[str] = None
 
 
 class CompleteInterviewRequest(BaseModel):
@@ -1047,6 +1054,58 @@ async def register_session(request: RegisterSessionRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/start")
+async def start_interview_simple(request: StartInterviewRequest):
+    """
+    Simplified login: email + password only.
+
+    Resolves candidate via main service, then delegates to the candidate-id
+    flow. Used by the technical-interview HTML login form.
+    """
+    try:
+        candidate_id = request.candidate_id
+        job_requirement_id = request.job_requirement_id
+
+        # If candidate_id / job_requirement_id were NOT supplied, look them up.
+        if not candidate_id or not job_requirement_id:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                lookup = await client.post(
+                    f"{MAIN_SERVICE_URL}/technical-interview/login",
+                    json={"email": request.email, "password": request.password},
+                )
+                if lookup.status_code != 200:
+                    detail = "Login failed"
+                    try:
+                        detail = lookup.json().get("detail", detail)
+                    except Exception:
+                        pass
+                    raise HTTPException(status_code=lookup.status_code, detail=detail)
+                lookup_data = lookup.json().get("data") or {}
+                candidate_id = lookup_data.get("candidate_id")
+                job_requirement_id = lookup_data.get("job_requirement_id")
+                if not candidate_id or not job_requirement_id:
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Login succeeded but candidate could not be resolved",
+                    )
+
+        # Reuse the candidate-id flow which does all validation + session creation.
+        return await start_interview(
+            candidate_id,
+            StartInterviewRequest(
+                email=request.email,
+                password=request.password,
+                candidate_id=candidate_id,
+                job_requirement_id=job_requirement_id,
+            ),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Simple start error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/start/{candidate_id}")
 async def start_interview(candidate_id: str, request: StartInterviewRequest):
     """
@@ -1167,7 +1226,7 @@ async def get_session(session_id: str):
     """Get session details."""
     if session_id not in active_sessions:
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     session = active_sessions[session_id]
     return {
         "success": True,
@@ -1175,6 +1234,115 @@ async def get_session(session_id: str):
         "technical_interview_id": session.technical_interview_id,
         "job_details": session.job_details,
         "candidate_info": session.candidate_info
+    }
+
+
+class VerifySessionRequest(BaseModel):
+    email: str
+    password: str
+
+
+@app.post("/api/session/{session_id}/verify")
+async def verify_session_login(session_id: str, payload: VerifySessionRequest):
+    """
+    Verify email + password BELONG to the candidate of the given session.
+
+    Used when the candidate opens a pre-generated /interview/<session_id> URL
+    — they must still log in. We:
+      1. Look up the candidate via the main service /technical-interview/login
+         (validates email/password + aptitude/technical eligibility).
+      2. Ensure the resolved candidate matches the session's candidate.
+      3. Only then return session data so the front-end can show the interview.
+
+    If the session is NOT in this process's in-memory cache (e.g. the service
+    was restarted after the link was generated), we lazy-rehydrate it from the
+    main service's database via /technical-interview/session/{session_id}.
+    """
+    # Lazy-rehydrate from main service DB if we lost the session (e.g. restart).
+    if session_id not in active_sessions:
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                sess_resp = await client.get(
+                    f"{MAIN_SERVICE_URL}/technical-interview/session/{session_id}"
+                )
+                if sess_resp.status_code == 200:
+                    sess_body = sess_resp.json() or {}
+                    sess_data = sess_body.get("data") or {}
+                    active_sessions[session_id] = InterviewSession(
+                        session_id=session_id,
+                        job_details=sess_data.get("job_details", {}) or {},
+                        candidate_info=sess_data.get("candidate_info", {}) or {},
+                        system_instruction=sess_data.get("system_instruction", "")
+                        or generate_system_instruction(
+                            sess_data.get("job_details", {}) or {},
+                            sess_data.get("candidate_info", {}) or {},
+                        ),
+                        technical_interview_id=sess_data.get("technical_interview_id"),
+                    )
+                    print(f"♻️  Rehydrated session from DB: {session_id}")
+                else:
+                    raise HTTPException(
+                        status_code=404,
+                        detail="Session not found or expired. Please request a new interview link from your recruiter.",
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(
+                status_code=502,
+                detail=f"Could not load session from main service: {e}",
+            )
+
+    session = active_sessions[session_id]
+
+    # Resolve credentials via main service
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            lookup = await client.post(
+                f"{MAIN_SERVICE_URL}/technical-interview/login",
+                json={"email": payload.email, "password": payload.password},
+            )
+            if lookup.status_code != 200:
+                detail = "Invalid email or password"
+                try:
+                    detail = lookup.json().get("detail", detail)
+                except Exception:
+                    pass
+                raise HTTPException(status_code=lookup.status_code, detail=detail)
+            lookup_data = lookup.json().get("data") or {}
+            login_candidate_id = lookup_data.get("candidate_id")
+            login_email = (lookup_data.get("candidate_email") or "").lower()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Auth backend unreachable: {e}")
+
+    # Make sure the logged-in person matches the session's candidate
+    session_candidate_id = (
+        session.candidate_info.get("candidate_id")
+        or session.candidate_info.get("id")
+        or ""
+    )
+    session_email = (session.candidate_info.get("email") or "").lower()
+
+    same_candidate = False
+    if login_candidate_id and session_candidate_id:
+        same_candidate = str(login_candidate_id) == str(session_candidate_id)
+    elif login_email and session_email:
+        same_candidate = login_email == session_email
+
+    if not same_candidate:
+        raise HTTPException(
+            status_code=403,
+            detail="These credentials do not match the candidate this interview was scheduled for.",
+        )
+
+    return {
+        "success": True,
+        "session_id": session_id,
+        "technical_interview_id": session.technical_interview_id,
+        "job_details": session.job_details,
+        "candidate_info": session.candidate_info,
     }
 
 

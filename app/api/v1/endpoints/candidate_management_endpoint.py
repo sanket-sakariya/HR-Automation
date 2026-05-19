@@ -449,3 +449,237 @@ async def select_top_resumes(
         )
 
 
+
+
+@router.post("/{candidate_id}/comprehensive-report", response_model=ApiResponseSchema[dict])
+async def generate_comprehensive_report(
+    candidate_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Generate an AI-driven holistic hiring report for a candidate.
+
+    Pulls together:
+      - Candidate profile + resume score
+      - Aptitude Q&A (questions + given answers + correct answers)
+      - Technical interview transcript + per-skill scores + AI feedback
+      - HR interview transcript + per-skill scores + AI feedback
+
+    Sends everything to Gemini to produce a structured narrative:
+      hire_recommendation, executive_summary, technical_assessment,
+      behavioral_assessment, communication_assessment, cultural_fit_assessment,
+      key_strengths, key_concerns, risk_areas, next_steps
+    """
+    import json as _json
+    try:
+        # ---- Load everything we need
+        from app.repository.candidate_repository import CandidateRepository
+        from app.repository.aptitude_test_repository import AptitudeTestRepository
+        from app.repository.technical_interview_repository import TechnicalInterviewRepository
+        from app.repository.hr_interview_repository import HRInterviewRepository
+
+        candidate_repo = CandidateRepository(db)
+        candidate = await candidate_repo.get_by_id(candidate_id)
+        if not candidate:
+            raise HTTPException(status_code=404, detail="Candidate not found")
+
+        # Aptitude Q&A
+        aptitude_qa: list = []
+        aptitude_summary = None
+        try:
+            apt_repo = AptitudeTestRepository(db)
+            test = (
+                await apt_repo.get_test_by_job_id(candidate.job_requirement_id)
+                if candidate.job_requirement_id else None
+            )
+            if test and candidate.email:
+                attempt = await apt_repo.get_attempt_by_email_and_test(
+                    candidate.email, test.aptitude_test_id
+                )
+                if attempt:
+                    aptitude_summary = {
+                        "score": attempt.score,
+                        "correct": attempt.correct_answers_count,
+                        "total": attempt.total_questions_attempted,
+                        "passed": attempt.passed,
+                    }
+                    questions = await apt_repo.get_questions_by_test_id(test.aptitude_test_id)
+                    answers = attempt.answers or {}
+                    for q in questions:
+                        given = None
+                        for k in (str(q.question_number), str(q.question_number - 1), str(q.question_id)):
+                            if k in answers:
+                                given = answers[k]
+                                break
+                        aptitude_qa.append({
+                            "q_no": q.question_number,
+                            "category": q.category,
+                            "question": q.question_text,
+                            "given": given,
+                            "correct": q.correct_answer,
+                            "is_correct": (
+                                given is not None
+                                and str(given).upper() == str(q.correct_answer).upper()
+                            ),
+                        })
+        except Exception as _e:
+            pass
+
+        # Technical interview
+        tech_data = None
+        try:
+            tech_repo = TechnicalInterviewRepository(db)
+            tech = (
+                await tech_repo.get_by_candidate_and_job(candidate_id, candidate.job_requirement_id)
+                if candidate.job_requirement_id else None
+            )
+            if tech:
+                tech_data = {
+                    "overall_score": tech.overall_score,
+                    "result": tech.result,
+                    "duration_seconds": tech.interview_duration_seconds,
+                    "scores": {
+                        "technical_knowledge": tech.technical_knowledge_score,
+                        "domain_expertise": tech.domain_expertise_score,
+                        "communication": tech.communication_score,
+                        "confidence": tech.confidence_score,
+                        "professionalism": tech.professionalism_score,
+                        "response_relevance": tech.response_relevance_score,
+                        "response_depth": tech.response_depth_score,
+                        "response_clarity": tech.response_clarity_score,
+                    },
+                    "ai_feedback": tech.ai_feedback_summary,
+                    "ai_recommendation": tech.ai_recommendation,
+                    "strengths": tech.candidate_strengths,
+                    "weaknesses": tech.candidate_weaknesses,
+                    "transcript": tech.interview_transcript,
+                }
+        except Exception as _e:
+            pass
+
+        # HR interview
+        hr_data = None
+        try:
+            hr_repo = HRInterviewRepository(db)
+            hr = (
+                await hr_repo.get_by_candidate_and_job(candidate_id, candidate.job_requirement_id)
+                if candidate.job_requirement_id else None
+            )
+            if hr:
+                hr_data = {
+                    "overall_score": hr.overall_score,
+                    "result": hr.result,
+                    "duration_seconds": hr.interview_duration_seconds,
+                    "scores": {
+                        "communication": hr.communication_score,
+                        "articulation": getattr(hr, "articulation_score", None),
+                        "confidence": hr.confidence_score,
+                        "professionalism": hr.professionalism_score,
+                        "attitude": getattr(hr, "attitude_score", None),
+                        "teamwork": getattr(hr, "teamwork_score", None),
+                        "leadership": getattr(hr, "leadership_score", None),
+                        "problem_solving": getattr(hr, "problem_solving_score", None),
+                        "adaptability": getattr(hr, "adaptability_score", None),
+                        "cultural_fit": getattr(hr, "cultural_fit_score", None),
+                        "motivation": getattr(hr, "motivation_score", None),
+                    },
+                    "ai_feedback": hr.ai_feedback_summary,
+                    "ai_recommendation": hr.ai_recommendation,
+                    "strengths": hr.candidate_strengths,
+                    "weaknesses": hr.candidate_weaknesses,
+                    "transcript": hr.interview_transcript,
+                }
+        except Exception as _e:
+            pass
+
+        # Resume score
+        resume_score = getattr(candidate, "candidate_resume_score", None)
+
+        # ---- Build Gemini prompt
+        full_name = f"{candidate.first_name or ''} {candidate.last_name or ''}".strip()
+        prompt = f"""You are a senior hiring manager writing the final comprehensive evaluation report for a candidate.
+
+Use ONLY the data below. Be specific, cite concrete examples from the transcripts and aptitude answers. Do NOT invent facts.
+
+# Candidate
+- Name: {full_name}
+- Email: {candidate.email}
+- Resume AI Match Score: {resume_score if resume_score is not None else 'N/A'}/100
+
+# Aptitude Test
+{_json.dumps(aptitude_summary, indent=2) if aptitude_summary else 'Not taken'}
+
+Per-question performance (sample):
+{_json.dumps(aptitude_qa[:20], indent=2, default=str) if aptitude_qa else 'N/A'}
+
+# Technical Interview
+{_json.dumps(tech_data, indent=2, default=str)[:6000] if tech_data else 'Not taken'}
+
+# HR Interview
+{_json.dumps(hr_data, indent=2, default=str)[:6000] if hr_data else 'Not taken'}
+
+# Output
+Return ONLY valid JSON with this exact schema:
+{{
+  "hire_recommendation": "strong_hire | hire | neutral | no_hire | strong_no_hire",
+  "confidence": "high | medium | low",
+  "headline": "<one-line verdict>",
+  "executive_summary": "<3-5 sentences synthesizing the entire pipeline performance>",
+  "technical_assessment": "<2-3 paragraphs evaluating technical depth, knowledge breadth, problem-solving — cite specific transcript quotes or aptitude answers>",
+  "behavioral_assessment": "<2-3 paragraphs on behavioral patterns: STAR usage, examples given, self-awareness, handling of difficult questions — cite specific HR transcript moments>",
+  "communication_assessment": "<2 paragraphs on language clarity, articulation, listening, language switches if any>",
+  "cultural_fit_assessment": "<2 paragraphs on attitude, motivation, team fit, values alignment>",
+  "key_strengths": ["<concrete strength 1>", "<2>", "<3>", "<4>"],
+  "key_concerns": ["<concrete concern 1>", "<2>", "<3>"],
+  "risk_areas": ["<onboarding risk>", "<performance risk>", "<retention risk>"],
+  "recommended_next_steps": ["<action 1>", "<action 2>", "<action 3>"],
+  "comparison_vs_role": "<2 sentences on how candidate stacks up against the role's typical bar>",
+  "overall_score_out_of_10": <number>
+}}
+"""
+
+        # ---- Call Gemini
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key="AIzaSyDHNd6W382fBzwf_HbPxf70sxG13XE9xgA")
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            response = await asyncio.to_thread(
+                model.generate_content,
+                prompt,
+                generation_config={"response_mime_type": "application/json"},
+            )
+            text = response.text or "{}"
+            ai_report = _json.loads(text)
+        except Exception as gem_err:
+            ai_report = {
+                "hire_recommendation": "neutral",
+                "confidence": "low",
+                "headline": "AI report generation failed — see raw scores",
+                "executive_summary": f"Automated narrative could not be produced ({gem_err}). Refer to per-section scores and raw transcripts.",
+            }
+
+        return ApiResponseSchema(
+            success=True,
+            message="Report generated",
+            data={
+                "candidate_name": full_name,
+                "candidate_email": candidate.email,
+                "job_requirement_id": str(candidate.job_requirement_id) if candidate.job_requirement_id else None,
+                "resume_score": resume_score,
+                "aptitude": {
+                    "summary": aptitude_summary,
+                    "qa": aptitude_qa,
+                },
+                "technical": tech_data,
+                "hr": hr_data,
+                "ai_report": ai_report,
+            },
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate report: {str(e)}",
+        )

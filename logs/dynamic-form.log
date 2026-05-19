@@ -1,0 +1,365 @@
+2026-05-19 08:27:46,231 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 08:27:46,231 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 08:27:46,231 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 08:27:46,231 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 08:27:46,256 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 08:27:46,256 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 08:27:46,257 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 08:27:46,465 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 08:27:46,465 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 08:27:46,465 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 08:27:46,465 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 08:27:46,483 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 08:27:46,487 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 08:49:39,947 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 08:49:39,948 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 08:49:39,948 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 08:49:39,948 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 08:49:39,970 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 08:49:39,970 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 08:49:39,971 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 08:49:40,171 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 08:49:40,171 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 08:49:40,171 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 08:49:40,171 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 08:49:40,188 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 08:49:40,192 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 08:52:16,550 - __main__ - INFO - Received job details for form generation: {'job_requirement_id': '6a76ec92-6777-4d39-a08d-abf002bd44cb', 'title': 'Full stack Developer', 'department': 'Engineering', 'description': "1. A Python and Next.js Full-Stack Developer is a versatile engineer capable of building both high-performance user interfaces and robust backend systems.\n2. They utilize **Next.js** on the frontend to create fast, SEO-friendly, and dynamically rendered React applications.\n3. On the backend, they leverage **Python** frameworks like FastAPI, Django, or Flask to build secure, scalable, and efficient RESTful or GraphQL APIs.\n4. They bridges the gap between client-side experiences and server-side logic, ensuring seamless data flow across the entire application stack.\n5. These developers are skilled in managing database systems, seamlessly connecting Python backends to SQL (like PostgreSQL) or NoSQL (like MongoDB) databases.\n6. They excel at state management, asynchronous data fetching, and implementing modern authentication flows between Next.js and Python servers.\n7. With Python's dominance in AI, they are uniquely positioned to integrate machine learning models and data analytics into modern web applications.\n8. They optimize application performance by leveraging Next.js features like Server-Side Rendering (SSR) alongside Python’s fast asynchronous processing.\n9. They handle deployment and DevOps tasks, often containerizing applications using Docker and deploying them to platforms like AWS, Vercel, or Heroku.\n10. Ultimately, they are end-to-end problem solvers who can transform a product concept into a fully functional, production-ready digital solution.", 'location': 'Remote', 'job_type': 'full-time', 'company_name': 'Botxbyte', 'salary_range': {'min': 50000.0, 'max': 100000.0, 'currency': 'USD'}, 'experience': {'min_years': 0, 'max_years': 3}, 'requirements': [{'skill': 'Python', 'level': 'intermediate', 'required': True}, {'skill': 'Django', 'level': 'intermediate', 'required': True}, {'skill': 'Next.js', 'level': 'intermediate', 'required': True}, {'skill': 'Fastapi', 'level': 'intermediate', 'required': True}, {'skill': 'Kubernates', 'level': 'intermediate', 'required': True}, {'skill': 'AWS', 'level': 'intermediate', 'required': True}, {'skill': 'SEO', 'level': 'intermediate', 'required': True}, {'skill': 'NoSQL', 'level': 'intermediate', 'required': True}, {'skill': 'SQL', 'level': 'intermediate', 'required': True}]}
+2026-05-19 08:52:16,565 - __main__ - INFO - Generated form for job requirement ID: 6a76ec92-6777-4d39-a08d-abf002bd44cb
+2026-05-19 08:52:16,565 - __main__ - INFO - Form saved at: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms/6a76ec92-6777-4d39-a08d-abf002bd44cb.html
+2026-05-19 08:52:16,565 - __main__ - INFO - Form URL: http://0.0.0.0:8889/forms/6a76ec92-6777-4d39-a08d-abf002bd44cb.html
+2026-05-19 08:52:16,566 - werkzeug - INFO - 127.0.0.1 - - [19/May/2026 08:52:16] "POST /interview-management-service/api/v1/candidates/apply/6a76ec92-6777-4d39-a08d-abf002bd44cb HTTP/1.1" 200 -
+2026-05-19 09:11:13,391 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 09:11:13,391 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 09:11:13,391 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 09:11:13,391 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 09:11:13,414 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 09:11:13,414 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 09:11:13,415 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:11:13,620 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 09:11:13,620 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 09:11:13,620 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 09:11:13,620 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 09:11:13,638 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:11:13,642 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:25:16,699 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 09:25:16,700 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 09:25:16,700 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 09:25:16,700 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 09:25:16,723 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 09:25:16,723 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 09:25:16,723 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:25:16,925 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 09:25:16,925 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 09:25:16,925 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 09:25:16,925 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 09:25:16,942 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:25:16,945 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:34:29,487 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 09:34:29,487 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 09:34:29,487 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 09:34:29,487 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 09:34:29,510 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 09:34:29,510 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 09:34:29,511 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:34:29,712 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 09:34:29,712 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 09:34:29,713 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 09:34:29,713 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 09:34:29,729 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:34:29,733 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:41:47,150 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 09:41:47,150 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 09:41:47,150 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 09:41:47,150 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 09:41:47,173 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 09:41:47,173 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 09:41:47,173 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:41:47,381 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 09:41:47,382 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 09:41:47,382 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 09:41:47,382 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 09:41:47,399 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:41:47,402 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:47:31,321 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 09:47:31,321 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 09:47:31,321 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 09:47:31,321 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 09:47:31,343 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 09:47:31,343 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 09:47:31,344 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:47:31,552 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 09:47:31,552 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 09:47:31,552 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 09:47:31,553 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 09:47:31,569 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:47:31,573 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 10:04:51,799 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 10:04:51,799 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 10:04:51,799 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 10:04:51,799 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 10:04:51,822 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 10:04:51,822 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 10:04:51,823 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 10:04:52,026 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 10:04:52,026 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 10:04:52,026 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 10:04:52,026 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 10:04:52,043 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 10:04:52,048 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 10:10:37,698 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 10:10:37,698 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 10:10:37,698 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 10:10:37,698 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 10:10:37,721 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 10:10:37,721 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 10:10:37,721 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 10:10:37,934 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 10:10:37,934 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 10:10:37,934 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 10:10:37,934 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 10:10:37,954 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 10:10:37,958 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 10:44:02,792 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 10:44:02,792 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 10:44:02,792 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 10:44:02,792 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 10:44:02,805 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 10:44:02,805 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 10:44:02,805 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 10:44:02,915 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 10:44:02,915 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 10:44:02,915 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 10:44:02,915 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 10:44:02,924 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 10:44:02,926 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 10:45:40,031 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 10:45:40,031 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 10:45:40,031 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 10:45:40,031 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 10:45:40,044 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 10:45:40,044 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 10:45:40,044 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 10:45:40,154 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 10:45:40,154 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 10:45:40,154 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 10:45:40,154 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 10:45:40,163 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 10:45:40,165 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 10:56:48,719 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 10:56:48,719 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 10:56:48,719 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 10:56:48,719 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 10:56:48,732 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 10:56:48,732 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 10:56:48,732 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 10:56:48,847 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 10:56:48,847 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 10:56:48,847 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 10:56:48,847 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 10:56:48,856 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 10:56:48,859 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 11:13:05,801 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 11:13:05,801 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 11:13:05,801 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 11:13:05,802 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 11:13:05,824 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 11:13:05,824 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 11:13:05,825 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 11:13:06,028 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 11:13:06,028 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 11:13:06,028 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 11:13:06,028 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 11:13:06,045 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 11:13:06,049 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 11:30:24,146 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 11:30:24,146 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 11:30:24,146 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 11:30:24,146 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 11:30:24,169 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 11:30:24,169 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 11:30:24,169 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 11:30:24,382 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 11:30:24,382 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 11:30:24,382 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 11:30:24,382 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 11:30:24,400 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 11:30:24,404 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 11:33:20,436 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 11:33:20,436 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 11:33:20,436 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 11:33:20,436 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 11:33:20,461 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 11:33:20,461 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 11:33:20,461 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 11:33:20,674 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 11:33:20,674 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 11:33:20,674 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 11:33:20,674 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 11:33:20,691 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 11:33:20,695 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 11:40:12,452 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 11:40:12,453 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 11:40:12,453 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 11:40:12,453 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 11:40:12,466 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 11:40:12,466 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 11:40:12,467 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 11:40:12,583 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 11:40:12,583 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 11:40:12,583 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 11:40:12,583 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 11:40:12,592 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 11:40:12,594 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 12:06:02,143 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 12:06:02,143 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 12:06:02,143 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 12:06:02,143 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 12:06:02,156 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 12:06:02,156 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 12:06:02,156 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 12:06:02,266 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 12:06:02,266 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 12:06:02,266 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 12:06:02,266 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 12:06:02,275 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 12:06:02,277 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 12:15:19,158 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 12:15:19,159 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 12:15:19,159 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 12:15:19,159 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 12:15:19,171 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 12:15:19,171 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 12:15:19,172 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 12:15:19,281 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 12:15:19,281 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 12:15:19,281 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 12:15:19,281 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 12:15:19,290 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 12:15:19,292 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 12:35:42,679 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 12:35:42,679 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 12:35:42,679 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 12:35:42,679 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 12:35:42,692 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 12:35:42,692 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 12:35:42,692 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 12:35:42,811 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 12:35:42,811 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 12:35:42,811 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 12:35:42,811 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 12:35:42,822 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 12:35:42,824 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 12:47:35,523 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 12:47:35,523 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 12:47:35,523 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 12:47:35,523 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 12:47:35,545 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8889
+ * Running on http://10.118.164.232:8889
+2026-05-19 12:47:35,545 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 12:47:35,546 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 12:47:35,756 - __main__ - INFO - Starting Dynamic Form Service...
+2026-05-19 12:47:35,756 - __main__ - INFO - Forms will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/dynamic form/forms
+2026-05-19 12:47:35,757 - __main__ - INFO - Service available at: http://0.0.0.0:8889
+2026-05-19 12:47:35,757 - __main__ - INFO - Main App API: http://localhost:8888/interview-management-service/api/v1/candidates/apply
+2026-05-19 12:47:35,774 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 12:47:35,778 - werkzeug - INFO -  * Debugger PIN: 140-702-408

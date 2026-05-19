@@ -3,7 +3,7 @@
 from __future__ import annotations
 from typing import Optional, List
 from uuid import UUID
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model.aptitude_test_model import AptitudeTestModel
@@ -130,4 +130,28 @@ class AptitudeTestRepository:
 
         result = await self.db.execute(query)
         return result.scalars().all()
+
+    async def delete_attempts_by_email(
+        self,
+        email: str,
+        aptitude_test_id: Optional[UUID] = None,
+        job_requirement_id: Optional[UUID] = None,
+    ) -> int:
+        """
+        Hard-delete aptitude test attempts for a candidate email.
+
+        Used to allow a candidate to retake the aptitude test by clearing
+        the previous attempt(s). Returns the number of rows removed.
+        """
+        stmt = delete(AptitudeTestAttemptModel).where(
+            AptitudeTestAttemptModel.candidate_email == email
+        )
+        if aptitude_test_id is not None:
+            stmt = stmt.where(AptitudeTestAttemptModel.aptitude_test_id == aptitude_test_id)
+        if job_requirement_id is not None:
+            stmt = stmt.where(AptitudeTestAttemptModel.job_requirement_id == job_requirement_id)
+
+        result = await self.db.execute(stmt)
+        await self.db.commit()
+        return result.rowcount or 0
 

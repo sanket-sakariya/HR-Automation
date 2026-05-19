@@ -189,14 +189,18 @@ class TechnicalInterviewService:
         )
         
         if updated_interview:
-            # Update candidate's technical test status
+            # Update candidate's technical test status, score, and result
             result = completion_data.get("result", "fail")
+            overall_score = completion_data.get("overall_score")
+            candidate_update: Dict[str, Any] = {
+                "technical_test": True,
+                "technical_test_result": result,
+            }
+            if overall_score is not None:
+                candidate_update["technical_test_score"] = overall_score
             await self.candidate_repo.update(
                 updated_interview.candidate_id,
-                {
-                    "technical_test": True,
-                    "technical_test_result": result
-                }
+                candidate_update,
             )
         
         return updated_interview

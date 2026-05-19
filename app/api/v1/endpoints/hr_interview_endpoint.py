@@ -37,6 +37,130 @@ router = APIRouter(
 )
 
 
+@router.post("/login", response_model=ApiResponseSchema[dict])
+async def login_and_lookup_candidate(
+    login_data: dict,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Resolve a candidate from just email + password for the HR interview.
+
+    Used by the hr-interview microservice's simplified login screen so the
+    candidate does NOT need to know/enter their candidate_id or job_requirement_id.
+    Returns the candidate_id and job_requirement_id which the caller can then pass
+    to /hr-interview/start/{candidate_id}.
+    """
+    email = (login_data or {}).get("email")
+    password = (login_data or {}).get("password")
+
+    if not email or not password:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Email and password are required",
+        )
+
+    candidate_repo = CandidateRepository(db)
+    candidate = await candidate_repo.get_by_email(email)
+    if not candidate:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+        )
+
+    if candidate.password != password:
+        raise HTTPException(
+            status_code=http_status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+        )
+
+    if not candidate.technical_test or candidate.technical_test_result != "pass":
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="You must pass the technical interview before taking the HR interview.",
+        )
+
+    if candidate.hr_test and candidate.hr_test_result:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=f"You have already completed the HR interview (result: {candidate.hr_test_result}).",
+        )
+
+    return ApiResponseSchema(
+        success=True,
+        message="Credentials verified",
+        data={
+            "candidate_id": str(candidate.candidate_id),
+            "job_requirement_id": str(candidate.job_requirement_id),
+            "candidate_name": f"{candidate.first_name or ''} {candidate.last_name or ''}".strip(),
+            "candidate_email": candidate.email,
+        },
+    )
+
+
+@router.post("/reset/{candidate_id}", response_model=ApiResponseSchema[dict])
+async def reset_candidate_hr_interview(
+    candidate_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Reset HR interview attempts for a candidate so they can retake it.
+
+    Deletes existing hr_interviews rows for this candidate and clears the
+    hr_test / hr_test_result / hr_test_score fields on the candidate so the
+    "Schedule HR Interview" flow re-opens.
+    """
+    from sqlalchemy import delete as sa_delete
+    from app.model.hr_interview_model import HRInterviewModel
+
+    try:
+        candidate_repo = CandidateRepository(db)
+        candidate = await candidate_repo.get_by_id(candidate_id)
+        if not candidate:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Candidate not found: {candidate_id}",
+            )
+
+        result = await db.execute(
+            sa_delete(HRInterviewModel).where(
+                HRInterviewModel.candidate_id == candidate_id
+            )
+        )
+        deleted = getattr(result, "rowcount", 0) or 0
+
+        candidate.hr_test = False
+        candidate.hr_test_result = None
+        try:
+            candidate.hr_test_score = None
+        except Exception:
+            pass
+
+        await db.commit()
+        await db.refresh(candidate)
+
+        return ApiResponseSchema(
+            success=True,
+            message=(
+                f"Reset complete — {deleted} previous HR interview(s) cleared. "
+                "Candidate can be scheduled for a fresh HR interview."
+            ),
+            data={
+                "candidate_id": str(candidate_id),
+                "email": candidate.email,
+                "deleted_interviews": deleted,
+                "job_requirement_id": str(candidate.job_requirement_id),
+            },
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to reset HR interview: {str(e)}",
+        )
+
+
 @router.post("/start/{candidate_id}", response_model=ApiResponseSchema[dict])
 async def start_hr_interview(
     candidate_id: UUID,
@@ -579,6 +703,95 @@ async def select_top_candidates(
         raise HTTPException(
             status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to select top candidates: {str(e)}"
+        )
+
+
+@router.get("/candidate/{candidate_id}/result", response_model=ApiResponseSchema[dict])
+async def get_candidate_hr_result(
+    candidate_id: UUID,
+    db: AsyncSession = Depends(get_async_db),
+):
+    """
+    Return the candidate's latest HR interview with its numeric scores.
+
+    Used by the candidate detail page to render the HR gauge with a real
+    percentage instead of just pass/fail. Returns data=null when the
+    candidate has not completed an HR interview.
+    """
+    try:
+        candidate_repo = CandidateRepository(db)
+        interview_repo = HRInterviewRepository(db)
+
+        candidate = await candidate_repo.get_by_id(candidate_id)
+        if not candidate:
+            raise HTTPException(
+                status_code=http_status.HTTP_404_NOT_FOUND,
+                detail=f"Candidate not found: {candidate_id}",
+            )
+        if not candidate.job_requirement_id:
+            return ApiResponseSchema(success=True, message="No job linked", data=None)
+
+        interview = await interview_repo.get_by_candidate_and_job(
+            candidate_id, candidate.job_requirement_id
+        )
+        if not interview:
+            return ApiResponseSchema(
+                success=True,
+                message="No HR interview yet for this candidate.",
+                data=None,
+            )
+
+        return ApiResponseSchema(
+            success=True,
+            message="HR interview retrieved",
+            data={
+                "hr_interview_id": str(interview.hr_interview_id),
+                "interview_session_id": interview.interview_session_id,
+                "interview_status": interview.interview_status,
+                "interview_started_at": interview.interview_started_at.isoformat() if interview.interview_started_at else None,
+                "interview_ended_at": interview.interview_ended_at.isoformat() if interview.interview_ended_at else None,
+                "interview_duration_seconds": interview.interview_duration_seconds,
+                # Scores
+                "overall_score": interview.overall_score,
+                "overall_rating": interview.overall_rating,
+                "communication_score": interview.communication_score,
+                "language_proficiency_score": interview.language_proficiency_score,
+                "articulation_score": getattr(interview, "articulation_score", None),
+                "confidence_score": interview.confidence_score,
+                "professionalism_score": interview.professionalism_score,
+                "attitude_score": getattr(interview, "attitude_score", None),
+                "teamwork_score": getattr(interview, "teamwork_score", None),
+                "leadership_score": getattr(interview, "leadership_score", None),
+                "problem_solving_score": getattr(interview, "problem_solving_score", None),
+                "adaptability_score": getattr(interview, "adaptability_score", None),
+                "cultural_fit_score": getattr(interview, "cultural_fit_score", None),
+                "motivation_score": getattr(interview, "motivation_score", None),
+                "engagement_score": getattr(interview, "engagement_score", None),
+                "passed_threshold": getattr(interview, "passed_threshold", None),
+                # Result + AI feedback
+                "result": getattr(interview, "result", None),
+                "ai_recommendation": getattr(interview, "ai_recommendation", None),
+                "ai_recommendation_reason": getattr(interview, "ai_recommendation_reason", None),
+                "ai_feedback_summary": getattr(interview, "ai_feedback_summary", None),
+                "candidate_strengths": getattr(interview, "candidate_strengths", None),
+                "candidate_weaknesses": getattr(interview, "candidate_weaknesses", None),
+                "improvement_areas": getattr(interview, "improvement_areas", None),
+                # Rich data
+                "interview_transcript": getattr(interview, "interview_transcript", None),
+                "skills_assessment": getattr(interview, "skills_assessment", None),
+                "question_analysis": getattr(interview, "question_analysis", None),
+                # Metadata
+                "interview_language": getattr(interview, "interview_language", None),
+                "languages_used": getattr(interview, "languages_used", None),
+                "candidate_hr_result": candidate.hr_test_result,
+            },
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch HR interview: {str(e)}",
         )
 
 

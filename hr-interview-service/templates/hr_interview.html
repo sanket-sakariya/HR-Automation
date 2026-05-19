@@ -16,28 +16,26 @@
            CSS Variables & Reset
            ============================================ */
         :root {
-            --bg-primary: #000000;
-            --bg-secondary: #050505;
-            --bg-tertiary: #0a0a0a;
-            --bg-glass: rgba(10, 10, 10, 0.85);
-            --bg-glass-light: rgba(20, 20, 20, 0.9);
-            --text-primary: #ffffff;
-            --text-secondary: #b0b0b0;
-            --text-muted: #606060;
-            --border-color: rgba(255, 255, 255, 0.08);
-            --border-light: rgba(255, 255, 255, 0.12);
-            --accent: #ffffff;
-            --accent-dim: rgba(255, 255, 255, 0.1);
+            --bg-primary: #f9fafb;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f3f4f6;
+            --bg-glass: rgba(255, 255, 255, 0.92);
+            --bg-glass-light: rgba(255, 255, 255, 0.98);
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-muted: #9ca3af;
+            --border-color: rgba(17, 24, 39, 0.08);
+            --border-light: rgba(17, 24, 39, 0.14);
+            --accent: #f59e0b;            /* amber-500 */
+            --accent-strong: #f97316;     /* orange-500 */
+            --accent-dim: rgba(245, 158, 11, 0.12);
             --success: #10b981;
             --error: #ef4444;
             --warning: #f59e0b;
-            --live-red: #ff3b30;
-            --glass-blur: 20px;
-            --gate-closed: #404040;
-            --gate-open: #ffffff;
-            /* HR Theme - Warm accent */
-            --hr-accent: #8b5cf6;
-            --hr-accent-dim: rgba(139, 92, 246, 0.1);
+            --live-red: #ef4444;
+            --glass-blur: 14px;
+            --gate-closed: #d1d5db;
+            --gate-open: #f59e0b;
         }
 
         * {
@@ -64,18 +62,18 @@
             align-items: center;
             height: 100vh;
             padding: 20px;
-            background: radial-gradient(ellipse at center, #0a0a0a 0%, #000000 70%);
+            background: radial-gradient(ellipse at top, rgba(245,158,11,0.10) 0%, #f9fafb 60%);
         }
         .login-screen.hidden { display: none; }
 
         .login-card {
-            background: var(--bg-glass);
-            backdrop-filter: blur(var(--glass-blur));
+            background: #ffffff;
             border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 48px;
             width: 100%;
             max-width: 420px;
+            box-shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
         }
         .login-card h1 {
             font-size: 28px;
@@ -83,7 +81,6 @@
             text-align: center;
             margin-bottom: 8px;
             letter-spacing: -0.5px;
-            color: var(--hr-accent);
         }
         .login-card p {
             color: var(--text-muted);
@@ -107,8 +104,8 @@
         .form-group input {
             width: 100%;
             padding: 14px 16px;
-            background: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
             border-radius: 10px;
             color: var(--text-primary);
             font-size: 14px;
@@ -117,8 +114,9 @@
         }
         .form-group input:focus {
             outline: none;
-            border-color: var(--hr-accent);
-            background: var(--bg-secondary);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+            background: #ffffff;
         }
         .form-group input::placeholder {
             color: var(--text-muted);
@@ -127,8 +125,8 @@
         .login-btn {
             width: 100%;
             padding: 16px;
-            background: var(--hr-accent);
-            color: var(--text-primary);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+            color: #ffffff;
             border: none;
             border-radius: 10px;
             font-size: 14px;
@@ -137,9 +135,10 @@
             cursor: pointer;
             margin-top: 8px;
             transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
         }
-        .login-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .login-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .login-btn:hover { opacity: 0.95; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45); }
+        .login-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
         .error-box {
             background: rgba(239, 68, 68, 0.1);
@@ -189,7 +188,7 @@
         .logo-icon {
             width: 36px;
             height: 36px;
-            border: 1.5px solid var(--hr-accent);
+            border: none;
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -197,7 +196,8 @@
             font-weight: 700;
             font-size: 13px;
             letter-spacing: -0.5px;
-            color: var(--hr-accent);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+            color: #ffffff;
         }
 
         .logo-text h1 {
@@ -268,7 +268,7 @@
         }
 
         .status-dot.ready { background: var(--success); box-shadow: 0 0 12px var(--success); }
-        .status-dot.speaking { background: var(--hr-accent); box-shadow: 0 0 12px var(--hr-accent); animation: pulse-glow 1.2s ease-in-out infinite; }
+        .status-dot.speaking { background: var(--accent); box-shadow: 0 0 12px var(--accent); animation: pulse-glow 1.2s ease-in-out infinite; }
         .status-dot.listening { background: var(--warning); box-shadow: 0 0 12px var(--warning); }
         .status-dot.error { background: var(--error); box-shadow: 0 0 12px var(--error); }
 
@@ -295,7 +295,7 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            background: radial-gradient(ellipse at center, #0a0a0a 0%, #000000 70%);
+            background: radial-gradient(ellipse at center, #ffffff 0%, #f9fafb 70%);
             padding: 24px;
             gap: 24px;
         }
@@ -306,10 +306,11 @@
             width: 100%;
             max-width: 480px;
             aspect-ratio: 4/3;
-            background: var(--bg-tertiary);
+            background: #f3f4f6;
             border-radius: 16px;
             overflow: hidden;
             border: 1px solid var(--border-color);
+            box-shadow: 0 4px 16px rgba(17, 24, 39, 0.06);
         }
 
         .video-container video {
@@ -340,7 +341,8 @@
             position: absolute;
             bottom: 12px;
             left: 12px;
-            background: rgba(0,0,0,0.7);
+            background: rgba(17,24,39,0.75);
+            color: #ffffff;
             backdrop-filter: blur(8px);
             padding: 8px 14px;
             border-radius: 8px;
@@ -369,24 +371,26 @@
         .visualizer-ring:nth-child(2) { width: 75%; height: 75%; }
         .visualizer-ring:nth-child(3) { width: 50%; height: 50%; }
 
-        .visualizer-ring.active { border-color: rgba(139, 92, 246, 0.5); }
+        .visualizer-ring.active { border-color: rgba(245, 158, 11, 0.45); }
 
         .visualizer-core {
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: linear-gradient(145deg, var(--bg-tertiary), var(--bg-primary));
+            background: linear-gradient(145deg, #ffffff, #fef3c7);
             border: 1.5px solid var(--border-light);
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.25s ease;
             z-index: 10;
+            box-shadow: 0 2px 8px rgba(17,24,39,0.06);
         }
 
         .visualizer-core.active {
-            border-color: var(--hr-accent);
-            box-shadow: 0 0 40px rgba(139, 92, 246, 0.3);
+            border-color: var(--accent);
+            background: linear-gradient(145deg, var(--accent) 0%, var(--accent-strong) 100%);
+            box-shadow: 0 0 40px rgba(245, 158, 11, 0.45);
         }
 
         .visualizer-core svg {
@@ -396,7 +400,7 @@
             transition: fill 0.2s ease;
         }
 
-        .visualizer-core.active svg { fill: var(--hr-accent); }
+        .visualizer-core.active svg { fill: #ffffff; }
 
         .ai-label {
             text-align: center;
@@ -488,12 +492,12 @@
             align-items: center;
             gap: 6px;
             padding: 4px 10px;
-            background: rgba(139, 92, 246, 0.15);
-            border: 1px solid rgba(139, 92, 246, 0.3);
+            background: rgba(255, 59, 48, 0.15);
+            border: 1px solid rgba(255, 59, 48, 0.3);
             border-radius: 12px;
             font-size: 10px;
             font-weight: 600;
-            color: var(--hr-accent);
+            color: var(--live-red);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             opacity: 0;
@@ -506,7 +510,7 @@
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: var(--hr-accent);
+            background: var(--live-red);
             animation: live-pulse 1s ease-in-out infinite;
         }
 
@@ -551,9 +555,10 @@
         .transcript-message {
             padding: 14px 16px;
             border-radius: 12px;
-            background: var(--bg-glass-light);
+            background: #ffffff;
             border: 1px solid var(--border-color);
             animation: message-in 0.25s ease-out;
+            box-shadow: 0 1px 3px rgba(17,24,39,0.04);
         }
 
         @keyframes message-in {
@@ -562,8 +567,8 @@
         }
 
         .transcript-message.interviewer {
-            background: rgba(139, 92, 246, 0.08);
-            border-color: rgba(139, 92, 246, 0.2);
+            background: #fffbeb;
+            border-color: #fde68a;
         }
 
         .transcript-message .role {
@@ -573,7 +578,7 @@
             letter-spacing: 1px;
             margin-bottom: 6px;
             display: block;
-            color: var(--hr-accent);
+            color: var(--text-secondary);
         }
 
         .transcript-message .text {
@@ -678,14 +683,15 @@
         .control-btn svg { width: 16px; height: 16px; }
 
         .control-btn.primary {
-            background: var(--hr-accent);
-            color: var(--text-primary);
-            border-color: var(--hr-accent);
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+            color: #ffffff;
+            border-color: transparent;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
         }
 
         .control-btn.primary:hover:not(:disabled) {
-            background: #7c3aed;
-            border-color: #7c3aed;
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+            transform: translateY(-1px);
         }
 
         .control-btn.danger {
@@ -757,22 +763,14 @@
             <div class="error-box" id="errorBox"></div>
             <form id="loginForm">
                 <div class="form-group">
-                    <label>Candidate ID</label>
-                    <input type="text" id="candidateId" placeholder="Enter candidate ID" required>
-                </div>
-                <div class="form-group">
-                    <label>Job Requirement ID</label>
-                    <input type="text" id="jobRequirementId" placeholder="Enter job requirement ID" required>
-                </div>
-                <div class="form-group">
                     <label>Email</label>
-                    <input type="email" id="email" placeholder="Enter your email" required>
+                    <input type="email" id="email" placeholder="Enter your email" required autofocus>
                 </div>
                 <div class="form-group">
                     <label>Password</label>
                     <input type="password" id="password" placeholder="Enter password" required>
                 </div>
-                <button type="submit" class="login-btn" id="loginBtn">Start HR Interview</button>
+                <button type="submit" class="login-btn" id="loginBtn">Start Interview</button>
             </form>
         </div>
     </div>
@@ -782,7 +780,7 @@
         <!-- Header -->
         <header class="header">
             <div class="logo">
-                <div class="logo-icon">HR</div>
+                <div class="logo-icon">AI</div>
                 <div class="logo-text">
                     <h1>HR Interview</h1>
                     <span id="jobTitle">Position</span>
@@ -837,7 +835,7 @@
             </div>
 
             <div class="ai-label">
-                <span id="aiStatusText">Adhira - HR Manager Ready</span>
+                <span id="aiStatusText">AI Interviewer Ready</span>
             </div>
 
             <div class="gate-indicator" id="gateIndicator">
@@ -989,8 +987,6 @@
                     loginForm: document.getElementById('loginForm'),
                     loginBtn: document.getElementById('loginBtn'),
                     errorBox: document.getElementById('errorBox'),
-                    candidateId: document.getElementById('candidateId'),
-                    jobRequirementId: document.getElementById('jobRequirementId'),
                     email: document.getElementById('email'),
                     password: document.getElementById('password'),
                     appContainer: document.getElementById('appContainer'),
@@ -1035,22 +1031,22 @@
             }
             
             init() {
-                // Check for session ID in URL
+                // If the URL contains /interview/<session>, remember the session
+                // but DO NOT auto-load it — the candidate must log in first.
                 const pathMatch = window.location.pathname.match(/\/interview\/([^/]+)/);
                 if (pathMatch) {
                     this.sessionId = pathMatch[1];
-                    this.loadSession(this.sessionId);
                 }
-                
+
                 // Event listeners
                 this.el.loginForm.onsubmit = (e) => this.handleLogin(e);
                 this.el.startBtn.onclick = () => this.startInterview();
                 this.el.endBtn.onclick = () => this.endInterview();
                 this.el.clearBtn.onclick = () => this.clearTranscript();
-                
+
                 this.setStatus('disconnected', 'Ready to start');
                 this.updateEntryCount();
-                
+
                 // Initialize Web Worker
                 this.initAudioWorker();
             }
@@ -1096,16 +1092,24 @@
                 this.currentDbLevel = metrics.dbLevel;
                 this.updateGateIndicator();
                 
-                // Don't send audio while AI is speaking
+                // Barge-in only when user is clearly speaking — debounce noise/keyboard taps
+                // by requiring 3 consecutive frames above a stricter threshold.
                 if (this.isAISpeaking) {
-                    const bargeInThreshold = -20;
+                    const bargeInThreshold = -10;  // was -20; raised to ignore breath / fans
                     if (metrics.dbLevel > bargeInThreshold) {
+                        this._bargeInFrames = (this._bargeInFrames || 0) + 1;
+                    } else {
+                        this._bargeInFrames = 0;
+                    }
+                    if (this._bargeInFrames >= 3) {
+                        this._bargeInFrames = 0;
                         this.stopAudio();
                         this.send({ type: 'interrupt' });
                         this.sendBinary(pcmBuffer);
                     }
                     return;
                 }
+                this._bargeInFrames = 0;
                 
                 // Send audio to server
                 this.sendBinary(pcmBuffer);
@@ -1135,15 +1139,33 @@
                 this.el.loginBtn.textContent = 'Starting...';
                 this.hideError();
 
+                const email = this.el.email.value.trim();
+                const password = this.el.password.value;
+
                 try {
-                    const response = await fetch(`/start/${this.el.candidateId.value.trim()}`, {
+                    // CASE A: URL had /interview/<session_id> — verify creds against that session.
+                    if (this.sessionId) {
+                        const verifyRes = await fetch(`/api/session/${this.sessionId}/verify`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+                        const verifyData = await verifyRes.json();
+                        if (!verifyRes.ok) {
+                            throw new Error(verifyData.detail || 'Verification failed');
+                        }
+                        this.hrInterviewId = verifyData.hr_interview_id;
+                        this.jobDetails = verifyData.job_details;
+                        this.candidateInfo = verifyData.candidate_info;
+                        this.showInterviewScreen();
+                        return;
+                    }
+
+                    // CASE B: Fresh login — create a brand new session via /start.
+                    const response = await fetch('/start', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            job_requirement_id: this.el.jobRequirementId.value.trim(),
-                            email: this.el.email.value.trim(),
-                            password: this.el.password.value
-                        })
+                        body: JSON.stringify({ email, password })
                     });
 
                     const data = await response.json();
@@ -1151,7 +1173,7 @@
 
                     if (data.success) {
                         this.sessionId = data.session_id;
-                        this.hrInterviewId = data.hr_interview_id;  // Store for completion
+                        this.hrInterviewId = data.hr_interview_id;
                         this.jobDetails = data.job_details;
                         this.candidateInfo = data.candidate_info;
                         window.history.pushState({}, '', `/interview/${this.sessionId}`);
@@ -1161,7 +1183,7 @@
                     this.showError(error.message);
                 } finally {
                     this.el.loginBtn.disabled = false;
-                    this.el.loginBtn.textContent = 'Start HR Interview';
+                    this.el.loginBtn.textContent = 'Start Interview';
                 }
             }
 
@@ -1186,7 +1208,7 @@
                 this.el.appContainer.classList.add('active');
 
                 if (this.jobDetails) {
-                    this.el.jobTitle.textContent = this.jobDetails.title || 'HR Interview';
+                    this.el.jobTitle.textContent = this.jobDetails.title || 'Position';
                 }
                 if (this.candidateInfo) {
                     const name = `${this.candidateInfo.first_name || ''} ${this.candidateInfo.last_name || ''}`.trim();
@@ -1304,11 +1326,11 @@
                 switch (status) {
                     case 'ready':
                         this.setStatus('ready', 'Ready');
-                        this.el.aiStatusText.textContent = 'Adhira - HR Manager Ready';
+                        this.el.aiStatusText.textContent = 'AI Interviewer Ready';
                         break;
                     case 'speaking':
                         this.isAISpeaking = true;
-                        this.setStatus('speaking', 'Adhira Speaking');
+                        this.setStatus('speaking', 'AI Speaking');
                         this.el.aiStatusText.textContent = 'Speaking...';
                         this.el.visualizerCore.classList.add('active');
                         this.el.rings.forEach(r => r.classList.add('active'));
@@ -1496,18 +1518,23 @@
             }
             
             stopAudio() {
+                // Stop and detach every active source so no more samples reach the speakers,
+                // but DO NOT close the playbackContext — closing it mid-chunk truncates the
+                // last word the AI was speaking and adds startup latency on the next chunk
+                // (root cause of "the AI swallows the end of sentences").
                 this.activeSources.forEach(source => {
                     try { source.stop(); } catch (e) {}
                     this.cleanupAudioSource(source);
                 });
                 this.activeSources.clear();
-                
-                if (this.playbackContext) {
-                    this.playbackContext.close();
-                    this.playbackContext = null;
+
+                // Re-anchor the playback clock to "now" so the next incoming chunk
+                // schedules without a gap or overlap.
+                if (this.playbackContext && this.playbackContext.state !== 'closed') {
+                    this.scheduledTime = this.playbackContext.currentTime;
+                } else {
+                    this.scheduledTime = 0;
                 }
-                
-                this.scheduledTime = 0;
                 this.isAISpeaking = false;
             }
             
@@ -1576,7 +1603,7 @@
                 if (this.interviewerEl) {
                     this.interviewerEl.querySelector('.text').textContent = this.interviewerText;
                 } else {
-                    this.interviewerEl = this.createMessage('Adhira - HR Manager', this.interviewerText, 'interviewer');
+                    this.interviewerEl = this.createMessage('AI Interviewer', this.interviewerText, 'interviewer');
                 }
                 
                 this.autoScroll();
@@ -1665,7 +1692,7 @@
                             console.log('Score generation timeout after 60s');
                             resolve(null);
                         }
-                    }, 60000);  // 60 second timeout
+                    }, 60000);  // 60 second timeout (increased)
                     
                     // Listen for scores_generated message
                     const checkMessage = (event) => {
@@ -1759,7 +1786,7 @@
                             total_speaking_time_seconds: scores.total_speaking_time_seconds,
                             interviewer_transcript: scores.interviewer_transcript,
                             question_analysis: scores.question_analysis,
-                            soft_skills_assessment: scores.soft_skills_assessment,
+                            soft_skills_assessment: scores.soft_skills_assessment || scores.skills_assessment,
                             candidate_strengths: scores.candidate_strengths,
                             candidate_weaknesses: scores.candidate_weaknesses,
                             ai_recommendation: scores.ai_recommendation,
@@ -1805,24 +1832,24 @@
                             // Display summary in transcript area
                             if (scores.candidate_answer_summary || scores.ai_feedback_summary) {
                                 const summaryHtml = `
-                                    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-radius: 12px; padding: 20px; margin-top: 20px; border: 1px solid rgba(139, 92, 246, 0.3);">
-                                        <h3 style="color: #8b5cf6; margin-bottom: 12px; font-size: 16px;">📊 HR Interview Summary</h3>
-                                        <p style="color: #e0e0e0; font-size: 14px; line-height: 1.6; margin-bottom: 15px;">
+                                    <div style="background: #ffffff; border-radius: 12px; padding: 20px; margin-top: 20px; border: 1px solid #fde68a; box-shadow: 0 4px 14px rgba(245,158,11,0.12);">
+                                        <h3 style="color: #d97706; margin-bottom: 12px; font-size: 16px;">📊 Interview Summary</h3>
+                                        <p style="color: #111827; font-size: 14px; line-height: 1.6; margin-bottom: 15px;">
                                             <strong>Your Performance:</strong> ${scores.candidate_answer_summary || 'No summary available'}
                                         </p>
-                                        <p style="color: #b0b0b0; font-size: 13px; line-height: 1.5;">
+                                        <p style="color: #4b5563; font-size: 13px; line-height: 1.5;">
                                             <strong>Feedback:</strong> ${scores.ai_feedback_summary || 'No feedback available'}
                                         </p>
                                         ${scores.candidate_strengths ? `
                                             <div style="margin-top: 12px;">
-                                                <strong style="color: #10b981; font-size: 13px;">✓ Strengths:</strong>
-                                                <span style="color: #a0a0a0; font-size: 13px;">${scores.candidate_strengths.join(', ')}</span>
+                                                <strong style="color: #059669; font-size: 13px;">✓ Strengths:</strong>
+                                                <span style="color: #374151; font-size: 13px;">${scores.candidate_strengths.join(', ')}</span>
                                             </div>
                                         ` : ''}
                                         ${scores.improvement_areas ? `
                                             <div style="margin-top: 8px;">
-                                                <strong style="color: #f59e0b; font-size: 13px;">↑ Areas to Improve:</strong>
-                                                <span style="color: #a0a0a0; font-size: 13px;">${scores.improvement_areas.join(', ')}</span>
+                                                <strong style="color: #d97706; font-size: 13px;">↑ Areas to Improve:</strong>
+                                                <span style="color: #374151; font-size: 13px;">${scores.improvement_areas.join(', ')}</span>
                                             </div>
                                         ` : ''}
                                         <p style="color: #6b7280; font-size: 12px; margin-top: 15px; text-align: center;">

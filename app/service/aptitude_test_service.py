@@ -315,7 +315,8 @@ CRITICAL RULES:
                     email=attempt.candidate_email,
                     job_requirement_id=attempt.job_requirement_id,
                     aptitude_test=True,
-                    aptitude_test_result=aptitude_test_result
+                    aptitude_test_result=aptitude_test_result,
+                    aptitude_test_score=round(score, 2),
                 )
                 log_central(
                     f"Candidate aptitude test status updated: email={attempt.candidate_email}, result={aptitude_test_result}",

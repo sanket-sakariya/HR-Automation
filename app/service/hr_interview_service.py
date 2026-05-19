@@ -182,14 +182,18 @@ class HRInterviewService:
         )
         
         if updated_interview:
-            # Update candidate's HR interview status
+            # Update candidate's HR interview status, score, and result
             result = completion_data.get("result", "fail")
+            overall_score = completion_data.get("overall_score")
+            candidate_update: Dict[str, Any] = {
+                "hr_test": True,
+                "hr_test_result": result,
+            }
+            if overall_score is not None:
+                candidate_update["hr_test_score"] = overall_score
             await self.candidate_repo.update(
                 updated_interview.candidate_id,
-                {
-                    "hr_test": True,
-                    "hr_test_result": result
-                }
+                candidate_update,
             )
         
         return updated_interview

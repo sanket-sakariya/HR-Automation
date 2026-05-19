@@ -37,6 +37,12 @@ class CandidateModel(BaseAppModel):
     technical_test_result = Column(String(10), nullable=True)  # 'pass' or 'fail'
     hr_test_result = Column(String(10), nullable=True)  # 'pass' or 'fail'
 
+    # Numeric scores from each round (percentage 0-100), persisted on candidate
+    # for fast read on listings/detail pages (also lives in the per-round tables).
+    aptitude_test_score = Column(Numeric(10, 4), nullable=True)
+    technical_test_score = Column(Numeric(10, 4), nullable=True)
+    hr_test_score = Column(Numeric(10, 4), nullable=True)
+
     # Resume selection field - based on top N resume scores for the job
     resume_selected = Column(Boolean, nullable=True, default=False)  # True if resume is selected
 

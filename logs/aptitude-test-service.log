@@ -1,0 +1,304 @@
+2026-05-19 08:27:46,230 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 08:27:46,230 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 08:27:46,230 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 08:27:46,256 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 08:27:46,256 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 08:27:46,257 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 08:27:46,466 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 08:27:46,466 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 08:27:46,466 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 08:27:46,484 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 08:27:46,488 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 08:49:39,951 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 08:49:39,951 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 08:49:39,951 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 08:49:39,975 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 08:49:39,975 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 08:49:39,976 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 08:49:40,182 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 08:49:40,182 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 08:49:40,182 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 08:49:40,200 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 08:49:40,204 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:06:14,338 - werkzeug - INFO -  * Detected change in '/home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/main.py', reloading
+2026-05-19 09:06:14,381 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:06:14,597 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:06:14,598 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:06:14,598 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 09:06:14,615 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:06:14,619 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:06:22,658 - werkzeug - INFO -  * Detected change in '/home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/main.py', reloading
+2026-05-19 09:06:22,700 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:06:22,920 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:06:22,921 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:06:22,921 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 09:06:22,939 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:06:22,943 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:11:13,391 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:11:13,391 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:11:13,392 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 09:11:13,414 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 09:11:13,415 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 09:11:13,415 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:11:13,623 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:11:13,623 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:11:13,623 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 09:11:13,640 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:11:13,644 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:16:33,661 - werkzeug - INFO - 127.0.0.1 - - [19/May/2026 09:16:33] "GET /tests/2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4_ea6eebdd-ef3e-4c94-915d-3d8b4551bae1.html HTTP/1.1" 200 -
+2026-05-19 09:17:10,738 - werkzeug - INFO - 127.0.0.1 - - [19/May/2026 09:17:10] "GET /tests/2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4_ea6eebdd-ef3e-4c94-915d-3d8b4551bae1.html HTTP/1.1" 200 -
+2026-05-19 09:18:31,017 - werkzeug - INFO -  * Detected change in '/home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/main.py', reloading
+2026-05-19 09:18:31,058 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:18:31,278 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:18:31,278 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:18:31,278 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 09:18:31,295 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:18:31,300 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:18:53,476 - werkzeug - INFO - 127.0.0.1 - - [19/May/2026 09:18:53] "GET /tests/2ff70a2a-d4aa-4d00-997a-1d2cd4d0d0e4_ea6eebdd-ef3e-4c94-915d-3d8b4551bae1.html HTTP/1.1" 200 -
+2026-05-19 09:25:16,698 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:25:16,698 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:25:16,698 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 09:25:16,721 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 09:25:16,721 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 09:25:16,721 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:25:16,925 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:25:16,925 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:25:16,925 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 09:25:16,942 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:25:16,945 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:34:29,497 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:34:29,498 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:34:29,498 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 09:34:29,520 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 09:34:29,520 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 09:34:29,521 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:34:29,726 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:34:29,727 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:34:29,727 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 09:34:29,744 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:34:29,748 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:41:47,146 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:41:47,146 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:41:47,146 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 09:41:47,170 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 09:41:47,170 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 09:41:47,171 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:41:47,378 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:41:47,379 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:41:47,379 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 09:41:47,396 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:41:47,400 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 09:47:31,322 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:47:31,322 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:47:31,322 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 09:47:31,344 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 09:47:31,344 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 09:47:31,345 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 09:47:31,550 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 09:47:31,550 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 09:47:31,550 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 09:47:31,567 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 09:47:31,571 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 10:04:51,807 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 10:04:51,808 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 10:04:51,808 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 10:04:51,830 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 10:04:51,830 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 10:04:51,831 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 10:04:52,034 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 10:04:52,034 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 10:04:52,034 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 10:04:52,051 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 10:04:52,055 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 10:10:37,705 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 10:10:37,705 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 10:10:37,705 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 10:10:37,728 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 10:10:37,728 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 10:10:37,729 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 10:10:37,952 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 10:10:37,952 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 10:10:37,952 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 10:10:37,971 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 10:10:37,975 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 10:44:02,807 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 10:44:02,808 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 10:44:02,808 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 10:44:02,821 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 10:44:02,821 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 10:44:02,821 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 10:44:02,934 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 10:44:02,934 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 10:44:02,934 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 10:44:02,943 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 10:44:02,945 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 10:45:40,013 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 10:45:40,014 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 10:45:40,014 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 10:45:40,027 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 10:45:40,027 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 10:45:40,027 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 10:45:40,139 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 10:45:40,139 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 10:45:40,139 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 10:45:40,149 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 10:45:40,151 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 10:56:48,728 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 10:56:48,729 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 10:56:48,729 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 10:56:48,743 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 10:56:48,743 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 10:56:48,744 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 10:56:48,865 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 10:56:48,865 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 10:56:48,865 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 10:56:48,875 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 10:56:48,877 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 11:13:05,800 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 11:13:05,800 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 11:13:05,800 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 11:13:05,822 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 11:13:05,822 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 11:13:05,823 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 11:13:06,031 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 11:13:06,031 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 11:13:06,031 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 11:13:06,049 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 11:13:06,052 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 11:30:24,156 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 11:30:24,156 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 11:30:24,156 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 11:30:24,179 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 11:30:24,180 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 11:30:24,180 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 11:30:24,394 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 11:30:24,394 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 11:30:24,394 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 11:30:24,411 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 11:30:24,415 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 11:33:20,433 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 11:33:20,433 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 11:33:20,433 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 11:33:20,460 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 11:33:20,460 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 11:33:20,461 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 11:33:20,673 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 11:33:20,674 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 11:33:20,674 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 11:33:20,691 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 11:33:20,695 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 11:40:12,448 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 11:40:12,448 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 11:40:12,448 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 11:40:12,462 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 11:40:12,462 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 11:40:12,462 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 11:40:12,579 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 11:40:12,579 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 11:40:12,579 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 11:40:12,589 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 11:40:12,591 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 12:06:02,151 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 12:06:02,151 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 12:06:02,151 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 12:06:02,164 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 12:06:02,164 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 12:06:02,164 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 12:06:02,276 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 12:06:02,276 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 12:06:02,276 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 12:06:02,285 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 12:06:02,287 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 12:15:19,162 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 12:15:19,162 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 12:15:19,162 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 12:15:19,175 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 12:15:19,175 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 12:15:19,175 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 12:15:19,286 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 12:15:19,286 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 12:15:19,286 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 12:15:19,296 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 12:15:19,298 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 12:35:42,681 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 12:35:42,681 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 12:35:42,681 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 12:35:42,698 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 12:35:42,698 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 12:35:42,699 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 12:35:42,815 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 12:35:42,815 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 12:35:42,815 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 12:35:42,825 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 12:35:42,828 - werkzeug - INFO -  * Debugger PIN: 140-702-408
+2026-05-19 12:47:35,529 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 12:47:35,529 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 12:47:35,529 - __main__ - INFO - Service available at: http://localhost:8890
+ * Serving Flask app 'main'
+ * Debug mode: on
+2026-05-19 12:47:35,552 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://localhost:8890
+2026-05-19 12:47:35,552 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-05-19 12:47:35,553 - werkzeug - INFO -  * Restarting with stat
+2026-05-19 12:47:35,759 - __main__ - INFO - Starting Aptitude Test Service...
+2026-05-19 12:47:35,759 - __main__ - INFO - Tests will be stored in: /home/sanket777/github-code/HR automation/HR-Automation/aptitude test service/tests
+2026-05-19 12:47:35,759 - __main__ - INFO - Service available at: http://localhost:8890
+2026-05-19 12:47:35,776 - werkzeug - WARNING -  * Debugger is active!
+2026-05-19 12:47:35,779 - werkzeug - INFO -  * Debugger PIN: 140-702-408

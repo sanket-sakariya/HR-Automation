@@ -401,27 +401,74 @@ APTITUDE_TEST_TEMPLATE = """
         // Timer functionality
         const totalSeconds = {{ total_time_minutes }} * 60;
         let remainingSeconds = totalSeconds;
+        let timerIntervalId = null;
+        let timerStartedAt = null;
+        let timerEndsAt = null;
         const timerElement = document.getElementById('timeRemaining');
         const timerContainer = document.getElementById('timer');
 
-        function updateTimer() {
-            const minutes = Math.floor(remainingSeconds / 60);
-            const seconds = remainingSeconds % 60;
-            timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-
-            if (remainingSeconds <= 60) {
-                timerContainer.classList.add('danger');
-            } else if (remainingSeconds <= 300) {
-                timerContainer.classList.add('warning');
+        function renderTimer() {
+            const safe = Math.max(0, remainingSeconds);
+            const minutes = Math.floor(safe / 60);
+            const seconds = safe % 60;
+            const el = timerElement || document.getElementById('timeRemaining');
+            if (el) {
+                el.textContent = minutes + ':' + seconds.toString().padStart(2, '0');
             }
-
-            if (remainingSeconds <= 0) {
-                alert('Time is up! Submitting your test...');
-                document.getElementById('aptitudeTestForm').submit();
+            const cont = timerContainer || document.getElementById('timer');
+            if (cont) {
+                if (safe <= 60) {
+                    cont.classList.add('danger');
+                } else if (safe <= 300) {
+                    cont.classList.add('warning');
+                }
             }
-
-            remainingSeconds--;
         }
+
+        function tickTimer() {
+            try {
+                if (timerEndsAt !== null) {
+                    remainingSeconds = Math.ceil((timerEndsAt - Date.now()) / 1000);
+                }
+                renderTimer();
+                if (remainingSeconds <= 0) {
+                    if (timerIntervalId !== null) {
+                        clearInterval(timerIntervalId);
+                        timerIntervalId = null;
+                    }
+                    alert('Time is up! Submitting your test...');
+                    const form = document.getElementById('aptitudeTestForm');
+                    if (form) form.submit();
+                }
+            } catch (err) {
+                console.error('Timer tick error:', err);
+            }
+        }
+
+        // Public alias used elsewhere in the code.
+        function updateTimer() { tickTimer(); }
+
+        function startTimer() {
+            if (timerStartedAt !== null) return; // idempotent
+            timerStartedAt = Date.now();
+            timerEndsAt = timerStartedAt + totalSeconds * 1000;
+            renderTimer();
+            // Kick the first decrement immediately so the user sees movement.
+            setTimeout(tickTimer, 1000);
+            // Primary loop.
+            timerIntervalId = setInterval(tickTimer, 1000);
+            console.log('[aptitude] Timer started for', totalSeconds, 'seconds');
+        }
+
+        // Auto-start safety net: if for ANY reason startTest is never called
+        // (e.g. user dismissed fullscreen, button event lost), the timer must
+        // still start as soon as the entry overlay is gone.
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && timerStartedAt === null) {
+                const entry = document.getElementById('fullscreenEntry');
+                if (entry && entry.style.display === 'none') startTimer();
+            }
+        });
 
         // Timer will be started by startTest() function
 
@@ -562,13 +609,17 @@ APTITUDE_TEST_TEMPLATE = """
         window.startTest = function() {
             // Enter fullscreen
             enterFullscreen();
-            
+
             // Hide entry screen and start timer
             setTimeout(() => {
                 document.getElementById('fullscreenEntry').style.display = 'none';
-                // Start the timer
-                setInterval(updateTimer, 1000);
+                // Start the timer (idempotent)
+                startTimer();
             }, 500);
+
+            // Safety net: ensure the timer starts even if the fullscreen
+            // transition is slow or the setTimeout above is throttled.
+            startTimer();
         }
 
         function exitFullscreen() {

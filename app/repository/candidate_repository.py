@@ -279,10 +279,13 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
         job_requirement_id: UUID,
         aptitude_test: bool,
         aptitude_test_result: str,  # 'pass' or 'fail'
+        aptitude_test_score: Optional[float] = None,  # 0-100 percentage
     ) -> Optional[CandidateModel]:
         """
         Update aptitude test fields for a candidate based on email and job requirement.
-        Sets aptitude_test to True and aptitude_test_result to 'pass' or 'fail'.
+        Sets aptitude_test to True, aptitude_test_result to 'pass'/'fail', and
+        optionally aptitude_test_score so the percentage is queryable directly
+        from the candidate row (used by the candidate detail page).
         """
         try:
             candidate = await self.get_by_email_and_job_requirement(email, str(job_requirement_id))
@@ -291,6 +294,8 @@ class CandidateRepository(BaseAppRepository[CandidateModel]):
 
             candidate.aptitude_test = aptitude_test
             candidate.aptitude_test_result = aptitude_test_result
+            if aptitude_test_score is not None:
+                candidate.aptitude_test_score = aptitude_test_score
 
             await self.db.commit()
             await self.db.refresh(candidate)

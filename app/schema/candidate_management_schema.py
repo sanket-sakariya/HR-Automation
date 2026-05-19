@@ -61,7 +61,12 @@ class CandidateReadSchema(BaseAppSchema):
     aptitude_test_result: Optional[str] = Field(None, description="Aptitude test result: 'pass' or 'fail'")
     technical_test_result: Optional[str] = Field(None, description="Technical test result: 'pass' or 'fail'")
     hr_test_result: Optional[str] = Field(None, description="HR test result: 'pass' or 'fail'")
-    
+
+    # Numeric score fields (percentage 0-100) persisted on candidate row
+    aptitude_test_score: Optional[float] = Field(None, description="Aptitude test score (0-100)")
+    technical_test_score: Optional[float] = Field(None, description="Technical interview score (0-100)")
+    hr_test_score: Optional[float] = Field(None, description="HR interview score (0-100)")
+
     # Resume selection field
     resume_selected: Optional[bool] = Field(None, description="Resume selected based on score")
 

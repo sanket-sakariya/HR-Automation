@@ -1,0 +1,548 @@
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [25985] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [25988]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+
+===========================================================================
+🎤 TECHNICAL INTERVIEW SERVICE - Production Hardened
+===========================================================================
+📡 Model: gemini-2.5-flash-native-audio-preview-12-2025
+🔗 Main Service: http://localhost:8888/interview-management-service/api/v1
+⏱️  Jitter buffer: 50ms
+🎤 Min speech duration: 150ms
+✅ API Key loaded (ends with: ...wjei2BZs)
+===========================================================================
+
+✅ Session registered: TI-6a9cdee78479-20260519104021
+INFO:     127.0.0.1:34296 - "POST /register-session HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34312 - "GET /interview/TI-6a9cdee78479-20260519104021 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34312 - "GET /static/dom_manager.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34312 - "GET /api/session/TI-6a9cdee78479-20260519104021 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34326 - "GET /static/audio_worker.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34326 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:34326 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     ('127.0.0.1', 51556) - "WebSocket /ws/interview/TI-6a9cdee78479-20260519104021" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [25988]
+INFO:     Stopping reloader process [25985]
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [26961] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [26967]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+
+===========================================================================
+🎤 TECHNICAL INTERVIEW SERVICE - Production Hardened
+===========================================================================
+📡 Model: gemini-2.5-flash-native-audio-preview-12-2025
+🔗 Main Service: http://localhost:8888/interview-management-service/api/v1
+⏱️  Jitter buffer: 50ms
+🎤 Min speech duration: 150ms
+✅ API Key loaded (ends with: ...ZjhjIV0E)
+===========================================================================
+
+✅ Session registered: TI-6a9cdee78479-20260519104021
+INFO:     127.0.0.1:47332 - "POST /register-session HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47344 - "GET /interview/TI-6a9cdee78479-20260519104021 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47344 - "GET /api/session/TI-6a9cdee78479-20260519104021 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47344 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     ('127.0.0.1', 47374) - "WebSocket /ws/interview/TI-6a9cdee78479-20260519104021" [accepted]
+INFO:     connection open
+INFO:     connection closed
+🔗 WebSocket connected: TI-6a9cdee78479-20260519104021
+🆕 Starting FRESH interview session (no prior context)
+🆕 Fresh interview session initialized for Sanket Sakariya
+✅ Gemini session connected (production hardened)
+🎤 Starting interview...
+🛑 AI interrupted (barge-in)
+🛑 AI interrupted (barge-in)
+🛑 AI interrupted (barge-in)
+🛑 AI interrupted (barge-in)
+🧠 Generating AI evaluation scores...
+📝 Interviewer transcript length: 236 characters
+🔄 Attempting evaluation with gemini-2.5-flash (attempt 1/5)...
+INFO:     127.0.0.1:35494 - "POST /register-session HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47358 - "GET /interview/TI-6a9cdee78479-20260519104021 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47358 - "GET /api/session/TI-6a9cdee78479-20260519104021 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47358 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     ('127.0.0.1', 35516) - "WebSocket /ws/interview/TI-6a9cdee78479-20260519104021" [accepted]
+INFO:     connection open
+INFO:     connection closed
+🔗 WebSocket connected: TI-6a9cdee78479-20260519104021
+🆕 Starting FRESH interview session (no prior context)
+🆕 Fresh interview session initialized for Sanket Sakariya
+✅ Gemini session connected (production hardened)
+🎤 Starting interview...
+✅ Evaluation successful with gemini-2.5-flash
+📊 Token Usage - Input: 1091, Output: 864, Total: 1955
+✅ Scores generated - Overall: 0, Result: fail
+   Recommendation: not_recommend
+📡 Gemini stream ended
+🔌 Session cleaned up
+👋 WebSocket closed: TI-6a9cdee78479-20260519104021
+🛑 AI interrupted (barge-in)
+🛑 AI interrupted (barge-in)
+🧠 Generating AI evaluation scores...
+📝 Interviewer transcript length: 268 characters
+🔄 Attempting evaluation with gemini-2.5-flash (attempt 1/5)...
+✅ Evaluation successful with gemini-2.5-flash
+📊 Token Usage - Input: 1103, Output: 1007, Total: 2110
+✅ Scores generated - Overall: 0, Result: fail
+   Recommendation: not_recommend
+🧹 Session cleaned up: TI-6a9cdee78479-20260519104021
+✅ Interview completed: 8a5c8dd5-7f35-42c9-9596-4f7aafce7e7e
+   Overall Score: 50.0
+   Result: fail
+   AI Recommendation: not_recommend
+INFO:     127.0.0.1:37522 - "POST /complete/8a5c8dd5-7f35-42c9-9596-4f7aafce7e7e HTTP/1.1" 200 OK
+Gemini stream error: 1000 None. 
+📡 Gemini stream ended
+🔌 Session cleaned up
+👋 WebSocket closed: TI-6a9cdee78479-20260519104021
+INFO:     127.0.0.1:50760 - "GET /thank-you HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50760 - "GET / HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [26967]
+INFO:     Started server process [27454]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27454]
+INFO:     Started server process [27464]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+
+===========================================================================
+🎤 TECHNICAL INTERVIEW SERVICE - Production Hardened
+===========================================================================
+📡 Model: gemini-2.5-flash-native-audio-preview-12-2025
+🔗 Main Service: http://localhost:8888/interview-management-service/api/v1
+⏱️  Jitter buffer: 50ms
+🎤 Min speech duration: 150ms
+✅ API Key loaded (ends with: ...ZjhjIV0E)
+===========================================================================
+
+INFO:     127.0.0.1:54292 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54304 - "POST /start HTTP/1.1" 422 Unprocessable Content
+INFO:     127.0.0.1:54314 - "POST /start HTTP/1.1" 405 Method Not Allowed
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [27464]
+INFO:     Stopping reloader process [26961]
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [28059] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [28062]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+
+===========================================================================
+🎤 TECHNICAL INTERVIEW SERVICE - Production Hardened
+===========================================================================
+📡 Model: gemini-2.5-flash-native-audio-preview-12-2025
+🔗 Main Service: http://localhost:8888/interview-management-service/api/v1
+⏱️  Jitter buffer: 50ms
+🎤 Min speech duration: 150ms
+✅ API Key loaded (ends with: ...ZjhjIV0E)
+===========================================================================
+
+✅ Session registered: TI-c17e884463a6-20260519105859
+INFO:     127.0.0.1:52940 - "POST /register-session HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52956 - "GET /interview/TI-c17e884463a6-20260519105859 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52956 - "GET /api/session/TI-c17e884463a6-20260519105859 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52956 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     ('127.0.0.1', 52970) - "WebSocket /ws/interview/TI-c17e884463a6-20260519105859" [accepted]
+INFO:     connection open
+INFO:     connection closed
+🔗 WebSocket connected: TI-c17e884463a6-20260519105859
+🆕 Starting FRESH interview session (no prior context)
+🆕 Fresh interview session initialized for Sanket Sakariya
+✅ Gemini session connected (production hardened)
+🎤 Starting interview...
+🛑 AI interrupted (barge-in)
+🧠 Generating AI evaluation scores...
+📝 Interviewer transcript length: 664 characters
+🔄 Attempting evaluation with gemini-2.5-flash (attempt 1/5)...
+✅ Evaluation successful with gemini-2.5-flash
+📊 Token Usage - Input: 1217, Output: 1410, Total: 2627
+✅ Scores generated - Overall: 10, Result: fail
+   Recommendation: not_recommend
+🧹 Session cleaned up: TI-c17e884463a6-20260519105859
+✅ Interview completed: d65e2fd6-1bfb-4ff9-b551-17050ad94e2b
+   Overall Score: 10.0
+   Result: fail
+   AI Recommendation: not_recommend
+INFO:     127.0.0.1:50918 - "POST /complete/d65e2fd6-1bfb-4ff9-b551-17050ad94e2b HTTP/1.1" 200 OK
+Gemini stream error: 1000 None. 
+📡 Gemini stream ended
+🔌 Session cleaned up
+👋 WebSocket closed: TI-c17e884463a6-20260519105859
+INFO:     127.0.0.1:50930 - "GET /thank-you HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50940 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38068 - "POST /start HTTP/1.1" 400 Bad Request
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [28062]
+INFO:     Stopping reloader process [28059]
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [29381] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [29384]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+
+===========================================================================
+🎤 TECHNICAL INTERVIEW SERVICE - Production Hardened
+===========================================================================
+📡 Model: gemini-2.5-flash-native-audio-preview-12-2025
+🔗 Main Service: http://localhost:8888/interview-management-service/api/v1
+⏱️  Jitter buffer: 50ms
+🎤 Min speech duration: 150ms
+✅ API Key loaded (ends with: ...ZjhjIV0E)
+===========================================================================
+
+✅ Session registered: TI-ac5c54425e75-20260519111830
+INFO:     127.0.0.1:48472 - "POST /register-session HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48478 - "GET /interview/TI-ac5c54425e75-20260519111830 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48478 - "GET /api/session/TI-ac5c54425e75-20260519111830 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48478 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     ('127.0.0.1', 52464) - "WebSocket /ws/interview/TI-ac5c54425e75-20260519111830" [accepted]
+INFO:     connection open
+INFO:     connection closed
+🔗 WebSocket connected: TI-ac5c54425e75-20260519111830
+🆕 Starting FRESH interview session (no prior context)
+🆕 Fresh interview session initialized for Sanket Sakariya
+✅ Gemini session connected (production hardened)
+🎤 Starting interview...
+🛑 AI interrupted (barge-in)
+🧠 Generating AI evaluation scores...
+📝 Interviewer transcript length: 958 characters
+🔄 Attempting evaluation with gemini-2.5-flash (attempt 1/5)...
+✅ Evaluation successful with gemini-2.5-flash
+📊 Token Usage - Input: 1235, Output: 1598, Total: 2833
+✅ Scores generated - Overall: 35, Result: fail
+   Recommendation: not_recommend
+🧹 Session cleaned up: TI-ac5c54425e75-20260519111830
+✅ Interview completed: 746424eb-fa0c-4f25-8af5-07ce3d2a73af
+   Overall Score: 35.0
+   Result: fail
+   AI Recommendation: not_recommend
+INFO:     127.0.0.1:52968 - "POST /complete/746424eb-fa0c-4f25-8af5-07ce3d2a73af HTTP/1.1" 200 OK
+Gemini stream error: 1000 None. 
+📡 Gemini stream ended
+🔌 Session cleaned up
+👋 WebSocket closed: TI-ac5c54425e75-20260519111830
+INFO:     127.0.0.1:52984 - "GET /thank-you HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52986 - "GET / HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [29384]
+INFO:     Started server process [30468]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [30468]
+INFO:     Stopping reloader process [29381]
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [30540] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [30543]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+
+===========================================================================
+🎤 TECHNICAL INTERVIEW SERVICE - Production Hardened
+===========================================================================
+📡 Model: gemini-2.5-flash-native-audio-preview-12-2025
+🔗 Main Service: http://localhost:8888/interview-management-service/api/v1
+⏱️  Jitter buffer: 50ms
+🎤 Min speech duration: 150ms
+✅ API Key loaded (ends with: ...ZjhjIV0E)
+===========================================================================
+
+INFO:     127.0.0.1:37752 - "GET /interview/TI-ac5c54425e75-20260519111830 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37768 - "POST /api/session/TI-ac5c54425e75-20260519111830/verify HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55602 - "GET /interview/TI-ac5c54425e75-20260519111830 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55618 - "POST /api/session/TI-ac5c54425e75-20260519111830/verify HTTP/1.1" 404 Not Found
+WARNING:  WatchFiles detected changes in 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [30543]
+INFO:     Started server process [30737]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [30737]
+INFO:     Stopping reloader process [30540]
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [30814] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [30817]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+
+===========================================================================
+🎤 TECHNICAL INTERVIEW SERVICE - Production Hardened
+===========================================================================
+📡 Model: gemini-2.5-flash-native-audio-preview-12-2025
+🔗 Main Service: http://localhost:8888/interview-management-service/api/v1
+⏱️  Jitter buffer: 50ms
+🎤 Min speech duration: 150ms
+✅ API Key loaded (ends with: ...ZjhjIV0E)
+===========================================================================
+
+INFO:     127.0.0.1:57304 - "GET /interview/TI-ac5c54425e75-20260519111830 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57306 - "POST /api/session/TI-ac5c54425e75-20260519111830/verify HTTP/1.1" 404 Not Found
+✅ Session registered: TI-23961aff9df0-20260519113400
+INFO:     127.0.0.1:35038 - "POST /register-session HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35050 - "GET /interview/TI-23961aff9df0-20260519113400 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35054 - "POST /api/session/TI-23961aff9df0-20260519113400/verify HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35054 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     ('127.0.0.1', 42962) - "WebSocket /ws/interview/TI-23961aff9df0-20260519113400" [accepted]
+INFO:     connection open
+INFO:     connection closed
+🔗 WebSocket connected: TI-23961aff9df0-20260519113400
+🆕 Starting FRESH interview session (no prior context)
+🆕 Fresh interview session initialized for Sanket Sakariya
+✅ Gemini session connected (production hardened)
+🎤 Starting interview...
+🛑 AI interrupted (barge-in)
+🧠 Generating AI evaluation scores...
+📝 Interviewer transcript length: 267 characters
+🔄 Attempting evaluation with gemini-2.5-flash (attempt 1/5)...
+✅ Evaluation successful with gemini-2.5-flash
+📊 Token Usage - Input: 1098, Output: 778, Total: 1876
+✅ Scores generated - Overall: 0, Result: fail
+   Recommendation: not_recommend
+🧹 Session cleaned up: TI-23961aff9df0-20260519113400
+✅ Interview completed: f2f310d6-890c-4dae-b65a-70d648dc57bc
+   Overall Score: 50.0
+   Result: fail
+   AI Recommendation: not_recommend
+INFO:     127.0.0.1:38836 - "POST /complete/f2f310d6-890c-4dae-b65a-70d648dc57bc HTTP/1.1" 200 OK
+Gemini stream error: 1000 None. 
+📡 Gemini stream ended
+🔌 Session cleaned up
+👋 WebSocket closed: TI-23961aff9df0-20260519113400
+INFO:     127.0.0.1:51820 - "GET /thank-you HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37026 - "GET / HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [30817]
+INFO:     Stopping reloader process [30814]
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [31550] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [31553]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+
+===========================================================================
+🎤 TECHNICAL INTERVIEW SERVICE - Production Hardened
+===========================================================================
+📡 Model: gemini-2.5-flash-native-audio-preview-12-2025
+🔗 Main Service: http://localhost:8888/interview-management-service/api/v1
+⏱️  Jitter buffer: 50ms
+🎤 Min speech duration: 150ms
+✅ API Key loaded (ends with: ...ZjhjIV0E)
+===========================================================================
+
+✅ Session registered: TI-6c143ac7ddc4-20260519114018
+INFO:     127.0.0.1:49324 - "POST /register-session HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49336 - "GET /interview/TI-6c143ac7ddc4-20260519114018 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49346 - "POST /api/session/TI-6c143ac7ddc4-20260519114018/verify HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49346 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     ('127.0.0.1', 33404) - "WebSocket /ws/interview/TI-6c143ac7ddc4-20260519114018" [accepted]
+INFO:     connection open
+INFO:     connection closed
+🔗 WebSocket connected: TI-6c143ac7ddc4-20260519114018
+🆕 Starting FRESH interview session (no prior context)
+🆕 Fresh interview session initialized for Sanket Sakariya
+✅ Gemini session connected (production hardened)
+🎤 Starting interview...
+🧠 Generating AI evaluation scores...
+📝 Interviewer transcript length: 1957 characters
+🔄 Attempting evaluation with gemini-2.5-flash (attempt 1/5)...
+✅ Evaluation successful with gemini-2.5-flash
+📊 Token Usage - Input: 1635, Output: 2018, Total: 3653
+✅ Scores generated - Overall: 65, Result: pass
+   Recommendation: neutral
+🧹 Session cleaned up: TI-6c143ac7ddc4-20260519114018
+✅ Interview completed: 0d9e5d4e-13f3-4fd4-9a35-29a3ba4f9858
+   Overall Score: 65.0
+   Result: pass
+   AI Recommendation: neutral
+INFO:     127.0.0.1:57582 - "POST /complete/0d9e5d4e-13f3-4fd4-9a35-29a3ba4f9858 HTTP/1.1" 200 OK
+Gemini stream error: 1000 None. 
+📡 Gemini stream ended
+🔌 Session cleaned up
+👋 WebSocket closed: TI-6c143ac7ddc4-20260519114018
+INFO:     127.0.0.1:48022 - "GET /thank-you HTTP/1.1" 200 OK
+INFO:     127.0.0.1:48030 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44490 - "POST /start HTTP/1.1" 400 Bad Request
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [31553]
+INFO:     Stopping reloader process [31550]
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [34049] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [34052]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [34052]
+INFO:     Stopping reloader process [34049]
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [36302] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [36305]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36305]
+INFO:     Stopping reloader process [36302]
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [38214] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [38217]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38217]
+INFO:     Stopping reloader process [38214]
+INFO:     Will watch for changes in these directories: ['/home/sanket777/github-code/HR automation/HR-Automation/technical-interview-service']
+INFO:     Uvicorn running on http://0.0.0.0:8100 (Press CTRL+C to quit)
+INFO:     Started reloader process [39636] using WatchFiles
+
+============================================================
+🚀 Starting Technical Interview Service
+============================================================
+📍 URL: http://localhost:8100
+📖 API Docs: http://localhost:8100/docs
+🔗 Health Check: http://localhost:8100/health
+============================================================
+
+INFO:     Started server process [39639]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
