@@ -301,3 +301,8 @@ INFO:     Started reloader process [39633] using WatchFiles
 INFO:     Started server process [39654]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39654]
+INFO:     Stopping reloader process [39633]
